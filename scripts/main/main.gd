@@ -49,6 +49,8 @@ const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 @onready var enemy_battle_hp_text: Label = %EnemyBattleHpText
 @onready var enemy_battle_hp: ProgressBar = %EnemyBattleHp
 @onready var battle_status: Label = %BattleStatus
+@onready var battle_log_label: Label = %BattleLog
+@onready var last_battle_result_label: Label = %LastBattleResult
 @onready var battle_toggle_button: Button = %BattleToggleButton
 
 var selected_resource: Dictionary = {}
@@ -641,6 +643,11 @@ func _refresh_battle() -> void:
 	player_battle_hp.tooltip_text = "我方生命 %.0f / %.0f" % [GameState.battle_player_hp, GameState.battle_player_max_hp]
 	enemy_battle_hp.tooltip_text = "敌方生命 %.0f / %.0f" % [GameState.battle_enemy_hp, GameState.battle_enemy_max_hp]
 	battle_status.text = GameState.battle_message
+	battle_log_label.text = "当前战报\n" + ("\n".join(GameState.battle_log) if not GameState.battle_log.is_empty() else "暂无战斗事件")
+	if GameState.last_battle_result.is_empty():
+		last_battle_result_label.text = "上一场结果：暂无"
+	else:
+		last_battle_result_label.text = "上一场结果：%s · 关卡%d · 奖励%s" % [GameState.last_battle_result.get("result", "未知"), GameState.last_battle_result.get("stage_id", 0), GameState.last_battle_result.get("reward_text", "无")]
 	battle_toggle_button.text = "停止自动战斗" if GameState.auto_battle_enabled else "开始自动战斗"
 	battle_toggle_button.disabled = GameState.battle_party.is_empty()
 	battle_stage_selector.disabled = GameState.battle_running

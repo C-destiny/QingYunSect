@@ -27,6 +27,7 @@ const SECT_LEVEL_REQUIREMENTS := [0, 100, 250, 500, 900]
 const SECT_PRODUCTION_BONUS_PER_LEVEL := 0.05
 const BATTLE_ROUND_TIME := BattleCatalogData.ROUND_TIME
 const BATTLE_RESTART_DELAY := BattleCatalogData.RESTART_DELAY
+const BATTLE_LOG_LIMIT := 30
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -64,6 +65,15 @@ var battle_enemy_max_hp: float = 0.0
 var battle_round_progress: float = 0.0
 var battle_restart_cooldown: float = 0.0
 var battle_message: String = "请先编成队伍并选择关卡"
+var battle_round_number: int = 0
+var battle_log: Array[String] = []
+var last_battle_result: Dictionary = {}
+
+
+func _append_battle_log(message: String) -> void:
+	battle_log.append(message)
+	while battle_log.size() > BATTLE_LOG_LIMIT:
+		battle_log.pop_front()
 
 
 func _ready() -> void:
@@ -317,17 +327,22 @@ func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
 	battle_enemy_max_hp = float(stage["hp"])
 	battle_enemy_hp = battle_enemy_max_hp
 	battle_round_progress = 0.0
+	battle_round_number = 0
+	battle_log.clear()
 	battle_restart_cooldown = 0.0
 	battle_encounter_sequence += 1
 	active_battle_encounter_id = battle_encounter_sequence
 	battle_running = true
 	auto_battle_enabled = true
 	battle_message = "正在挑战%s · %s" % [stage["name"], stage["enemy"]]
+	_append_battle_log("开始挑战 %s（场次%d）" % [stage["name"], active_battle_encounter_id])
 	battle_changed.emit()
 	return true
 
 
 func stop_auto_battle(message: String = "已停止自动战斗") -> void:
+	if battle_running or auto_battle_enabled:
+		_append_battle_log("战斗停止：%s" % message)
 	battle_running = false
 	auto_battle_enabled = false
 	active_battle_encounter_id = 0
@@ -354,23 +369,29 @@ func process_battle(delta: float) -> bool:
 	while battle_running and battle_round_progress >= BATTLE_ROUND_TIME:
 		changed = true
 		battle_round_progress -= BATTLE_ROUND_TIME
+		battle_round_number += 1
 		var stage: Dictionary = BattleCatalogData.get_stage(selected_battle_stage)
 		var party_stats := get_battle_party_stats()
 		var party_damage := BattleCatalogData.calculate_damage(float(party_stats["attack"]), float(stage["defense"]))
 		battle_enemy_hp = maxf(0.0, battle_enemy_hp - party_damage)
+		_append_battle_log("第%d回合：我方造成%.0f伤害" % [battle_round_number, party_damage])
 		if is_zero_approx(battle_enemy_hp):
 			won = _complete_battle_victory(stage, active_battle_encounter_id)
 			break
 		var enemy_damage := BattleCatalogData.calculate_damage(float(stage["attack"]), float(party_stats["defense"]))
 		battle_player_hp = maxf(0.0, battle_player_hp - enemy_damage)
+		_append_battle_log("第%d回合：敌方造成%.0f伤害" % [battle_round_number, enemy_damage])
 		if is_zero_approx(battle_player_hp):
+			var failed_encounter_id := active_battle_encounter_id
 			battle_running = false
 			auto_battle_enabled = false
 			active_battle_encounter_id = 0
 			battle_message = "挑战失败，调整队伍或提升境界后再来"
+			last_battle_result = {"result": "失败", "stage_id": selected_battle_stage, "encounter_id": failed_encounter_id, "reward_text": "无"}
+			_append_battle_log("战斗失败：未获得奖励")
 			break
 		battle_message = "第%d轮 · 我方造成%.0f伤害，敌方造成%.0f伤害" % [
-			ceili((battle_player_max_hp - battle_player_hp) / enemy_damage), party_damage, enemy_damage,
+			battle_round_number, party_damage, enemy_damage,
 		]
 	if changed:
 		battle_changed.emit()
@@ -395,6 +416,8 @@ func _complete_battle_victory(stage: Dictionary, encounter_id: int = -1) -> bool
 	active_battle_encounter_id = 0
 	battle_restart_cooldown = BATTLE_RESTART_DELAY if auto_battle_enabled else 0.0
 	battle_message = "胜利！%s已回流宗门，%.0f秒后再次挑战" % [BattleCatalogData.get_reward_text(selected_battle_stage), BATTLE_RESTART_DELAY]
+	last_battle_result = {"result": "胜利", "stage_id": selected_battle_stage, "encounter_id": encounter_id, "reward_text": BattleCatalogData.get_reward_text(selected_battle_stage)}
+	_append_battle_log("战斗胜利：获得%s" % BattleCatalogData.get_reward_text(selected_battle_stage))
 	resources_changed.emit()
 	return true
 
@@ -800,6 +823,9 @@ func export_save_data() -> Dictionary:
 		"battle_round_progress": battle_round_progress,
 		"battle_restart_cooldown": battle_restart_cooldown,
 		"battle_message": battle_message,
+		"battle_round_number": battle_round_number,
+		"battle_log": battle_log.duplicate(),
+		"last_battle_result": last_battle_result.duplicate(true),
 	}
 
 
@@ -954,6 +980,17 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	battle_round_progress = clampf(float(data.get("battle_round_progress", 0.0)), 0.0, BATTLE_ROUND_TIME)
 	battle_restart_cooldown = maxf(0.0, float(data.get("battle_restart_cooldown", 0.0)))
 	battle_message = str(data.get("battle_message", "请先编成队伍并选择关卡"))
+	battle_round_number = maxi(0, int(data.get("battle_round_number", 0)))
+	var loaded_log: Variant = data.get("battle_log", [])
+	var loaded_result: Variant = data.get("last_battle_result", {})
+	if not loaded_log is Array or not loaded_result is Dictionary:
+		return false
+	battle_log.clear()
+	for entry: Variant in loaded_log:
+		battle_log.append(str(entry))
+	while battle_log.size() > BATTLE_LOG_LIMIT:
+		battle_log.pop_front()
+	last_battle_result = loaded_result.duplicate(true)
 	if battle_running:
 		if not auto_battle_enabled or not is_zero_approx(battle_restart_cooldown) or battle_player_hp <= 0.0 or battle_enemy_hp <= 0.0:
 			return false
