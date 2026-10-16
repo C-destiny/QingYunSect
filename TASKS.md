@@ -32,4 +32,4 @@
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
-- 游戏代码与本轮文档尚未推送远端；不把远端管理对象当作双机源码已同步。
+- 2026-10-17已将 `docs/development-management` 推送至 `origin/docs/development-management`，包含V0.4候选源码、测试和文档；尚未合并main，也未上传Windows构建或创建完成标签。

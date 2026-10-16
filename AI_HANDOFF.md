@@ -6,7 +6,7 @@
 
 - 仓库：E:/Rgame/qingyun-sect，origin=https://github.com/C-destiny/QingYunSect.git（私有）。
 - 游戏基线：main / 1567995ce02cca8fa808d9571570ca07db4aad84 / v0.3.0。
-- 当前开发分支：docs/development-management；已承载V0.4逐项开发提交，尚未推送远端。
+- 当前开发分支：docs/development-management；已承载V0.4逐项开发提交，并于2026-10-17推送到同名远端分支。
 - E:/Rgame/AGENTS.md另有本机父目录入口，指向仓库内长期指令；它不在仓库版本管理中。另一台电脑应直接以qingyun-sect为Codex项目目录。
 - 引擎：Godot 4.7.2.stable.official.ed1daf0bf；主要路径与模块见docs/V0.3_ENGINEERING_AUDIT.md。
 - V0.1～V0.3已按负责人本轮要求归档完成；V0.4～V1.0均规划中。V0.4是战斗完善，不是精英装备。
@@ -36,7 +36,7 @@
 - Milestones/Project未创建：GitHub连接器只有Issue相关能力，gh不在PATH；浏览器绑定/读页面连续超时。账号仓库admin权限已证实，不误报为无权限。
 - 已保存13个里程碑完整描述和看板配置，恢复工具后查重创建/关联，更新Issue中的待关联备注，再更新摘要。不得声称已有看板URL。
 - 本轮可验收核验报告和本地体系；远端体系尚有上述缺口，不能宣称整套搭建全部完成。
-- API返回远端仓库size=0；本轮未推送。双机恢复不能只依赖远端空仓库，需要负责人另确认阶段性源码同步。
+- V0.4候选源码、测试和文档已推送到 `origin/docs/development-management`；main仍停留在V0.3。另一台电脑应获取该远端分支继续验收，不能误以为已合并或发布。
 - 不自动创建Goal：工具支持，但用户本轮只要求建议。建议目标仅V0.4已批准任务并保留逐项人工验收。
 - 不提前修复审查发现的问题；它们已映射到Issues #2～#9。
 - 完成长时证据和GitHub同步后，等待负责人验收QYS-V04-007～010及V0.4；确认前不进入V0.5，不创建v0.4.0标签。
