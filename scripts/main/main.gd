@@ -69,7 +69,11 @@ func _refresh_resources() -> void:
 	wood_label.text = "木材  %d" % GameState.get_resource_amount("wood")
 	spirit_stone_label.text = "灵石  %d" % GameState.get_resource_amount("spirit_stone")
 	food_label.text = "灵谷  %d" % GameState.get_resource_amount("food")
-	disciples_label.text = "弟子  %d/%d" % [GameState.assigned_disciples, GameState.total_disciples]
+	disciples_label.text = "弟子  %d/%d · 上限 %d" % [
+		GameState.assigned_disciples,
+		GameState.total_disciples,
+		GameState.get_disciple_capacity(),
+	]
 	if not build_buttons.is_empty():
 		for building_id: StringName in build_buttons:
 			var definition := BuildingCatalog.get_data(building_id)
@@ -109,9 +113,14 @@ func _refresh_assignment() -> void:
 		return
 	var workers := GameState.get_assignment(selected_resource["site_id"])
 	unassign_button.disabled = workers <= 0
-	var total_rate := float(selected_resource["rate"]) * float(workers)
+	var multiplier := GameState.get_production_multiplier(selected_resource["resource_id"])
+	var total_rate := float(selected_resource["rate"]) * multiplier * float(workers)
 	assignment_status.text = "已分配 %d 人 · 空闲 %d 人" % [workers, GameState.get_idle_disciples()]
-	production_status.text = "%s +%.0f/分钟" % [selected_resource["resource_name"], total_rate]
+	production_status.text = "%s +%.1f/分钟 · 建筑加成 +%.0f%%" % [
+		selected_resource["resource_name"],
+		total_rate,
+		(multiplier - 1.0) * 100.0,
+	]
 
 
 func _save_game() -> void:
@@ -175,6 +184,7 @@ func _on_placement_requested(building_id: StringName, cell: Vector2i) -> void:
 
 func _refresh_buildings() -> void:
 	sect_map.queue_redraw()
+	_refresh_assignment()
 	var constructing := 0
 	for building: Dictionary in GameState.buildings:
 		if not bool(building["completed"]):

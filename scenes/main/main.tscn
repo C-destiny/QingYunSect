@@ -233,25 +233,25 @@ columns = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "弟子居\n木40 灵10"
+text = "弟子居 +2上限\n木40 灵10"
 
 [node name="LumberYardButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "伐木场\n木30 灵15"
+text = "伐木场 木+25%\n木30 灵15"
 
 [node name="SpiritMineButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "采灵坊\n木50 灵25"
+text = "采灵坊 灵+25%\n木50 灵25"
 
 [node name="SpiritFieldButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "灵田\n木35 灵20"
+text = "灵田 谷+25%\n木35 灵20"
 
 [node name="TrainingGroundButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true

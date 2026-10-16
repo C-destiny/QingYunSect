@@ -5,6 +5,7 @@ signal assignments_changed
 signal buildings_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
+const BASE_DISCIPLE_CAPACITY := 3
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -51,6 +52,27 @@ func get_idle_disciples() -> int:
 	return total_disciples - assigned_disciples
 
 
+func get_disciple_capacity() -> int:
+	var capacity := BASE_DISCIPLE_CAPACITY
+	for building: Dictionary in buildings:
+		if not bool(building.get("completed", false)):
+			continue
+		var definition := BuildingCatalog.get_data(StringName(building.get("type", "")))
+		capacity += int(definition.get("disciple_capacity", 0))
+	return capacity
+
+
+func get_production_multiplier(resource_id: StringName) -> float:
+	var multiplier := 1.0
+	for building: Dictionary in buildings:
+		if not bool(building.get("completed", false)):
+			continue
+		var definition := BuildingCatalog.get_data(StringName(building.get("type", "")))
+		if StringName(definition.get("production_resource", &"")) == resource_id:
+			multiplier += float(definition.get("production_bonus", 0.0))
+	return multiplier
+
+
 func get_assignment(site_id: StringName) -> int:
 	return int(assignments.get(site_id, 0))
 
@@ -79,7 +101,7 @@ func process_production(site_id: StringName, resource_id: StringName, rate_per_m
 	if workers <= 0 or rate_per_minute <= 0.0:
 		return 0
 	var progress := float(production_progress.get(site_id, 0.0))
-	progress += rate_per_minute * float(workers) * delta / 60.0
+	progress += rate_per_minute * get_production_multiplier(resource_id) * float(workers) * delta / 60.0
 	var completed := floori(progress)
 	production_progress[site_id] = progress - float(completed)
 	if completed > 0:
