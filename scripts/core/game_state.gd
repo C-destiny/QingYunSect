@@ -804,22 +804,39 @@ func export_save_data() -> Dictionary:
 
 
 func import_save_data(data: Dictionary) -> bool:
+	var rollback_data := export_save_data()
+	if _import_save_data_in_place(data):
+		return true
+	if not _import_save_data_in_place(rollback_data):
+		push_error("读档失败后无法恢复原游戏状态")
+	return false
+
+
+func _import_save_data_in_place(data: Dictionary) -> bool:
 	if not data.has("resources") or not data.has("assignments"):
+		return false
+	if not data["resources"] is Dictionary or not data["assignments"] is Dictionary:
 		return false
 	var loaded_resources: Dictionary = data["resources"]
 	for resource_id: StringName in RESOURCE_IDS:
 		var key := String(resource_id)
-		if not loaded_resources.has(key):
+		if not loaded_resources.has(key) or typeof(loaded_resources[key]) not in [TYPE_INT, TYPE_FLOAT]:
 			return false
 		resources[key] = maxi(0, int(loaded_resources[key]))
 	var saved_total := maxi(0, int(data.get("total_disciples", 3)))
 	var loaded_assignments: Dictionary = data["assignments"]
 	production_progress.clear()
-	var loaded_progress: Dictionary = data.get("production_progress", {})
+	var loaded_progress_value: Variant = data.get("production_progress", {})
+	if not loaded_progress_value is Dictionary:
+		return false
+	var loaded_progress: Dictionary = loaded_progress_value
 	for site_id: Variant in loaded_progress:
 		production_progress[String(site_id)] = clampf(float(loaded_progress[site_id]), 0.0, 0.999999)
 	buildings.clear()
-	var loaded_buildings: Array = data.get("buildings", [])
+	var loaded_buildings_value: Variant = data.get("buildings", [])
+	if not loaded_buildings_value is Array:
+		return false
+	var loaded_buildings: Array = loaded_buildings_value
 	for raw_building: Variant in loaded_buildings:
 		if not raw_building is Dictionary:
 			return false
@@ -830,7 +847,10 @@ func import_save_data(data: Dictionary) -> bool:
 	cultivation_points = maxf(0.0, float(data.get("cultivation_points", 0.0)))
 	disciples.clear()
 	next_disciple_id = 1
-	var loaded_disciples: Array = data.get("disciples", [])
+	var loaded_disciples_value: Variant = data.get("disciples", [])
+	if not loaded_disciples_value is Array:
+		return false
+	var loaded_disciples: Array = loaded_disciples_value
 	if not loaded_disciples.is_empty():
 		var used_ids: Dictionary = {}
 		for raw_disciple: Variant in loaded_disciples:
@@ -934,6 +954,14 @@ func import_save_data(data: Dictionary) -> bool:
 	battle_round_progress = clampf(float(data.get("battle_round_progress", 0.0)), 0.0, BATTLE_ROUND_TIME)
 	battle_restart_cooldown = maxf(0.0, float(data.get("battle_restart_cooldown", 0.0)))
 	battle_message = str(data.get("battle_message", "请先编成队伍并选择关卡"))
+	if battle_running:
+		if not auto_battle_enabled or not is_zero_approx(battle_restart_cooldown) or battle_player_hp <= 0.0 or battle_enemy_hp <= 0.0:
+			return false
+	elif auto_battle_enabled:
+		if battle_restart_cooldown <= 0.0:
+			return false
+	elif battle_restart_cooldown > 0.0:
+		return false
 	if total_disciples + (1 if is_recruiting() else 0) > get_disciple_capacity():
 		return false
 	resources_changed.emit()

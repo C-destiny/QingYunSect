@@ -29,9 +29,15 @@ func _on_save_completed(success: bool, message: String) -> void:
 	last_save_message = message
 
 
+func _cleanup_test_save() -> void:
+	for suffix: String in ["", ".bak", ".tmp"]:
+		var path := TEST_SAVE_PATH + suffix
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
 func _init() -> void:
-	if FileAccess.file_exists(TEST_SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
+	_cleanup_test_save()
 	var state := _new_state()
 	var manager := _new_manager(state, TEST_SAVE_PATH)
 	var disciple_id := int(state.disciples[0]["id"])
@@ -76,12 +82,14 @@ func _init() -> void:
 	assert(not settled._complete_battle_victory(BattleCatalogData.get_stage(1), encounter_id))
 	assert(settled.get_resource_amount(&"wood") == wood_before + 20)
 
-	var legacy_save: Dictionary = state.export_save_data()
+	var legacy_source := _new_state()
+	var legacy_id := int(legacy_source.disciples[0]["id"])
+	assert(legacy_source.set_disciple_job(legacy_id, &"combat"))
+	assert(legacy_source.start_auto_battle(1))
+	var legacy_save: Dictionary = legacy_source.export_save_data()
 	legacy_save.erase("battle_encounter_sequence")
 	legacy_save.erase("active_battle_encounter_id")
 	legacy_save.erase("last_settled_battle_encounter_id")
-	legacy_save["battle_running"] = true
-	legacy_save["auto_battle_enabled"] = true
 	var legacy := _new_state()
 	assert(legacy.import_save_data(legacy_save))
 	assert(legacy.active_battle_encounter_id > 0)
@@ -122,6 +130,6 @@ func _init() -> void:
 	assert(failed.battle_victories == 0)
 	assert(failed.get_resource_amount(&"wood") == failed_wood)
 
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
+	_cleanup_test_save()
 	print("PASS: battle reward settlement is traceable, idempotent, and save failures stay visible")
 	quit()

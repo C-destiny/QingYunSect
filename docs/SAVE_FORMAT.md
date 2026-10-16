@@ -1,10 +1,10 @@
 # 当前存档事实与迁移边界
 
-核验基线：V0.3 / 1567995；本轮不变更格式。
+兼容基线：V0.3 / 1567995；当前实现包含V0.4向后兼容字段与安全恢复机制。
 
 ## 实际格式
 
-scripts/core/save_manager.gd使用JSON，SAVE_VERSION=1，路径user://savegame.json。未启用自定义user目录；按当前Windows Godot应用名通常映射到%APPDATA%/Godot/app_userdata/青云宗/savegame.json，具体路径需由引擎globalize_path核实，本轮未打开玩家存档。
+scripts/core/save_manager.gd使用JSON，SAVE_VERSION=1，主路径user://savegame.json，临时文件追加.tmp，备份追加.bak。未启用自定义user目录；按当前Windows Godot应用名通常映射到%APPDATA%/Godot/app_userdata/青云宗/savegame.json。本轮仅使用res://tests下的隔离路径，未打开玩家正式存档。
 
 外层：version、saved_at_unix、game_state。游戏V0.3不等于存档版本3；V0.1～V0.3仍沿用version=1。时间戳目前只记录，不产生离线收益。
 
@@ -22,14 +22,18 @@ game_state由GameState.export_save_data导出：
 
 ## 当前兼容实现
 
-load_game仅接受version=1；import_save_data使用默认值填充，旧聚合弟子数据可生成个人记录。该方式不是显式版本迁移链。
+load_game接受version=1；import_save_data使用默认值填充，旧聚合弟子数据可生成个人记录。
 岗位计数由个人记录重算，battle_party另外恢复。QYS-V04-003 起：字段存在时必须与 combat 岗位集合完全一致；字段缺失时仍从 combat 岗位构建，以兼容旧档。格式字段和 SAVE_VERSION 均未改变。
 QYS-V04-004新增三个可选场次跟踪字段但仍保持SAVE_VERSION=1：V0.3缺字段存档在战斗中读取时生成有效场次号，非战斗状态保持零；新字段部分缺失或编号关系无效时拒绝读取。详细语义见BATTLE_REWARD_SETTLEMENT.md。
-写入直接FileAccess.WRITE目标文件后flush，未见备份或临时文件原子替换。
-加载逐字段直接修改运行对象，后续失败不回滚（已复现）。
+QYS-V04-005起，读档先保存内存快照；任一字段校验失败会用快照完整回滚，避免部分字段污染当前游戏。资源容器、数组/字典容器、队伍和战斗状态矛盾均显式拒绝。
+保存先写.tmp并重新解析、校验完整游戏状态；校验成功后保留上一份有效主档为.bak，再以同目录重命名替换主档。替换失败时尝试由备份恢复。主档不存在或损坏时可读取.bak，并明确显示“从备份读取”，不会静默覆盖主档。
 
-## V0.4必要工作
+## 失败与恢复语义
 
-Issue #5先提交方案：旧档字段映射、默认值、状态一致性校验、失败不修改当前状态、安全保存和备份；与#4的战斗结算标识同步设计。
-测试覆盖战斗中/胜利等待/停止、合法旧档、损坏及类型异常、重复读取、失败写入。只能用合成夹具及隔离路径；保留原始旧档以证明迁移，不用新版重写后冒充旧档。
-本轮test_save_manager使用res://tests/.test_savegame.json，诊断主场景使用不存在的res://tests/.audit_v03_unused.json，均不覆盖玩家正式存档。
+- 主档有效：读取主档。
+- 主档损坏且备份有效：读取备份并向界面报告，不自动覆盖损坏主档。
+- 主档和备份均无效：读取失败，当前内存状态保持不变。
+- 保存临时写入、校验、备份或替换任一步失败：返回失败并保留可恢复的旧主档/备份；不能显示“已保存”。
+- V0.3战斗中、胜利等待、停止状态分别迁移；结算ID缺失时按BATTLE_REWARD_SETTLEMENT.md生成默认值。
+
+专项测试使用res://tests下的合成存档，覆盖往返、V0.3三类战斗状态、较早聚合弟子数据、损坏JSON、错误容器、无效队伍、矛盾战斗状态、重复读取、临时文件清理与备份恢复，不覆盖user://savegame.json。
