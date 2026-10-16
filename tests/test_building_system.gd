@@ -4,6 +4,7 @@ extends SceneTree
 func _init() -> void:
 	var state := preload("res://scripts/core/game_state.gd").new()
 	root.add_child(state)
+	assert(BuildingCatalog.get_cost_text(&"lumber_yard") == "木材30、灵石15")
 	assert(not state.is_cell_occupied(Vector2i(0, 0)))
 	assert(state.is_cell_occupied(Vector2i(4, 3)))
 	assert(state.start_construction(&"lumber_yard", Vector2i(0, 0)))

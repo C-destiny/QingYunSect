@@ -56,5 +56,12 @@ static func get_data(building_id: StringName) -> Dictionary:
 static func get_cost_text(building_id: StringName) -> String:
 	var data := get_data(building_id)
 	var cost: Dictionary = data.get("cost", {})
-	return "木%d 灵%d" % [int(cost.get("wood", 0)), int(cost.get("spirit_stone", 0))]
+	var parts := PackedStringArray()
+	if int(cost.get("wood", 0)) > 0:
+		parts.append("木材%d" % int(cost["wood"]))
+	if int(cost.get("spirit_stone", 0)) > 0:
+		parts.append("灵石%d" % int(cost["spirit_stone"]))
+	if int(cost.get("food", 0)) > 0:
+		parts.append("灵谷%d" % int(cost["food"]))
+	return "、".join(parts)
 

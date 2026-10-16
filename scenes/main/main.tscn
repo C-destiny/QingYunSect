@@ -253,31 +253,36 @@ columns = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "弟子居 +2上限\n木40 灵10"
+theme_override_font_sizes/font_size = 14
+text = "弟子居 +2上限\n木材40 灵石10"
 
 [node name="LumberYardButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "伐木场 木+25%\n木30 灵15"
+theme_override_font_sizes/font_size = 14
+text = "伐木场 木材+25%\n木材30 灵石15"
 
 [node name="SpiritMineButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "采灵坊 灵+25%\n木50 灵25"
+theme_override_font_sizes/font_size = 14
+text = "采灵坊 灵石+25%\n木材50 灵石25"
 
 [node name="SpiritFieldButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "灵田 谷+25%\n木35 灵20"
+theme_override_font_sizes/font_size = 14
+text = "灵田 灵谷+25%\n木材35 灵石20"
 
 [node name="TrainingGroundButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "演武场 2修炼位\n木60 灵40"
+theme_override_font_sizes/font_size = 14
+text = "演武场 2修炼位\n木材60 灵石40"
 
 [node name="CancelBuildButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true
