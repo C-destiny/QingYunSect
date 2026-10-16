@@ -52,6 +52,9 @@ var selected_battle_stage: int = 1
 var highest_unlocked_stage: int = 1
 var highest_cleared_stage: int = 0
 var battle_victories: int = 0
+var battle_encounter_sequence: int = 0
+var active_battle_encounter_id: int = 0
+var last_settled_battle_encounter_id: int = 0
 var battle_running: bool = false
 var auto_battle_enabled: bool = false
 var battle_player_hp: float = 0.0
@@ -315,6 +318,8 @@ func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
 	battle_enemy_hp = battle_enemy_max_hp
 	battle_round_progress = 0.0
 	battle_restart_cooldown = 0.0
+	battle_encounter_sequence += 1
+	active_battle_encounter_id = battle_encounter_sequence
 	battle_running = true
 	auto_battle_enabled = true
 	battle_message = "正在挑战%s · %s" % [stage["name"], stage["enemy"]]
@@ -325,6 +330,7 @@ func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
 func stop_auto_battle(message: String = "已停止自动战斗") -> void:
 	battle_running = false
 	auto_battle_enabled = false
+	active_battle_encounter_id = 0
 	battle_restart_cooldown = 0.0
 	battle_message = message
 	battle_changed.emit()
@@ -353,14 +359,14 @@ func process_battle(delta: float) -> bool:
 		var party_damage := BattleCatalogData.calculate_damage(float(party_stats["attack"]), float(stage["defense"]))
 		battle_enemy_hp = maxf(0.0, battle_enemy_hp - party_damage)
 		if is_zero_approx(battle_enemy_hp):
-			_complete_battle_victory(stage)
-			won = true
+			won = _complete_battle_victory(stage, active_battle_encounter_id)
 			break
 		var enemy_damage := BattleCatalogData.calculate_damage(float(stage["attack"]), float(party_stats["defense"]))
 		battle_player_hp = maxf(0.0, battle_player_hp - enemy_damage)
 		if is_zero_approx(battle_player_hp):
 			battle_running = false
 			auto_battle_enabled = false
+			active_battle_encounter_id = 0
 			battle_message = "挑战失败，调整队伍或提升境界后再来"
 			break
 		battle_message = "第%d轮 · 我方造成%.0f伤害，敌方造成%.0f伤害" % [
@@ -371,17 +377,37 @@ func process_battle(delta: float) -> bool:
 	return won
 
 
-func _complete_battle_victory(stage: Dictionary) -> void:
+func _complete_battle_victory(stage: Dictionary, encounter_id: int = -1) -> bool:
+	if encounter_id < 0:
+		encounter_id = active_battle_encounter_id
+	if stage != BattleCatalogData.get_stage(selected_battle_stage):
+		return false
 	var rewards: Dictionary = stage.get("rewards", {})
+	if not _can_grant_battle_rewards(encounter_id, rewards):
+		return false
+	last_settled_battle_encounter_id = encounter_id
 	for resource_id: Variant in rewards:
 		resources[String(resource_id)] = get_resource_amount(StringName(resource_id)) + int(rewards[resource_id])
 	battle_victories += 1
 	highest_cleared_stage = maxi(highest_cleared_stage, selected_battle_stage)
 	highest_unlocked_stage = mini(BattleCatalogData.get_stage_count(), maxi(highest_unlocked_stage, selected_battle_stage + 1))
 	battle_running = false
+	active_battle_encounter_id = 0
 	battle_restart_cooldown = BATTLE_RESTART_DELAY if auto_battle_enabled else 0.0
 	battle_message = "胜利！%s已回流宗门，%.0f秒后再次挑战" % [BattleCatalogData.get_reward_text(selected_battle_stage), BATTLE_RESTART_DELAY]
 	resources_changed.emit()
+	return true
+
+
+func _can_grant_battle_rewards(encounter_id: int, rewards: Dictionary) -> bool:
+	if not battle_running or encounter_id <= 0 or encounter_id != active_battle_encounter_id:
+		return false
+	if encounter_id <= last_settled_battle_encounter_id:
+		return false
+	for resource_id: Variant in rewards:
+		if StringName(resource_id) not in RESOURCE_IDS or int(rewards[resource_id]) < 0:
+			return false
+	return true
 
 
 func get_disciple_capacity() -> int:
@@ -762,6 +788,9 @@ func export_save_data() -> Dictionary:
 		"highest_unlocked_stage": highest_unlocked_stage,
 		"highest_cleared_stage": highest_cleared_stage,
 		"battle_victories": battle_victories,
+		"battle_encounter_sequence": battle_encounter_sequence,
+		"active_battle_encounter_id": active_battle_encounter_id,
+		"last_settled_battle_encounter_id": last_settled_battle_encounter_id,
 		"battle_running": battle_running,
 		"auto_battle_enabled": auto_battle_enabled,
 		"battle_player_hp": battle_player_hp,
@@ -877,8 +906,27 @@ func import_save_data(data: Dictionary) -> bool:
 	highest_cleared_stage = clampi(int(data.get("highest_cleared_stage", 0)), 0, BattleCatalogData.get_stage_count())
 	selected_battle_stage = clampi(int(data.get("selected_battle_stage", 1)), 1, highest_unlocked_stage)
 	battle_victories = maxi(0, int(data.get("battle_victories", 0)))
+	var has_encounter_tracking := data.has("battle_encounter_sequence") or data.has("active_battle_encounter_id") or data.has("last_settled_battle_encounter_id")
+	if has_encounter_tracking and (not data.has("battle_encounter_sequence") or not data.has("active_battle_encounter_id") or not data.has("last_settled_battle_encounter_id")):
+		return false
+	battle_encounter_sequence = maxi(0, int(data.get("battle_encounter_sequence", 0)))
+	active_battle_encounter_id = maxi(0, int(data.get("active_battle_encounter_id", 0)))
+	last_settled_battle_encounter_id = maxi(0, int(data.get("last_settled_battle_encounter_id", 0)))
+	if last_settled_battle_encounter_id > battle_encounter_sequence:
+		return false
 	battle_running = bool(data.get("battle_running", false)) and not battle_party.is_empty()
 	auto_battle_enabled = bool(data.get("auto_battle_enabled", false)) and not battle_party.is_empty()
+	if battle_running:
+		if has_encounter_tracking:
+			if active_battle_encounter_id <= last_settled_battle_encounter_id or active_battle_encounter_id > battle_encounter_sequence:
+				return false
+		else:
+			battle_encounter_sequence = last_settled_battle_encounter_id + 1
+			active_battle_encounter_id = battle_encounter_sequence
+	elif has_encounter_tracking and active_battle_encounter_id != 0:
+		return false
+	else:
+		active_battle_encounter_id = 0
 	battle_player_max_hp = maxf(0.0, float(data.get("battle_player_max_hp", 0.0)))
 	battle_player_hp = clampf(float(data.get("battle_player_hp", battle_player_max_hp)), 0.0, battle_player_max_hp)
 	battle_enemy_max_hp = maxf(0.0, float(data.get("battle_enemy_max_hp", 0.0)))

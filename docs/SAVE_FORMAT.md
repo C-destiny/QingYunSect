@@ -17,12 +17,14 @@ game_state由GameState.export_save_data导出：
 - training_disciples、cultivation_points。
 - disciples（id、name、realm_level、cultivation、job）、next_disciple_id、sect_level。
 - battle_party、selected_battle_stage、highest_unlocked_stage、highest_cleared_stage、battle_victories。
+- battle_encounter_sequence、active_battle_encounter_id、last_settled_battle_encounter_id（QYS-V04-004新增；用于结算幂等）。
 - battle_running、auto_battle_enabled、battle_player_hp/max_hp、battle_enemy_hp/max_hp、battle_round_progress、battle_restart_cooldown、battle_message。
 
 ## 当前兼容实现
 
 load_game仅接受version=1；import_save_data使用默认值填充，旧聚合弟子数据可生成个人记录。该方式不是显式版本迁移链。
 岗位计数由个人记录重算，battle_party另外恢复。QYS-V04-003 起：字段存在时必须与 combat 岗位集合完全一致；字段缺失时仍从 combat 岗位构建，以兼容旧档。格式字段和 SAVE_VERSION 均未改变。
+QYS-V04-004新增三个可选场次跟踪字段但仍保持SAVE_VERSION=1：V0.3缺字段存档在战斗中读取时生成有效场次号，非战斗状态保持零；新字段部分缺失或编号关系无效时拒绝读取。详细语义见BATTLE_REWARD_SETTLEMENT.md。
 写入直接FileAccess.WRITE目标文件后flush，未见备份或临时文件原子替换。
 加载逐字段直接修改运行对象，后续失败不回滚（已复现）。
 
