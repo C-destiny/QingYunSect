@@ -147,6 +147,32 @@ func get_disciple_job_text(job: StringName) -> String:
 		_: return "空闲"
 
 
+func can_set_disciple_job(disciple_id: int, job: StringName) -> bool:
+	if job not in [&"idle", &"forest", &"mine", &"field", &"training"]:
+		return false
+	var disciple := get_disciple(disciple_id)
+	if disciple.is_empty():
+		return false
+	var current_job := StringName(disciple.get("job", "idle"))
+	if current_job == job:
+		return true
+	if job == &"training" and training_disciples >= get_training_capacity():
+		return false
+	return true
+
+
+func set_disciple_job(disciple_id: int, job: StringName) -> bool:
+	if not can_set_disciple_job(disciple_id, job):
+		return false
+	var disciple := get_disciple(disciple_id)
+	disciple["job"] = String(job)
+	_sync_aggregate_state_from_disciples()
+	assignments_changed.emit()
+	training_changed.emit()
+	disciples_changed.emit()
+	return true
+
+
 func get_site_workforce_power(site_id: StringName) -> float:
 	_ensure_disciple_records()
 	var power := 0.0

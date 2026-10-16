@@ -25,12 +25,15 @@ extends Control
 @onready var disciple_selector: OptionButton = %DiscipleSelector
 @onready var disciple_detail: Label = %DiscipleDetail
 @onready var breakthrough_button: Button = %BreakthroughButton
+@onready var disciple_job_selector: OptionButton = %DiscipleJobSelector
+@onready var disciple_job_status: Label = %DiscipleJobStatus
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
 var build_buttons: Dictionary = {}
 var selected_building_instance: int = 0
 var selected_disciple_id: int = 0
+const DISCIPLE_JOBS := [&"idle", &"forest", &"mine", &"field", &"training"]
 
 
 func _ready() -> void:
@@ -65,6 +68,10 @@ func _ready() -> void:
 	demolish_button.pressed.connect(_demolish_selected_building)
 	disciple_selector.item_selected.connect(_on_disciple_selected)
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
+	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
+	for job: StringName in DISCIPLE_JOBS:
+		disciple_job_selector.add_item(GameState.get_disciple_job_text(job))
+		disciple_job_selector.set_item_metadata(disciple_job_selector.item_count - 1, String(job))
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
@@ -321,7 +328,9 @@ func _refresh_disciple_detail() -> void:
 	if disciple.is_empty():
 		disciple_detail.text = "暂无弟子"
 		breakthrough_button.disabled = true
+		disciple_job_selector.disabled = true
 		return
+	disciple_job_selector.disabled = false
 	var realm_level := int(disciple.get("realm_level", 1))
 	var cultivation := float(disciple.get("cultivation", 0.0))
 	var gathering_bonus := float(realm_level - 1) * GameState.REALM_GATHERING_BONUS_PER_LEVEL * 100.0
@@ -339,6 +348,27 @@ func _refresh_disciple_detail() -> void:
 		]
 		breakthrough_button.text = "突破至%s" % GameState.get_realm_name(realm_level + 1)
 	breakthrough_button.disabled = not GameState.can_breakthrough(selected_disciple_id)
+	var current_job := StringName(disciple.get("job", "idle"))
+	for index: int in range(disciple_job_selector.item_count):
+		var job := StringName(disciple_job_selector.get_item_metadata(index))
+		disciple_job_selector.set_item_disabled(index, job == &"training" and current_job != &"training" and GameState.training_disciples >= GameState.get_training_capacity())
+		if job == current_job:
+			disciple_job_selector.select(index)
+
+
+func _on_disciple_job_selected(index: int) -> void:
+	if index < 0 or index >= disciple_job_selector.item_count or selected_disciple_id <= 0:
+		return
+	var job := StringName(disciple_job_selector.get_item_metadata(index))
+	if GameState.set_disciple_job(selected_disciple_id, job):
+		var disciple := GameState.get_disciple(selected_disciple_id)
+		disciple_job_status.text = "%s已调整为：%s" % [disciple.get("name", "该弟子"), GameState.get_disciple_job_text(job)]
+		disciple_job_status.modulate = Color(0.55, 0.85, 0.62)
+		SaveManager.save_game()
+	else:
+		disciple_job_status.text = "无法调整岗位：演武场修炼位不足"
+		disciple_job_status.modulate = Color(0.9, 0.55, 0.42)
+		_refresh_disciple_detail()
 
 
 func _breakthrough_selected_disciple() -> void:
