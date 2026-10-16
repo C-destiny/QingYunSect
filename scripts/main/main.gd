@@ -15,14 +15,20 @@ extends Control
 @onready var load_button: Button = %LoadButton
 @onready var save_status: Label = %SaveStatus
 @onready var autosave_timer: Timer = %AutosaveTimer
+@onready var placement_status: Label = %PlacementStatus
+@onready var cancel_build_button: Button = %CancelBuildButton
 
 var selected_resource: Dictionary = {}
+var selected_building: StringName = &""
+var build_buttons: Dictionary = {}
 
 
 func _ready() -> void:
 	GameState.resources_changed.connect(_refresh_resources)
 	GameState.assignments_changed.connect(_refresh_assignment)
+	GameState.buildings_changed.connect(_refresh_buildings)
 	sect_map.resource_selected.connect(_on_resource_selected)
+	sect_map.placement_requested.connect(_on_placement_requested)
 	assign_button.pressed.connect(_assign_disciple)
 	unassign_button.pressed.connect(_unassign_disciple)
 	save_button.pressed.connect(_save_game)
@@ -30,11 +36,22 @@ func _ready() -> void:
 	autosave_timer.timeout.connect(_autosave)
 	SaveManager.save_completed.connect(_on_save_completed)
 	SaveManager.load_completed.connect(_on_load_completed)
+	build_buttons = {
+		&"disciple_quarters": %DiscipleQuartersButton,
+		&"lumber_yard": %LumberYardButton,
+		&"spirit_mine": %SpiritMineButton,
+		&"spirit_field": %SpiritFieldButton,
+		&"training_ground": %TrainingGroundButton,
+	}
+	for building_id: StringName in build_buttons:
+		build_buttons[building_id].pressed.connect(_start_building_placement.bind(building_id))
+	cancel_build_button.pressed.connect(_cancel_building_placement)
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
 	_refresh_assignment()
-	print("青云宗 V0.1：本地存档系统启动成功")
+	_refresh_buildings()
+	print("青云宗 V0.1：建筑系统启动成功")
 
 
 func _process(delta: float) -> void:
@@ -45,6 +62,7 @@ func _process(delta: float) -> void:
 			resource_data["rate"],
 			delta
 		)
+	GameState.process_construction(delta)
 
 
 func _refresh_resources() -> void:
@@ -52,6 +70,10 @@ func _refresh_resources() -> void:
 	spirit_stone_label.text = "灵石  %d" % GameState.get_resource_amount("spirit_stone")
 	food_label.text = "灵谷  %d" % GameState.get_resource_amount("food")
 	disciples_label.text = "弟子  %d/%d" % [GameState.assigned_disciples, GameState.total_disciples]
+	if not build_buttons.is_empty():
+		for building_id: StringName in build_buttons:
+			var definition := BuildingCatalog.get_data(building_id)
+			build_buttons[building_id].disabled = not GameState.can_afford(definition["cost"])
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
@@ -118,4 +140,45 @@ func _on_load_completed(success: bool, message: String) -> void:
 	if success:
 		_refresh_resources()
 		_refresh_assignment()
+		_refresh_buildings()
+
+
+func _start_building_placement(building_id: StringName) -> void:
+	var definition := BuildingCatalog.get_data(building_id)
+	if not GameState.can_afford(definition["cost"]):
+		placement_status.text = "资源不足：%s" % BuildingCatalog.get_cost_text(building_id)
+		return
+	selected_building = building_id
+	sect_map.start_placement(building_id)
+	cancel_build_button.disabled = false
+	placement_status.text = "放置 %s · 点击绿色格子" % definition["name"]
+
+
+func _cancel_building_placement() -> void:
+	selected_building = &""
+	sect_map.cancel_placement()
+	cancel_build_button.disabled = true
+	placement_status.text = "选择建筑开始建造"
+
+
+func _on_placement_requested(building_id: StringName, cell: Vector2i) -> void:
+	if GameState.start_construction(building_id, cell):
+		var definition := BuildingCatalog.get_data(building_id)
+		placement_status.text = "%s开始施工（%.0f秒）" % [definition["name"], definition["build_time"]]
+		selected_building = &""
+		sect_map.cancel_placement()
+		cancel_build_button.disabled = true
+		SaveManager.save_game()
+	else:
+		placement_status.text = "无法在这里建造"
+
+
+func _refresh_buildings() -> void:
+	sect_map.queue_redraw()
+	var constructing := 0
+	for building: Dictionary in GameState.buildings:
+		if not bool(building["completed"]):
+			constructing += 1
+	if constructing > 0 and selected_building == &"":
+		placement_status.text = "施工中：%d 座建筑" % constructing
 

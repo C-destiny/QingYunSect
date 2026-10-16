@@ -1,6 +1,7 @@
 extends Control
 
 signal resource_selected(resource_data: Dictionary)
+signal placement_requested(building_type: StringName, cell: Vector2i)
 
 const GRID_SIZE := Vector2i(8, 6)
 const TILE_SIZE := Vector2(104.0, 52.0)
@@ -17,11 +18,13 @@ var resource_nodes: Array[Dictionary] = [
 
 var selected_cell := Vector2i(-1, -1)
 var hovered_cell := Vector2i(-1, -1)
+var placement_building: StringName = &""
 
 
 func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	GameState.assignments_changed.connect(queue_redraw)
+	GameState.buildings_changed.connect(queue_redraw)
 	queue_redraw()
 
 
@@ -48,9 +51,12 @@ func _draw() -> void:
 			if cell == hovered_cell and cell != selected_cell:
 				draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color(0.68, 0.82, 0.72, 0.9), 2.0, true)
 
+	for building: Dictionary in GameState.buildings:
+		_draw_building(building, origin)
 	_draw_main_hall(origin)
 	for resource_data: Dictionary in resource_nodes:
 		_draw_resource(resource_data, origin)
+	_draw_placement_preview(origin)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -59,6 +65,11 @@ func _gui_input(event: InputEvent) -> void:
 		queue_redraw()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var clicked_cell := _screen_to_cell(event.position, _map_origin())
+		if placement_building != &"":
+			if is_placement_valid(clicked_cell):
+				placement_requested.emit(placement_building, clicked_cell)
+			accept_event()
+			return
 		for resource_data: Dictionary in resource_nodes:
 			if resource_data["cell"] == clicked_cell:
 				selected_cell = clicked_cell
@@ -66,6 +77,28 @@ func _gui_input(event: InputEvent) -> void:
 				queue_redraw()
 				accept_event()
 				return
+
+
+func start_placement(building_type: StringName) -> void:
+	placement_building = building_type
+	selected_cell = Vector2i(-1, -1)
+	queue_redraw()
+
+
+func cancel_placement() -> void:
+	placement_building = &""
+	queue_redraw()
+
+
+func is_placement_valid(cell: Vector2i) -> bool:
+	if cell.x < 0 or cell.y < 0 or cell.x >= GRID_SIZE.x or cell.y >= GRID_SIZE.y:
+		return false
+	if GameState.is_cell_occupied(cell):
+		return false
+	for resource_data: Dictionary in resource_nodes:
+		if resource_data["cell"] == cell:
+			return false
+	return true
 
 
 func _map_origin() -> Vector2:
@@ -102,4 +135,37 @@ func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
 	var workers := GameState.get_assignment(resource_data["site_id"])
 	if workers > 0:
 		draw_string(ThemeDB.fallback_font, center + Vector2(-18, 39), "%d 人" % workers, HORIZONTAL_ALIGNMENT_CENTER, 36, 15, Color(0.9, 0.94, 0.86, 1.0))
+
+
+func _draw_building(building: Dictionary, origin: Vector2) -> void:
+	var definition := BuildingCatalog.get_data(StringName(building["type"]))
+	var cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
+	var center := _cell_to_screen(cell, origin)
+	var color: Color = definition["color"]
+	if not bool(building["completed"]):
+		color = color.darkened(0.35)
+	draw_rect(Rect2(center + Vector2(-34, -47), Vector2(68, 52)), color, true)
+	draw_colored_polygon(PackedVector2Array([center + Vector2(-43, -47), center + Vector2(0, -70), center + Vector2(43, -47), center + Vector2(0, -30)]), color.lightened(0.15))
+	var name_text: String = definition["name"]
+	draw_string(ThemeDB.fallback_font, center + Vector2(-42, 25), name_text, HORIZONTAL_ALIGNMENT_CENTER, 84, 15, Color(0.9, 0.92, 0.85, 1.0))
+	if not bool(building["completed"]):
+		var progress := 1.0 - float(building["remaining"]) / float(building["build_time"])
+		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
+		draw_rect(Rect2(center + Vector2(-35, 32), Vector2(70.0 * progress, 5)), Color(0.85, 0.67, 0.28, 1.0), true)
+
+
+func _draw_placement_preview(origin: Vector2) -> void:
+	if placement_building == &"" or hovered_cell == Vector2i(-1, -1):
+		return
+	var center := _cell_to_screen(hovered_cell, origin)
+	var valid := is_placement_valid(hovered_cell)
+	var preview_color := Color(0.35, 0.9, 0.52, 0.5) if valid else Color(0.95, 0.28, 0.25, 0.5)
+	var points := PackedVector2Array([
+		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
+		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
+		center + Vector2(0.0, TILE_SIZE.y * 0.5),
+		center + Vector2(-TILE_SIZE.x * 0.5, 0.0),
+	])
+	draw_colored_polygon(points, preview_color)
+	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), preview_color.lightened(0.3), 3.0, true)
 

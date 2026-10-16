@@ -214,6 +214,66 @@ size_flags_horizontal = 3
 disabled = true
 text = "派遣一人"
 
+[node name="BuildDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+
+[node name="BuildHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
+theme_override_font_sizes/font_size = 21
+text = "宗门建设"
+
+[node name="BuildingGrid" type="GridContainer" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="DiscipleQuartersButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+text = "弟子居\n木40 灵10"
+
+[node name="LumberYardButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+text = "伐木场\n木30 灵15"
+
+[node name="SpiritMineButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+text = "采灵坊\n木50 灵25"
+
+[node name="SpiritFieldButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+text = "灵田\n木35 灵20"
+
+[node name="TrainingGroundButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+text = "演武场\n木60 灵40"
+
+[node name="CancelBuildButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+disabled = true
+text = "取消放置"
+
+[node name="PlacementStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.75, 0.7, 1)
+theme_override_font_sizes/font_size = 15
+text = "选择建筑开始建造"
+autowrap_mode = 2
+
 [node name="Spacer" type="Control" parent="Layout/Body/Sidebar/Margin/Info"]
 layout_mode = 2
 size_flags_vertical = 3

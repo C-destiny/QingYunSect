@@ -2,6 +2,7 @@ extends Node
 
 signal resources_changed
 signal assignments_changed
+signal buildings_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 
@@ -15,6 +16,8 @@ var total_disciples: int = 3
 var assigned_disciples: int = 0
 var assignments: Dictionary = {}
 var production_progress: Dictionary = {}
+var buildings: Array[Dictionary] = []
+var next_building_id: int = 1
 
 
 func get_resource_amount(resource_id: StringName) -> int:
@@ -84,12 +87,56 @@ func process_production(site_id: StringName, resource_id: StringName, rate_per_m
 	return completed
 
 
+func is_cell_occupied(cell: Vector2i) -> bool:
+	if cell == Vector2i(4, 3):
+		return true
+	for building: Dictionary in buildings:
+		if Vector2i(int(building["cell_x"]), int(building["cell_y"])) == cell:
+			return true
+	return false
+
+
+func start_construction(building_type: StringName, cell: Vector2i) -> bool:
+	var definition := BuildingCatalog.get_data(building_type)
+	if definition.is_empty() or is_cell_occupied(cell):
+		return false
+	if not spend_resources(definition["cost"]):
+		return false
+	buildings.append({
+		"instance_id": next_building_id,
+		"type": String(building_type),
+		"cell_x": cell.x,
+		"cell_y": cell.y,
+		"remaining": float(definition["build_time"]),
+		"build_time": float(definition["build_time"]),
+		"completed": false,
+	})
+	next_building_id += 1
+	buildings_changed.emit()
+	return true
+
+
+func process_construction(delta: float) -> void:
+	var changed := false
+	for building: Dictionary in buildings:
+		if bool(building["completed"]):
+			continue
+		building["remaining"] = maxf(0.0, float(building["remaining"]) - delta)
+		if is_zero_approx(float(building["remaining"])):
+			building["completed"] = true
+		changed = true
+	if changed:
+		buildings_changed.emit()
+
+
 func export_save_data() -> Dictionary:
 	return {
 		"resources": resources.duplicate(true),
 		"total_disciples": total_disciples,
 		"assignments": assignments.duplicate(true),
 		"production_progress": production_progress.duplicate(true),
+		"buildings": buildings.duplicate(true),
+		"next_building_id": next_building_id,
 	}
 
 
@@ -116,7 +163,18 @@ func import_save_data(data: Dictionary) -> bool:
 	var loaded_progress: Dictionary = data.get("production_progress", {})
 	for site_id: Variant in loaded_progress:
 		production_progress[String(site_id)] = clampf(float(loaded_progress[site_id]), 0.0, 0.999999)
+	buildings.clear()
+	var loaded_buildings: Array = data.get("buildings", [])
+	for raw_building: Variant in loaded_buildings:
+		if not raw_building is Dictionary:
+			return false
+		var building: Dictionary = raw_building
+		if BuildingCatalog.get_data(StringName(building.get("type", ""))).is_empty():
+			return false
+		buildings.append(building.duplicate(true))
+	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
 	resources_changed.emit()
 	assignments_changed.emit()
+	buildings_changed.emit()
 	return true
 
