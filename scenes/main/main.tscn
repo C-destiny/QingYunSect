@@ -150,6 +150,40 @@ theme_override_font_sizes/font_size = 17
 text = "点击发光的资源标记，查看宗门周围可利用的资源点。"
 autowrap_mode = 2
 
+[node name="AssignmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 1)
+theme_override_font_sizes/font_size = 18
+text = "已分配 0 人 · 空闲 3 人"
+
+[node name="ProductionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.73, 0.39, 1)
+theme_override_font_sizes/font_size = 18
+text = "选择资源点后安排弟子"
+
+[node name="AssignmentButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="UnassignButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/AssignmentButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "撤回一人"
+
+[node name="AssignButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/AssignmentButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "派遣一人"
+
 [node name="Spacer" type="Control" parent="Layout/Body/Sidebar/Margin/Info"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -158,6 +192,6 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.57, 0.54, 1)
 theme_override_font_sizes/font_size = 15
-text = "当前开放区域：8 × 6\n规划地图：40 × 40\n\n下一步：派遣弟子采集资源"
+text = "当前开放区域：8 × 6\n规划地图：40 × 40\n\n提示：每名弟子都会按资源点基础效率持续工作"
 autowrap_mode = 2
 

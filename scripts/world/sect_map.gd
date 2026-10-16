@@ -10,9 +10,9 @@ const TILE_OUTLINE := Color(0.27, 0.43, 0.37, 0.72)
 const SELECTED_OUTLINE := Color(0.86, 0.76, 0.37, 1.0)
 
 var resource_nodes: Array[Dictionary] = [
-	{"cell": Vector2i(1, 1), "name": "青松林", "description": "宗门西侧的成片青松，可安排普通弟子伐木。", "reserve": 600, "yield_text": "木材 +12/分钟", "color": Color(0.24, 0.68, 0.39, 1.0)},
-	{"cell": Vector2i(6, 1), "name": "浅层灵石矿", "description": "灵气稀薄但易于开采的矿脉，是宗门初期灵石来源。", "reserve": 420, "yield_text": "灵石 +8/分钟", "color": Color(0.35, 0.73, 0.9, 1.0)},
-	{"cell": Vector2i(2, 4), "name": "荒芜灵田", "description": "经过整理即可种植灵谷，为弟子提供日常消耗。", "reserve": 500, "yield_text": "灵谷 +10/分钟", "color": Color(0.84, 0.67, 0.25, 1.0)},
+	{"site_id": &"forest", "resource_id": &"wood", "cell": Vector2i(1, 1), "name": "青松林", "description": "宗门西侧的成片青松，可安排普通弟子伐木。", "reserve": 600, "rate": 12.0, "resource_name": "木材", "color": Color(0.24, 0.68, 0.39, 1.0)},
+	{"site_id": &"mine", "resource_id": &"spirit_stone", "cell": Vector2i(6, 1), "name": "浅层灵石矿", "description": "灵气稀薄但易于开采的矿脉，是宗门初期灵石来源。", "reserve": 420, "rate": 8.0, "resource_name": "灵石", "color": Color(0.35, 0.73, 0.9, 1.0)},
+	{"site_id": &"field", "resource_id": &"food", "cell": Vector2i(2, 4), "name": "荒芜灵田", "description": "经过整理即可种植灵谷，为弟子提供日常消耗。", "reserve": 500, "rate": 10.0, "resource_name": "灵谷", "color": Color(0.84, 0.67, 0.25, 1.0)},
 ]
 
 var selected_cell := Vector2i(-1, -1)
@@ -21,6 +21,7 @@ var hovered_cell := Vector2i(-1, -1)
 
 func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	GameState.assignments_changed.connect(queue_redraw)
 	queue_redraw()
 
 
@@ -98,4 +99,7 @@ func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
 	draw_circle(center, 18.0, Color(color, 0.2))
 	draw_circle(center, 11.0, color)
 	draw_circle(center, 4.0, Color.WHITE)
+	var workers := GameState.get_assignment(resource_data["site_id"])
+	if workers > 0:
+		draw_string(ThemeDB.fallback_font, center + Vector2(-18, 39), "%d 人" % workers, HORIZONTAL_ALIGNMENT_CENTER, 36, 15, Color(0.9, 0.94, 0.86, 1.0))
 
