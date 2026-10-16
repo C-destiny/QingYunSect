@@ -63,7 +63,7 @@ text = "青云宗"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 16
-text = "V0.3 · 外山征战"
+text = "V0.4 验收候选 · 自动战斗完善"
 
 [node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
 layout_mode = 2

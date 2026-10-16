@@ -126,7 +126,7 @@ func _ready() -> void:
 	_refresh_sect_progress()
 	_refresh_battle_stages()
 	_refresh_battle()
-	print("青云宗 V0.3：挂机战斗原型启动成功")
+	print("青云宗 V0.4 验收候选：自动战斗完善版启动成功")
 
 
 func _process(delta: float) -> void:

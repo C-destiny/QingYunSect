@@ -19,6 +19,7 @@ game_state由GameState.export_save_data导出：
 - battle_party、selected_battle_stage、highest_unlocked_stage、highest_cleared_stage、battle_victories。
 - battle_encounter_sequence、active_battle_encounter_id、last_settled_battle_encounter_id（QYS-V04-004新增；用于结算幂等）。
 - battle_running、auto_battle_enabled、battle_player_hp/max_hp、battle_enemy_hp/max_hp、battle_round_progress、battle_restart_cooldown、battle_message。
+- battle_round_number、battle_log、last_battle_result（QYS-V04-007新增；分别保存独立回合计数、最多30条结构化事件及上一场胜负奖励摘要）。
 
 ## 当前兼容实现
 
@@ -26,6 +27,7 @@ load_game接受version=1；import_save_data使用默认值填充，旧聚合弟�
 岗位计数由个人记录重算，battle_party另外恢复。QYS-V04-003 起：字段存在时必须与 combat 岗位集合完全一致；字段缺失时仍从 combat 岗位构建，以兼容旧档。格式字段和 SAVE_VERSION 均未改变。
 QYS-V04-004新增三个可选场次跟踪字段但仍保持SAVE_VERSION=1：V0.3缺字段存档在战斗中读取时生成有效场次号，非战斗状态保持零；新字段部分缺失或编号关系无效时拒绝读取。详细语义见BATTLE_REWARD_SETTLEMENT.md。
 QYS-V04-005起，读档先保存内存快照；任一字段校验失败会用快照完整回滚，避免部分字段污染当前游戏。资源容器、数组/字典容器、队伍和战斗状态矛盾均显式拒绝。
+QYS-V04-007新增的日志字段均为可选字段：V0.3存档缺失时使用0、空日志和空结果；新版本读取日志时限制为最近30条，防止日志随挂机无限增长。
 保存先写.tmp并重新解析、校验完整游戏状态；校验成功后保留上一份有效主档为.bak，再以同目录重命名替换主档。替换失败时尝试由备份恢复。主档不存在或损坏时可读取.bak，并明确显示“从备份读取”，不会静默覆盖主档。
 
 ## 失败与恢复语义

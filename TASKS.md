@@ -4,9 +4,9 @@
 
 - 当前历史已完成版本：V0.3（1567995 / v0.3.0）；V0.1、V0.2、V0.3依负责人本轮明确要求归档已完成。
 - 目标版本：V0.4 战斗系统完善与经营联动，状态：规划中。
-- 当前任务：QYS-V04-006，战斗成员/敌方/关卡信息界面已编码并通过测试，等待负责人验收；GitHub里程碑/看板创建仍受工具阻塞。
-- 本轮授权：负责人已明确验收QYS-V04-005并要求继续下一项开发；QYS-V04-006获准实施。
-- V0.4批准范围共10项（含核验和版本交付），当前ACCEPTED为5/10；其余任务不能提前计入完成。
+- 当前任务：QYS-V04-007～010合并开发已完成，正在执行版本级验证并准备负责人验收；GitHub里程碑/看板创建仍受工具阻塞。
+- 本轮授权：负责人明确验收QYS-V04-006，并要求一起完成QYS-V04-007～010。
+- V0.4批准范围共10项（含核验和版本交付），当前ACCEPTED为6/10；QYS-V04-007～010编码测试完成后仍保持待验收，不能提前计入完成。
 - V0.5～V1.0仅路线和里程碑草案，未创建细碎任务。
 
 | 编号 / GitHub | 任务 | 优先级 | 本轮快照 |
@@ -16,16 +16,15 @@
 | [QYS-V04-003](https://github.com/C-destiny/QingYunSect/issues/3) | 统一队伍与岗位互斥及异常成员处理 | P0 | 已验收（2026-10-16） |
 | [QYS-V04-004](https://github.com/C-destiny/QingYunSect/issues/4) | 统一战斗奖励入口与重复结算防护 | P0 | 已验收（2026-10-17） |
 | [QYS-V04-005](https://github.com/C-destiny/QingYunSect/issues/5) | V0.3存档迁移与安全恢复 | P0 | 已验收（2026-10-17） |
-| [QYS-V04-006](https://github.com/C-destiny/QingYunSect/issues/6) | 战斗界面与成员敌方关卡信息 | P1 | 待验收（18组回归通过） |
-| [QYS-V04-007](https://github.com/C-destiny/QingYunSect/issues/7) | 结构化战斗日志与胜负奖励展示 | P1 | 待办（范围待批准） |
-| [QYS-V04-008](https://github.com/C-destiny/QingYunSect/issues/8) | 战斗与宗门生产收益对照及数值确认 | P1 | 待办（范围待批准） |
-| [QYS-V04-009](https://github.com/C-destiny/QingYunSect/issues/9) | 长时间挂机及跨系统回归测试 | P0 | 待办（范围待批准） |
-| [QYS-V04-010](https://github.com/C-destiny/QingYunSect/issues/10) | V0.4 Windows交付与负责人版本验收 | P0 | 待办（范围待批准） |
+| [QYS-V04-006](https://github.com/C-destiny/QingYunSect/issues/6) | 战斗界面与成员敌方关卡信息 | P1 | 已验收（2026-10-17） |
+| [QYS-V04-007](https://github.com/C-destiny/QingYunSect/issues/7) | 结构化战斗日志与胜负奖励展示 | P1 | 待验收 |
+| [QYS-V04-008](https://github.com/C-destiny/QingYunSect/issues/8) | 战斗与宗门生产收益对照及数值确认 | P1 | 待验收；建议保留现行数值 |
+| [QYS-V04-009](https://github.com/C-destiny/QingYunSect/issues/9) | 长时间挂机及跨系统回归测试 | P0 | 待验收；8小时模拟与30分钟真实运行通过 |
+| [QYS-V04-010](https://github.com/C-destiny/QingYunSect/issues/10) | V0.4 Windows交付与负责人版本验收 | P0 | 待验收；候选包已生成 |
 
 ## 下一步
 
-负责人验收QYS-V04-006后将其标记已完成，再按依赖进入QYS-V04-007。
-本次对V0.4范围的确认不等于验收后续任务；每项编码测试后仍单独进入待验收。
+完成长时验证与GitHub状态同步后，提交QYS-V04-007～010及整个V0.4给负责人合并验收。验收确认前不关闭Issue #7～#10、不创建完成标签、不进入V0.5。
 
 ## 同步欠账
 
