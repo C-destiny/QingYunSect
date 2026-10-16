@@ -237,6 +237,32 @@ layout_mode = 2
 disabled = true
 text = "招募弟子"
 
+[node name="RosterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
+theme_override_font_sizes/font_size = 18
+text = "普通弟子名册"
+
+[node name="DiscipleSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+
+[node name="DiscipleDetail" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+text = "暂无弟子"
+autowrap_mode = 2
+
+[node name="BreakthroughButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+disabled = true
+text = "修为不足，无法突破"
+
 [node name="BuildHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)

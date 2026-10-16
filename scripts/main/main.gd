@@ -22,11 +22,15 @@ extends Control
 @onready var building_actions: HBoxContainer = %BuildingActions
 @onready var demolish_button: Button = %DemolishButton
 @onready var building_action_status: Label = %BuildingActionStatus
+@onready var disciple_selector: OptionButton = %DiscipleSelector
+@onready var disciple_detail: Label = %DiscipleDetail
+@onready var breakthrough_button: Button = %BreakthroughButton
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
 var build_buttons: Dictionary = {}
 var selected_building_instance: int = 0
+var selected_disciple_id: int = 0
 
 
 func _ready() -> void:
@@ -36,6 +40,7 @@ func _ready() -> void:
 	GameState.recruitment_changed.connect(_refresh_recruitment)
 	GameState.sustenance_changed.connect(_refresh_resources)
 	GameState.training_changed.connect(_refresh_training)
+	GameState.disciples_changed.connect(_refresh_disciple_roster)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
@@ -58,12 +63,15 @@ func _ready() -> void:
 	cancel_build_button.pressed.connect(_cancel_building_placement)
 	recruit_button.pressed.connect(_start_recruitment)
 	demolish_button.pressed.connect(_demolish_selected_building)
+	disciple_selector.item_selected.connect(_on_disciple_selected)
+	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
 	_refresh_assignment()
 	_refresh_buildings()
 	_refresh_recruitment()
+	_refresh_disciple_roster()
 	print("青云宗 V0.1：建筑系统启动成功")
 
 
@@ -252,12 +260,15 @@ func _refresh_assignment() -> void:
 	var building_multiplier := GameState.get_production_multiplier(selected_resource["resource_id"])
 	var sustenance_multiplier := GameState.get_sustenance_multiplier()
 	var multiplier := building_multiplier * sustenance_multiplier
-	var total_rate := float(selected_resource["rate"]) * multiplier * float(workers)
+	var workforce_power := GameState.get_site_workforce_power(selected_resource["site_id"])
+	var realm_bonus := (workforce_power / float(workers) - 1.0) * 100.0 if workers > 0 else 0.0
+	var total_rate := float(selected_resource["rate"]) * multiplier * workforce_power
 	assignment_status.text = "已分配 %d 人 · 空闲 %d 人" % [workers, GameState.get_idle_disciples()]
-	production_status.text = "%s +%.1f/分钟 · 建筑加成 +%.0f%%" % [
+	production_status.text = "%s +%.1f/分钟 · 建筑 +%.0f%% · 境界 +%.0f%%" % [
 		selected_resource["resource_name"],
 		total_rate,
 		(building_multiplier - 1.0) * 100.0,
+		realm_bonus,
 	]
 	if sustenance_multiplier < 1.0:
 		production_status.text += " · 缺粮效率50%"
@@ -266,8 +277,74 @@ func _refresh_assignment() -> void:
 func _get_food_production_per_minute() -> float:
 	for resource_data: Dictionary in sect_map.resource_nodes:
 		if StringName(resource_data["resource_id"]) == &"food":
-			return float(resource_data["rate"]) * float(GameState.get_assignment(resource_data["site_id"])) * GameState.get_production_multiplier(&"food") * GameState.get_sustenance_multiplier()
+			return float(resource_data["rate"]) * GameState.get_site_workforce_power(resource_data["site_id"]) * GameState.get_production_multiplier(&"food") * GameState.get_sustenance_multiplier()
 	return 0.0
+
+
+func _refresh_disciple_roster() -> void:
+	if disciple_selector.item_count != GameState.disciples.size():
+		var previous_id := selected_disciple_id
+		disciple_selector.clear()
+		for disciple: Dictionary in GameState.disciples:
+			var realm_name := GameState.get_realm_name(int(disciple.get("realm_level", 1)))
+			disciple_selector.add_item("%s · %s" % [disciple.get("name", "无名弟子"), realm_name])
+			disciple_selector.set_item_metadata(disciple_selector.item_count - 1, int(disciple.get("id", 0)))
+		if disciple_selector.item_count > 0:
+			var target_index := 0
+			for index: int in range(disciple_selector.item_count):
+				if int(disciple_selector.get_item_metadata(index)) == previous_id:
+					target_index = index
+					break
+			disciple_selector.select(target_index)
+			selected_disciple_id = int(disciple_selector.get_item_metadata(target_index))
+	for index: int in range(mini(disciple_selector.item_count, GameState.disciples.size())):
+		var disciple: Dictionary = GameState.disciples[index]
+		disciple_selector.set_item_metadata(index, int(disciple.get("id", 0)))
+		disciple_selector.set_item_text(index, "%s · %s" % [
+			disciple.get("name", "无名弟子"),
+			GameState.get_realm_name(int(disciple.get("realm_level", 1))),
+		])
+	if disciple_selector.selected >= 0 and disciple_selector.selected < disciple_selector.item_count:
+		selected_disciple_id = int(disciple_selector.get_item_metadata(disciple_selector.selected))
+	_refresh_disciple_detail()
+
+
+func _on_disciple_selected(index: int) -> void:
+	if index < 0 or index >= disciple_selector.item_count:
+		return
+	selected_disciple_id = int(disciple_selector.get_item_metadata(index))
+	_refresh_disciple_detail()
+
+
+func _refresh_disciple_detail() -> void:
+	var disciple := GameState.get_disciple(selected_disciple_id)
+	if disciple.is_empty():
+		disciple_detail.text = "暂无弟子"
+		breakthrough_button.disabled = true
+		return
+	var realm_level := int(disciple.get("realm_level", 1))
+	var cultivation := float(disciple.get("cultivation", 0.0))
+	var gathering_bonus := float(realm_level - 1) * GameState.REALM_GATHERING_BONUS_PER_LEVEL * 100.0
+	if realm_level >= GameState.REALM_MAX_LEVEL:
+		disciple_detail.text = "%s · %s\n修为 %.1f · 岗位：%s\n个人采集加成 +%.0f%%" % [
+			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), cultivation,
+			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
+		]
+		breakthrough_button.text = "已达炼气九层"
+	else:
+		var requirement := GameState.get_breakthrough_requirement(realm_level)
+		disciple_detail.text = "%s · %s\n修为 %.1f / %.0f · 岗位：%s\n个人采集加成 +%.0f%%" % [
+			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), cultivation, requirement,
+			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
+		]
+		breakthrough_button.text = "突破至%s" % GameState.get_realm_name(realm_level + 1)
+	breakthrough_button.disabled = not GameState.can_breakthrough(selected_disciple_id)
+
+
+func _breakthrough_selected_disciple() -> void:
+	if GameState.breakthrough_disciple(selected_disciple_id):
+		_refresh_disciple_roster()
+		SaveManager.save_game()
 
 
 func _save_game() -> void:

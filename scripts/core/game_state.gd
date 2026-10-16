@@ -6,6 +6,7 @@ signal buildings_changed
 signal recruitment_changed
 signal sustenance_changed
 signal training_changed
+signal disciples_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -13,6 +14,10 @@ const RECRUIT_COST := {"spirit_stone": 25, "food": 20}
 const RECRUIT_TIME := 5.0
 const FOOD_CONSUMPTION_PER_DISCIPLE := 1.0
 const HUNGRY_PRODUCTION_MULTIPLIER := 0.5
+const REALM_MAX_LEVEL := 9
+const REALM_GATHERING_BONUS_PER_LEVEL := 0.05
+const DISCIPLE_SURNAMES := ["沈", "顾", "陆", "苏", "林", "叶", "楚", "白", "宁", "江"]
+const DISCIPLE_GIVEN_NAMES := ["青竹", "云舟", "明溪", "知远", "怀瑾", "清和", "景行", "若谷", "星河", "长风"]
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -30,6 +35,21 @@ var recruitment_remaining: float = 0.0
 var food_consumption_progress: float = 0.0
 var training_disciples: int = 0
 var cultivation_points: float = 0.0
+var disciples: Array[Dictionary] = []
+var next_disciple_id: int = 1
+
+
+func _ready() -> void:
+	_ensure_disciple_records()
+
+
+func _ensure_disciple_records() -> void:
+	if not disciples.is_empty() or total_disciples <= 0:
+		return
+	var desired_total := total_disciples
+	for index: int in range(desired_total):
+		_create_disciple()
+	_sync_aggregate_state_from_disciples()
 
 
 func get_resource_amount(resource_id: StringName) -> int:
@@ -60,7 +80,97 @@ func add_resource(resource_id: StringName, amount: int) -> void:
 
 
 func get_idle_disciples() -> int:
+	_ensure_disciple_records()
 	return total_disciples - assigned_disciples
+
+
+func _create_disciple() -> Dictionary:
+	var name_index := next_disciple_id - 1
+	var disciple := {
+		"id": next_disciple_id,
+		"name": DISCIPLE_SURNAMES[name_index % DISCIPLE_SURNAMES.size()] + DISCIPLE_GIVEN_NAMES[int(name_index / DISCIPLE_SURNAMES.size()) % DISCIPLE_GIVEN_NAMES.size()],
+		"realm_level": 1,
+		"cultivation": 0.0,
+		"job": "idle",
+	}
+	next_disciple_id += 1
+	disciples.append(disciple)
+	total_disciples = disciples.size()
+	return disciple
+
+
+func get_disciple(disciple_id: int) -> Dictionary:
+	_ensure_disciple_records()
+	for disciple: Dictionary in disciples:
+		if int(disciple.get("id", 0)) == disciple_id:
+			return disciple
+	return {}
+
+
+func get_realm_name(realm_level: int) -> String:
+	const NUMERALS := ["一", "二", "三", "四", "五", "六", "七", "八", "九"]
+	return "炼气%s层" % NUMERALS[clampi(realm_level, 1, REALM_MAX_LEVEL) - 1]
+
+
+func get_breakthrough_requirement(realm_level: int) -> float:
+	if realm_level >= REALM_MAX_LEVEL:
+		return 0.0
+	return float(realm_level * 10)
+
+
+func can_breakthrough(disciple_id: int) -> bool:
+	var disciple := get_disciple(disciple_id)
+	if disciple.is_empty():
+		return false
+	var realm_level := int(disciple.get("realm_level", 1))
+	return realm_level < REALM_MAX_LEVEL and float(disciple.get("cultivation", 0.0)) >= get_breakthrough_requirement(realm_level)
+
+
+func breakthrough_disciple(disciple_id: int) -> bool:
+	if not can_breakthrough(disciple_id):
+		return false
+	var disciple := get_disciple(disciple_id)
+	var realm_level := int(disciple["realm_level"])
+	disciple["cultivation"] = float(disciple["cultivation"]) - get_breakthrough_requirement(realm_level)
+	disciple["realm_level"] = realm_level + 1
+	disciples_changed.emit()
+	assignments_changed.emit()
+	return true
+
+
+func get_disciple_job_text(job: StringName) -> String:
+	match job:
+		&"forest": return "青松林伐木"
+		&"mine": return "灵石矿采掘"
+		&"field": return "灵田耕作"
+		&"training": return "演武场修炼"
+		_: return "空闲"
+
+
+func get_site_workforce_power(site_id: StringName) -> float:
+	_ensure_disciple_records()
+	var power := 0.0
+	for disciple: Dictionary in disciples:
+		if StringName(disciple.get("job", "idle")) != site_id:
+			continue
+		var realm_level := int(disciple.get("realm_level", 1))
+		power += 1.0 + float(realm_level - 1) * REALM_GATHERING_BONUS_PER_LEVEL
+	return power
+
+
+func _sync_aggregate_state_from_disciples() -> void:
+	assignments.clear()
+	training_disciples = 0
+	assigned_disciples = 0
+	total_disciples = disciples.size()
+	for disciple: Dictionary in disciples:
+		var job := StringName(disciple.get("job", "idle"))
+		if job in [&"forest", &"mine", &"field"]:
+			assignments[String(job)] = int(assignments.get(String(job), 0)) + 1
+			assigned_disciples += 1
+		elif job == &"training":
+			training_disciples += 1
+			assigned_disciples += 1
 
 
 func get_disciple_capacity() -> int:
@@ -78,6 +188,7 @@ func is_recruiting() -> bool:
 
 
 func can_recruit_disciple() -> bool:
+	_ensure_disciple_records()
 	return not is_recruiting() and total_disciples < get_disciple_capacity() and can_afford(RECRUIT_COST)
 
 
@@ -95,8 +206,10 @@ func process_recruitment(delta: float) -> bool:
 	recruitment_remaining = maxf(0.0, recruitment_remaining - delta)
 	var completed := false
 	if is_zero_approx(recruitment_remaining):
-		total_disciples += 1
+		_ensure_disciple_records()
+		_create_disciple()
 		assignments_changed.emit()
+		disciples_changed.emit()
 		completed = true
 	recruitment_changed.emit()
 	return completed
@@ -141,29 +254,45 @@ func get_cultivation_per_minute() -> float:
 func assign_training_disciple() -> bool:
 	if get_idle_disciples() <= 0 or training_disciples >= get_training_capacity():
 		return false
-	training_disciples += 1
-	assigned_disciples += 1
+	for disciple: Dictionary in disciples:
+		if StringName(disciple.get("job", "idle")) == &"idle":
+			disciple["job"] = "training"
+			break
+	_sync_aggregate_state_from_disciples()
 	assignments_changed.emit()
 	training_changed.emit()
+	disciples_changed.emit()
 	return true
 
 
 func unassign_training_disciple() -> bool:
 	if training_disciples <= 0:
 		return false
-	training_disciples -= 1
-	assigned_disciples -= 1
+	for index: int in range(disciples.size() - 1, -1, -1):
+		if StringName(disciples[index].get("job", "idle")) == &"training":
+			disciples[index]["job"] = "idle"
+			break
+	_sync_aggregate_state_from_disciples()
 	assignments_changed.emit()
 	training_changed.emit()
+	disciples_changed.emit()
 	return true
 
 
 func process_training(delta: float) -> float:
 	if training_disciples <= 0 or delta <= 0.0:
 		return 0.0
-	var gained := get_cultivation_per_minute() * delta / 60.0
+	var definition := BuildingCatalog.get_data(&"training_ground")
+	var gain_per_disciple := float(definition.get("cultivation_rate", 0.0)) * delta / 60.0
+	var gained := 0.0
+	for disciple: Dictionary in disciples:
+		if StringName(disciple.get("job", "idle")) != &"training":
+			continue
+		disciple["cultivation"] = float(disciple.get("cultivation", 0.0)) + gain_per_disciple
+		gained += gain_per_disciple
 	cultivation_points += gained
 	training_changed.emit()
+	disciples_changed.emit()
 	return gained
 
 
@@ -211,6 +340,7 @@ func get_sustenance_multiplier() -> float:
 
 
 func get_food_consumption_per_minute() -> float:
+	_ensure_disciple_records()
 	return float(total_disciples) * FOOD_CONSUMPTION_PER_DISCIPLE
 
 
@@ -239,9 +369,13 @@ func get_assignment(site_id: StringName) -> int:
 func assign_disciple(site_id: StringName) -> bool:
 	if get_idle_disciples() <= 0:
 		return false
-	assignments[site_id] = get_assignment(site_id) + 1
-	assigned_disciples += 1
+	for disciple: Dictionary in disciples:
+		if StringName(disciple.get("job", "idle")) == &"idle":
+			disciple["job"] = String(site_id)
+			break
+	_sync_aggregate_state_from_disciples()
 	assignments_changed.emit()
+	disciples_changed.emit()
 	return true
 
 
@@ -249,18 +383,22 @@ func unassign_disciple(site_id: StringName) -> bool:
 	var current := get_assignment(site_id)
 	if current <= 0:
 		return false
-	assignments[site_id] = current - 1
-	assigned_disciples -= 1
+	for index: int in range(disciples.size() - 1, -1, -1):
+		if StringName(disciples[index].get("job", "idle")) == site_id:
+			disciples[index]["job"] = "idle"
+			break
+	_sync_aggregate_state_from_disciples()
 	assignments_changed.emit()
+	disciples_changed.emit()
 	return true
 
 
 func process_production(site_id: StringName, resource_id: StringName, rate_per_minute: float, delta: float) -> int:
-	var workers := get_assignment(site_id)
-	if workers <= 0 or rate_per_minute <= 0.0:
+	var workforce_power := get_site_workforce_power(site_id)
+	if workforce_power <= 0.0 or rate_per_minute <= 0.0:
 		return 0
 	var progress := float(production_progress.get(site_id, 0.0))
-	progress += rate_per_minute * get_production_multiplier(resource_id) * get_sustenance_multiplier() * float(workers) * delta / 60.0
+	progress += rate_per_minute * get_production_multiplier(resource_id) * get_sustenance_multiplier() * workforce_power * delta / 60.0
 	var completed := floori(progress)
 	production_progress[site_id] = progress - float(completed)
 	if completed > 0:
@@ -312,6 +450,7 @@ func process_construction(delta: float) -> void:
 
 
 func export_save_data() -> Dictionary:
+	_ensure_disciple_records()
 	return {
 		"resources": resources.duplicate(true),
 		"total_disciples": total_disciples,
@@ -323,6 +462,8 @@ func export_save_data() -> Dictionary:
 		"food_consumption_progress": food_consumption_progress,
 		"training_disciples": training_disciples,
 		"cultivation_points": cultivation_points,
+		"disciples": disciples.duplicate(true),
+		"next_disciple_id": next_disciple_id,
 	}
 
 
@@ -335,16 +476,8 @@ func import_save_data(data: Dictionary) -> bool:
 		if not loaded_resources.has(key):
 			return false
 		resources[key] = maxi(0, int(loaded_resources[key]))
-	total_disciples = maxi(0, int(data.get("total_disciples", 3)))
-	assignments.clear()
-	assigned_disciples = 0
+	var saved_total := maxi(0, int(data.get("total_disciples", 3)))
 	var loaded_assignments: Dictionary = data["assignments"]
-	for site_id: Variant in loaded_assignments:
-		var worker_count := maxi(0, int(loaded_assignments[site_id]))
-		assignments[String(site_id)] = worker_count
-		assigned_disciples += worker_count
-	if assigned_disciples > total_disciples:
-		return false
 	production_progress.clear()
 	var loaded_progress: Dictionary = data.get("production_progress", {})
 	for site_id: Variant in loaded_progress:
@@ -358,10 +491,58 @@ func import_save_data(data: Dictionary) -> bool:
 		if BuildingCatalog.get_data(StringName(building.get("type", ""))).is_empty():
 			return false
 		buildings.append(building.duplicate(true))
-	training_disciples = maxi(0, int(data.get("training_disciples", 0)))
 	cultivation_points = maxf(0.0, float(data.get("cultivation_points", 0.0)))
-	assigned_disciples += training_disciples
-	if assigned_disciples > total_disciples or training_disciples > get_training_capacity():
+	disciples.clear()
+	next_disciple_id = 1
+	var loaded_disciples: Array = data.get("disciples", [])
+	if not loaded_disciples.is_empty():
+		var used_ids: Dictionary = {}
+		for raw_disciple: Variant in loaded_disciples:
+			if not raw_disciple is Dictionary:
+				return false
+			var disciple: Dictionary = raw_disciple.duplicate(true)
+			var disciple_id := int(disciple.get("id", 0))
+			var realm_level := int(disciple.get("realm_level", 1))
+			var job := StringName(disciple.get("job", "idle"))
+			if disciple_id <= 0 or used_ids.has(disciple_id) or realm_level < 1 or realm_level > REALM_MAX_LEVEL:
+				return false
+			if job not in [&"idle", &"forest", &"mine", &"field", &"training"]:
+				return false
+			used_ids[disciple_id] = true
+			disciple["name"] = str(disciple.get("name", "无名弟子"))
+			disciple["realm_level"] = realm_level
+			disciple["cultivation"] = maxf(0.0, float(disciple.get("cultivation", 0.0)))
+			disciple["job"] = String(job)
+			disciples.append(disciple)
+		next_disciple_id = maxi(int(data.get("next_disciple_id", 1)), int(used_ids.keys().max()) + 1)
+	else:
+		for index: int in range(saved_total):
+			_create_disciple()
+		var cursor := 0
+		for site_id: Variant in loaded_assignments:
+			var worker_count := maxi(0, int(loaded_assignments[site_id]))
+			for worker_index: int in range(worker_count):
+				if cursor >= disciples.size():
+					return false
+				disciples[cursor]["job"] = String(site_id)
+				cursor += 1
+		var legacy_training := maxi(0, int(data.get("training_disciples", 0)))
+		for training_index: int in range(legacy_training):
+			if cursor >= disciples.size():
+				return false
+			disciples[cursor]["job"] = "training"
+			cursor += 1
+		if cultivation_points > 0.0 and not disciples.is_empty():
+			var recipients: Array[Dictionary] = []
+			for disciple: Dictionary in disciples:
+				if StringName(disciple["job"]) == &"training":
+					recipients.append(disciple)
+			if recipients.is_empty():
+				recipients.append(disciples[0])
+			for disciple: Dictionary in recipients:
+				disciple["cultivation"] = cultivation_points / float(recipients.size())
+	_sync_aggregate_state_from_disciples()
+	if total_disciples != saved_total or training_disciples > get_training_capacity():
 		return false
 	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
 	recruitment_remaining = clampf(float(data.get("recruitment_remaining", 0.0)), 0.0, RECRUIT_TIME)
@@ -374,5 +555,6 @@ func import_save_data(data: Dictionary) -> bool:
 	recruitment_changed.emit()
 	sustenance_changed.emit()
 	training_changed.emit()
+	disciples_changed.emit()
 	return true
 
