@@ -250,6 +250,20 @@ theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 18
 text = "普通弟子名册"
 
+[node name="RosterTools" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RosterFilter" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterTools"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RosterSort" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterTools"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="DiscipleSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
@@ -262,6 +276,12 @@ theme_override_colors/font_color = Color(0.7, 0.78, 0.74, 1)
 theme_override_font_sizes/font_size = 14
 text = "暂无弟子"
 autowrap_mode = 2
+
+[node name="CultivationProgress" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+show_percentage = false
 
 [node name="DiscipleJobRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 layout_mode = 2

@@ -27,6 +27,9 @@ extends Control
 @onready var breakthrough_button: Button = %BreakthroughButton
 @onready var disciple_job_selector: OptionButton = %DiscipleJobSelector
 @onready var disciple_job_status: Label = %DiscipleJobStatus
+@onready var roster_filter: OptionButton = %RosterFilter
+@onready var roster_sort: OptionButton = %RosterSort
+@onready var cultivation_progress: ProgressBar = %CultivationProgress
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
@@ -34,6 +37,7 @@ var build_buttons: Dictionary = {}
 var selected_building_instance: int = 0
 var selected_disciple_id: int = 0
 const DISCIPLE_JOBS := [&"idle", &"forest", &"mine", &"field", &"training"]
+var roster_signature: String = ""
 
 
 func _ready() -> void:
@@ -69,6 +73,12 @@ func _ready() -> void:
 	disciple_selector.item_selected.connect(_on_disciple_selected)
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
+	roster_filter.item_selected.connect(_on_roster_view_changed)
+	roster_sort.item_selected.connect(_on_roster_view_changed)
+	for filter_name: String in ["全部弟子", "空闲", "采集工作", "修炼中", "可突破"]:
+		roster_filter.add_item(filter_name)
+	for sort_name: String in ["按姓名", "境界降序", "修为降序", "按岗位"]:
+		roster_sort.add_item(sort_name)
 	for job: StringName in DISCIPLE_JOBS:
 		disciple_job_selector.add_item(GameState.get_disciple_job_text(job))
 		disciple_job_selector.set_item_metadata(disciple_job_selector.item_count - 1, String(job))
@@ -289,12 +299,25 @@ func _get_food_production_per_minute() -> float:
 
 
 func _refresh_disciple_roster() -> void:
-	if disciple_selector.item_count != GameState.disciples.size():
+	var visible_disciples := _get_visible_disciples()
+	var signature_parts := PackedStringArray([str(roster_filter.selected), str(roster_sort.selected)])
+	for disciple: Dictionary in visible_disciples:
+		signature_parts.append("%d:%d:%d:%s" % [
+			int(disciple.get("id", 0)), int(disciple.get("realm_level", 1)),
+			floori(float(disciple.get("cultivation", 0.0))), str(disciple.get("job", "idle")),
+		])
+	var new_signature := "|".join(signature_parts)
+	if new_signature != roster_signature:
+		roster_signature = new_signature
 		var previous_id := selected_disciple_id
 		disciple_selector.clear()
-		for disciple: Dictionary in GameState.disciples:
-			var realm_name := GameState.get_realm_name(int(disciple.get("realm_level", 1)))
-			disciple_selector.add_item("%s · %s" % [disciple.get("name", "无名弟子"), realm_name])
+		for disciple: Dictionary in visible_disciples:
+			var marker := " ★" if GameState.can_breakthrough(int(disciple.get("id", 0))) else ""
+			disciple_selector.add_item("%s · %s · %s%s" % [
+				disciple.get("name", "无名弟子"),
+				GameState.get_realm_name(int(disciple.get("realm_level", 1))),
+				GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), marker,
+			])
 			disciple_selector.set_item_metadata(disciple_selector.item_count - 1, int(disciple.get("id", 0)))
 		if disciple_selector.item_count > 0:
 			var target_index := 0
@@ -304,16 +327,34 @@ func _refresh_disciple_roster() -> void:
 					break
 			disciple_selector.select(target_index)
 			selected_disciple_id = int(disciple_selector.get_item_metadata(target_index))
-	for index: int in range(mini(disciple_selector.item_count, GameState.disciples.size())):
-		var disciple: Dictionary = GameState.disciples[index]
-		disciple_selector.set_item_metadata(index, int(disciple.get("id", 0)))
-		disciple_selector.set_item_text(index, "%s · %s" % [
-			disciple.get("name", "无名弟子"),
-			GameState.get_realm_name(int(disciple.get("realm_level", 1))),
-		])
-	if disciple_selector.selected >= 0 and disciple_selector.selected < disciple_selector.item_count:
-		selected_disciple_id = int(disciple_selector.get_item_metadata(disciple_selector.selected))
+		else:
+			selected_disciple_id = 0
 	_refresh_disciple_detail()
+
+
+func _get_visible_disciples() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for disciple: Dictionary in GameState.disciples:
+		var job := StringName(disciple.get("job", "idle"))
+		var include := true
+		match roster_filter.selected:
+			1: include = job == &"idle"
+			2: include = job in [&"forest", &"mine", &"field"]
+			3: include = job == &"training"
+			4: include = GameState.can_breakthrough(int(disciple.get("id", 0)))
+		if include:
+			result.append(disciple)
+	match roster_sort.selected:
+		0: result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a["name"]).naturalnocasecmp_to(str(b["name"])) < 0)
+		1: result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["realm_level"]) > int(b["realm_level"]))
+		2: result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["cultivation"]) > float(b["cultivation"]))
+		3: result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a["job"]).naturalnocasecmp_to(str(b["job"])) < 0)
+	return result
+
+
+func _on_roster_view_changed(_index: int) -> void:
+	roster_signature = ""
+	_refresh_disciple_roster()
 
 
 func _on_disciple_selected(index: int) -> void:
@@ -329,12 +370,15 @@ func _refresh_disciple_detail() -> void:
 		disciple_detail.text = "暂无弟子"
 		breakthrough_button.disabled = true
 		disciple_job_selector.disabled = true
+		cultivation_progress.value = 0.0
 		return
 	disciple_job_selector.disabled = false
 	var realm_level := int(disciple.get("realm_level", 1))
 	var cultivation := float(disciple.get("cultivation", 0.0))
 	var gathering_bonus := float(realm_level - 1) * GameState.REALM_GATHERING_BONUS_PER_LEVEL * 100.0
 	if realm_level >= GameState.REALM_MAX_LEVEL:
+		cultivation_progress.max_value = 1.0
+		cultivation_progress.value = 1.0
 		disciple_detail.text = "%s · %s\n修为 %.1f · 岗位：%s\n个人采集加成 +%.0f%%" % [
 			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), cultivation,
 			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
@@ -342,6 +386,8 @@ func _refresh_disciple_detail() -> void:
 		breakthrough_button.text = "已达炼气九层"
 	else:
 		var requirement := GameState.get_breakthrough_requirement(realm_level)
+		cultivation_progress.max_value = requirement
+		cultivation_progress.value = cultivation
 		disciple_detail.text = "%s · %s\n修为 %.1f / %.0f · 岗位：%s\n个人采集加成 +%.0f%%" % [
 			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), cultivation, requirement,
 			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
