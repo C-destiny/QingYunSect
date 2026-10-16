@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/world/sect_map.gd" id="2_map"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -20,52 +21,143 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.035, 0.055, 0.075, 1)
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Layout" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = -28.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 18
 
-[node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(760, 360)
+[node name="Header" type="PanelContainer" parent="Layout"]
+custom_minimum_size = Vector2(0, 94)
 layout_mode = 2
 
-[node name="Margin" type="MarginContainer" parent="Center/Panel"]
+[node name="Margin" type="MarginContainer" parent="Layout/Header"]
 layout_mode = 2
-theme_override_constants/margin_left = 64
-theme_override_constants/margin_top = 48
-theme_override_constants/margin_right = 64
-theme_override_constants/margin_bottom = 48
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 14
 
-[node name="Content" type="VBoxContainer" parent="Center/Panel/Margin"]
+[node name="Row" type="HBoxContainer" parent="Layout/Header/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 22
-alignment = 1
+theme_override_constants/separation = 32
 
-[node name="Title" type="Label" parent="Center/Panel/Margin/Content"]
+[node name="Brand" type="VBoxContainer" parent="Layout/Header/Margin/Row"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Layout/Header/Margin/Row/Brand"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
-theme_override_font_sizes/font_size = 64
+theme_override_font_sizes/font_size = 32
 text = "青云宗"
-horizontal_alignment = 1
 
-[node name="Version" type="Label" parent="Center/Panel/Margin/Content"]
+[node name="Subtitle" type="Label" parent="Layout/Header/Margin/Row/Brand"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.72, 0.66, 1)
+theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
+theme_override_font_sizes/font_size = 16
+text = "V0.1 · 开宗立派"
+
+[node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 28
+alignment = 2
+
+[node name="Wood" type="Label" parent="Layout/Header/Margin/Row/Resources"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "木材  0"
+
+[node name="SpiritStone" type="Label" parent="Layout/Header/Margin/Row/Resources"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "灵石  0"
+
+[node name="Food" type="Label" parent="Layout/Header/Margin/Row/Resources"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "灵谷  0"
+
+[node name="Disciples" type="Label" parent="Layout/Header/Margin/Row/Resources"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "弟子  0/0"
+
+[node name="Body" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="MapPanel" type="PanelContainer" parent="Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SectMap" type="Control" parent="Layout/Body/MapPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(900, 650)
+layout_mode = 2
+mouse_filter = 0
+script = ExtResource("2_map")
+
+[node name="Sidebar" type="PanelContainer" parent="Layout/Body"]
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Layout/Body/Sidebar"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Info" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Heading" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 26
-text = "V0.1 · 宗门经营原型"
-horizontal_alignment = 1
+text = "宗门领地"
 
-[node name="Divider" type="HSeparator" parent="Center/Panel/Margin/Content"]
+[node name="Divider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Info"]
 layout_mode = 2
 
-[node name="Status" type="Label" parent="Center/Panel/Margin/Content"]
+[node name="SelectionName" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.81, 0.8, 1)
 theme_override_font_sizes/font_size = 22
-text = "项目初始化完成\n下一里程碑：基础宗门地图与资源状态"
-horizontal_alignment = 1
-line_spacing = 8.0
+text = "请选择地图资源"
+autowrap_mode = 2
+
+[node name="SelectionDescription" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.74, 0.72, 1)
+theme_override_font_sizes/font_size = 17
+text = "点击发光的资源标记，查看宗门周围可利用的资源点。"
+autowrap_mode = 2
+
+[node name="Spacer" type="Control" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Hint" type="Label" parent="Layout/Body/Sidebar/Margin/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.57, 0.54, 1)
+theme_override_font_sizes/font_size = 15
+text = "当前开放区域：8 × 6\n规划地图：40 × 40\n\n下一步：派遣弟子采集资源"
+autowrap_mode = 2
 
