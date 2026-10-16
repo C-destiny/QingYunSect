@@ -7,6 +7,7 @@ signal recruitment_changed
 signal sustenance_changed
 signal training_changed
 signal disciples_changed
+signal sect_progress_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -18,6 +19,9 @@ const REALM_MAX_LEVEL := 9
 const REALM_GATHERING_BONUS_PER_LEVEL := 0.05
 const DISCIPLE_SURNAMES := ["沈", "顾", "陆", "苏", "林", "叶", "楚", "白", "宁", "江"]
 const DISCIPLE_GIVEN_NAMES := ["青竹", "云舟", "明溪", "知远", "怀瑾", "清和", "景行", "若谷", "星河", "长风"]
+const MAX_SECT_LEVEL := 5
+const SECT_LEVEL_REQUIREMENTS := [0, 100, 250, 500, 900]
+const SECT_PRODUCTION_BONUS_PER_LEVEL := 0.05
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -37,6 +41,7 @@ var training_disciples: int = 0
 var cultivation_points: float = 0.0
 var disciples: Array[Dictionary] = []
 var next_disciple_id: int = 1
+var sect_level: int = 1
 
 
 func _ready() -> void:
@@ -250,6 +255,38 @@ func get_production_multiplier(resource_id: StringName) -> float:
 		if StringName(definition.get("production_resource", &"")) == resource_id:
 			multiplier += float(definition.get("production_bonus", 0.0)) * float(building.get("level", 1))
 	return multiplier
+
+
+func get_sect_prosperity() -> int:
+	var prosperity := floori(cultivation_points)
+	for building: Dictionary in buildings:
+		if bool(building.get("completed", false)):
+			prosperity += int(building.get("level", 1)) * 20
+	for disciple: Dictionary in disciples:
+		prosperity += 10 + int(disciple.get("realm_level", 1)) * 5
+	return prosperity
+
+
+func get_next_sect_level_requirement() -> int:
+	if sect_level >= MAX_SECT_LEVEL:
+		return 0
+	return int(SECT_LEVEL_REQUIREMENTS[sect_level])
+
+
+func get_sect_production_multiplier() -> float:
+	return 1.0 + float(sect_level - 1) * SECT_PRODUCTION_BONUS_PER_LEVEL
+
+
+func can_upgrade_sect() -> bool:
+	return sect_level < MAX_SECT_LEVEL and get_sect_prosperity() >= get_next_sect_level_requirement()
+
+
+func upgrade_sect() -> bool:
+	if not can_upgrade_sect():
+		return false
+	sect_level += 1
+	sect_progress_changed.emit()
+	return true
 
 
 func get_building(instance_id: int) -> Dictionary:
@@ -467,7 +504,7 @@ func process_production(site_id: StringName, resource_id: StringName, rate_per_m
 	if workforce_power <= 0.0 or rate_per_minute <= 0.0:
 		return 0
 	var progress := float(production_progress.get(site_id, 0.0))
-	progress += rate_per_minute * get_production_multiplier(resource_id) * get_sustenance_multiplier() * workforce_power * delta / 60.0
+	progress += rate_per_minute * get_production_multiplier(resource_id) * get_sect_production_multiplier() * get_sustenance_multiplier() * workforce_power * delta / 60.0
 	var completed := floori(progress)
 	production_progress[site_id] = progress - float(completed)
 	if completed > 0:
@@ -539,6 +576,7 @@ func export_save_data() -> Dictionary:
 		"cultivation_points": cultivation_points,
 		"disciples": disciples.duplicate(true),
 		"next_disciple_id": next_disciple_id,
+		"sect_level": sect_level,
 	}
 
 
@@ -622,6 +660,7 @@ func import_save_data(data: Dictionary) -> bool:
 	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
 	recruitment_remaining = clampf(float(data.get("recruitment_remaining", 0.0)), 0.0, RECRUIT_TIME)
 	food_consumption_progress = clampf(float(data.get("food_consumption_progress", 0.0)), 0.0, 0.999999)
+	sect_level = clampi(int(data.get("sect_level", 1)), 1, MAX_SECT_LEVEL)
 	if total_disciples + (1 if is_recruiting() else 0) > get_disciple_capacity():
 		return false
 	resources_changed.emit()
@@ -631,5 +670,6 @@ func import_save_data(data: Dictionary) -> bool:
 	sustenance_changed.emit()
 	training_changed.emit()
 	disciples_changed.emit()
+	sect_progress_changed.emit()
 	return true
 

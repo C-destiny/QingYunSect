@@ -31,6 +31,9 @@ extends Control
 @onready var roster_filter: OptionButton = %RosterFilter
 @onready var roster_sort: OptionButton = %RosterSort
 @onready var cultivation_progress: ProgressBar = %CultivationProgress
+@onready var sect_level_status: Label = %SectLevelStatus
+@onready var sect_progress: ProgressBar = %SectProgress
+@onready var sect_upgrade_button: Button = %SectUpgradeButton
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
@@ -49,6 +52,10 @@ func _ready() -> void:
 	GameState.sustenance_changed.connect(_refresh_resources)
 	GameState.training_changed.connect(_refresh_training)
 	GameState.disciples_changed.connect(_refresh_disciple_roster)
+	GameState.sect_progress_changed.connect(_refresh_sect_progress)
+	GameState.buildings_changed.connect(_refresh_sect_progress)
+	GameState.disciples_changed.connect(_refresh_sect_progress)
+	GameState.training_changed.connect(_refresh_sect_progress)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
@@ -74,6 +81,7 @@ func _ready() -> void:
 	upgrade_button.pressed.connect(_upgrade_selected_building)
 	disciple_selector.item_selected.connect(_on_disciple_selected)
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
+	sect_upgrade_button.pressed.connect(_upgrade_sect)
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
 	roster_filter.item_selected.connect(_on_roster_view_changed)
 	roster_sort.item_selected.connect(_on_roster_view_changed)
@@ -91,7 +99,8 @@ func _ready() -> void:
 	_refresh_buildings()
 	_refresh_recruitment()
 	_refresh_disciple_roster()
-	print("青云宗 V0.1：建筑系统启动成功")
+	_refresh_sect_progress()
+	print("青云宗 V0.2：宗门发展系统启动成功")
 
 
 func _process(delta: float) -> void:
@@ -313,13 +322,15 @@ func _refresh_assignment() -> void:
 	var multiplier := building_multiplier * sustenance_multiplier
 	var workforce_power := GameState.get_site_workforce_power(selected_resource["site_id"])
 	var realm_bonus := (workforce_power / float(workers) - 1.0) * 100.0 if workers > 0 else 0.0
-	var total_rate := float(selected_resource["rate"]) * multiplier * workforce_power
+	var sect_multiplier := GameState.get_sect_production_multiplier()
+	var total_rate := float(selected_resource["rate"]) * multiplier * sect_multiplier * workforce_power
 	assignment_status.text = "已分配 %d 人 · 空闲 %d 人" % [workers, GameState.get_idle_disciples()]
-	production_status.text = "%s +%.1f/分钟 · 建筑 +%.0f%% · 境界 +%.0f%%" % [
+	production_status.text = "%s +%.1f/分钟 · 建筑 +%.0f%% · 境界 +%.0f%% · 宗门 +%.0f%%" % [
 		selected_resource["resource_name"],
 		total_rate,
 		(building_multiplier - 1.0) * 100.0,
 		realm_bonus,
+		(sect_multiplier - 1.0) * 100.0,
 	]
 	if sustenance_multiplier < 1.0:
 		production_status.text += " · 缺粮效率50%"
@@ -328,7 +339,7 @@ func _refresh_assignment() -> void:
 func _get_food_production_per_minute() -> float:
 	for resource_data: Dictionary in sect_map.resource_nodes:
 		if StringName(resource_data["resource_id"]) == &"food":
-			return float(resource_data["rate"]) * GameState.get_site_workforce_power(resource_data["site_id"]) * GameState.get_production_multiplier(&"food") * GameState.get_sustenance_multiplier()
+			return float(resource_data["rate"]) * GameState.get_site_workforce_power(resource_data["site_id"]) * GameState.get_production_multiplier(&"food") * GameState.get_sect_production_multiplier() * GameState.get_sustenance_multiplier()
 	return 0.0
 
 
@@ -454,6 +465,32 @@ func _on_disciple_job_selected(index: int) -> void:
 func _breakthrough_selected_disciple() -> void:
 	if GameState.breakthrough_disciple(selected_disciple_id):
 		_refresh_disciple_roster()
+		SaveManager.save_game()
+
+
+func _refresh_sect_progress() -> void:
+	var prosperity := GameState.get_sect_prosperity()
+	var bonus := float(GameState.sect_level - 1) * GameState.SECT_PRODUCTION_BONUS_PER_LEVEL * 100.0
+	if GameState.sect_level >= GameState.MAX_SECT_LEVEL:
+		sect_level_status.text = "青云宗 等级%d · 繁荣%d · 采集+%.0f%%" % [GameState.sect_level, prosperity, bonus]
+		sect_progress.max_value = 1.0
+		sect_progress.value = 1.0
+		sect_upgrade_button.text = "宗门已达当前最高等级"
+		sect_upgrade_button.disabled = true
+		return
+	var requirement := GameState.get_next_sect_level_requirement()
+	sect_level_status.text = "青云宗 等级%d · 繁荣%d/%d · 采集+%.0f%%" % [GameState.sect_level, prosperity, requirement, bonus]
+	sect_progress.max_value = requirement
+	sect_progress.value = prosperity
+	sect_upgrade_button.text = "晋升宗门至等级%d" % (GameState.sect_level + 1)
+	sect_upgrade_button.disabled = not GameState.can_upgrade_sect()
+
+
+func _upgrade_sect() -> void:
+	if GameState.upgrade_sect():
+		_refresh_resources()
+		_refresh_assignment()
+		_refresh_sect_progress()
 		SaveManager.save_game()
 
 

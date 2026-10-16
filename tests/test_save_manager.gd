@@ -1,6 +1,6 @@
 extends SceneTree
 
-const TEST_SAVE_PATH := "user://test_savegame.json"
+const TEST_SAVE_PATH := "res://tests/.test_savegame.json"
 
 
 func _init() -> void:

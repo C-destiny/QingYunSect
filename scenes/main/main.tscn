@@ -63,7 +63,7 @@ text = "青云宗"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 16
-text = "V0.1 · 开宗立派"
+text = "V0.2 · 宗门发展"
 
 [node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
 layout_mode = 2
@@ -171,6 +171,26 @@ text = "宗门领地"
 
 [node name="Divider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 layout_mode = 2
+
+[node name="SectLevelStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.75, 0.43, 1)
+theme_override_font_sizes/font_size = 16
+text = "青云宗 等级1"
+
+[node name="SectProgress" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+show_percentage = false
+
+[node name="SectUpgradeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+disabled = true
+text = "繁荣度不足"
 
 [node name="SelectionName" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
