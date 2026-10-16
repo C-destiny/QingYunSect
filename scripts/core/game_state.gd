@@ -3,9 +3,12 @@ extends Node
 signal resources_changed
 signal assignments_changed
 signal buildings_changed
+signal recruitment_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
+const RECRUIT_COST := {"spirit_stone": 25, "food": 20}
+const RECRUIT_TIME := 5.0
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -19,6 +22,7 @@ var assignments: Dictionary = {}
 var production_progress: Dictionary = {}
 var buildings: Array[Dictionary] = []
 var next_building_id: int = 1
+var recruitment_remaining: float = 0.0
 
 
 func get_resource_amount(resource_id: StringName) -> int:
@@ -60,6 +64,35 @@ func get_disciple_capacity() -> int:
 		var definition := BuildingCatalog.get_data(StringName(building.get("type", "")))
 		capacity += int(definition.get("disciple_capacity", 0))
 	return capacity
+
+
+func is_recruiting() -> bool:
+	return recruitment_remaining > 0.0
+
+
+func can_recruit_disciple() -> bool:
+	return not is_recruiting() and total_disciples < get_disciple_capacity() and can_afford(RECRUIT_COST)
+
+
+func start_recruitment() -> bool:
+	if not can_recruit_disciple() or not spend_resources(RECRUIT_COST):
+		return false
+	recruitment_remaining = RECRUIT_TIME
+	recruitment_changed.emit()
+	return true
+
+
+func process_recruitment(delta: float) -> bool:
+	if not is_recruiting() or delta <= 0.0:
+		return false
+	recruitment_remaining = maxf(0.0, recruitment_remaining - delta)
+	var completed := false
+	if is_zero_approx(recruitment_remaining):
+		total_disciples += 1
+		assignments_changed.emit()
+		completed = true
+	recruitment_changed.emit()
+	return completed
 
 
 func get_production_multiplier(resource_id: StringName) -> float:
@@ -159,6 +192,7 @@ func export_save_data() -> Dictionary:
 		"production_progress": production_progress.duplicate(true),
 		"buildings": buildings.duplicate(true),
 		"next_building_id": next_building_id,
+		"recruitment_remaining": recruitment_remaining,
 	}
 
 
@@ -195,8 +229,12 @@ func import_save_data(data: Dictionary) -> bool:
 			return false
 		buildings.append(building.duplicate(true))
 	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
+	recruitment_remaining = clampf(float(data.get("recruitment_remaining", 0.0)), 0.0, RECRUIT_TIME)
+	if total_disciples + (1 if is_recruiting() else 0) > get_disciple_capacity():
+		return false
 	resources_changed.emit()
 	assignments_changed.emit()
 	buildings_changed.emit()
+	recruitment_changed.emit()
 	return true
 

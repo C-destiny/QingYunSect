@@ -17,6 +17,8 @@ extends Control
 @onready var autosave_timer: Timer = %AutosaveTimer
 @onready var placement_status: Label = %PlacementStatus
 @onready var cancel_build_button: Button = %CancelBuildButton
+@onready var recruit_button: Button = %RecruitButton
+@onready var recruitment_status: Label = %RecruitmentStatus
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
@@ -27,6 +29,7 @@ func _ready() -> void:
 	GameState.resources_changed.connect(_refresh_resources)
 	GameState.assignments_changed.connect(_refresh_assignment)
 	GameState.buildings_changed.connect(_refresh_buildings)
+	GameState.recruitment_changed.connect(_refresh_recruitment)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	assign_button.pressed.connect(_assign_disciple)
@@ -46,11 +49,13 @@ func _ready() -> void:
 	for building_id: StringName in build_buttons:
 		build_buttons[building_id].pressed.connect(_start_building_placement.bind(building_id))
 	cancel_build_button.pressed.connect(_cancel_building_placement)
+	recruit_button.pressed.connect(_start_recruitment)
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
 	_refresh_assignment()
 	_refresh_buildings()
+	_refresh_recruitment()
 	print("青云宗 V0.1：建筑系统启动成功")
 
 
@@ -63,6 +68,8 @@ func _process(delta: float) -> void:
 			delta
 		)
 	GameState.process_construction(delta)
+	if GameState.process_recruitment(delta):
+		SaveManager.save_game()
 
 
 func _refresh_resources() -> void:
@@ -132,7 +139,7 @@ func _load_game() -> void:
 
 
 func _autosave() -> void:
-	if GameState.assigned_disciples > 0:
+	if GameState.assigned_disciples > 0 or GameState.is_recruiting():
 		SaveManager.save_game()
 
 
@@ -150,6 +157,29 @@ func _on_load_completed(success: bool, message: String) -> void:
 		_refresh_resources()
 		_refresh_assignment()
 		_refresh_buildings()
+		_refresh_recruitment()
+
+
+func _start_recruitment() -> void:
+	if GameState.start_recruitment():
+		recruitment_status.text = "正在招募普通弟子……"
+		SaveManager.save_game()
+	else:
+		_refresh_recruitment()
+
+
+func _refresh_recruitment() -> void:
+	recruit_button.disabled = not GameState.can_recruit_disciple()
+	if GameState.is_recruiting():
+		recruitment_status.text = "招募中：剩余 %.1f 秒" % GameState.recruitment_remaining
+		return
+	if GameState.total_disciples >= GameState.get_disciple_capacity():
+		recruitment_status.text = "弟子人数已达上限，请先建造弟子居"
+		return
+	if not GameState.can_afford(GameState.RECRUIT_COST):
+		recruitment_status.text = "资源不足：需要灵石25、灵谷20"
+		return
+	recruitment_status.text = "可招募普通弟子 · 灵石25 灵谷20"
 
 
 func _start_building_placement(building_id: StringName) -> void:
@@ -185,6 +215,7 @@ func _on_placement_requested(building_id: StringName, cell: Vector2i) -> void:
 func _refresh_buildings() -> void:
 	sect_map.queue_redraw()
 	_refresh_assignment()
+	_refresh_recruitment()
 	var constructing := 0
 	for building: Dictionary in GameState.buildings:
 		if not bool(building["completed"]):
