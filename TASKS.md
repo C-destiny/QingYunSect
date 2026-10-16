@@ -23,11 +23,21 @@
 
 ## 下一步
 
-先完成V0.4合并与标签，再在独立V0.5分支实施QYS-V05-001；完成编码和测试后进入待负责人验收。
+QYS-V05-001已编码并通过22组快速回归，等待负责人验收；验收后进入QYS-V05-002离线经营与灵谷分段计算。
+
+| 编号 / GitHub | V0.5任务 | 优先级 | 本轮快照 |
+|---|---|---|---|
+| [QYS-V05-001](https://github.com/C-destiny/QingYunSect/issues/11) | 时间基线、存档迁移与结算契约 | P0 | 待验收 |
+| [QYS-V05-002](https://github.com/C-destiny/QingYunSect/issues/12) | 离线经营与灵谷分段计算 | P0 | 待开发 |
+| [QYS-V05-003](https://github.com/C-destiny/QingYunSect/issues/13) | 离线战斗解析模拟 | P0 | 待开发 |
+| [QYS-V05-004](https://github.com/C-destiny/QingYunSect/issues/14) | 离线施工招募与修炼推进 | P1 | 待开发 |
+| [QYS-V05-005](https://github.com/C-destiny/QingYunSect/issues/15) | 离线结算原子性与防重复领取 | P0 | 待开发 |
+| [QYS-V05-006](https://github.com/C-destiny/QingYunSect/issues/16) | 离线收益明细界面 | P1 | 待开发 |
+| [QYS-V05-007](https://github.com/C-destiny/QingYunSect/issues/17) | V0.5回归、长时与Windows交付 | P0 | 待开发 |
 
 ## 同步欠账
 
-- 10个真实Issue已创建、保持open；全部未关联Milestone。
+- V0.4的10个Issue已验收关闭；V0.5的7个Issue已创建并保持open，均未关联Milestone。
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。

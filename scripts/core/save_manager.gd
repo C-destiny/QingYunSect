@@ -2,13 +2,19 @@ extends Node
 
 signal save_completed(success: bool, message: String)
 signal load_completed(success: bool, message: String)
+signal offline_window_ready(window: Dictionary)
 
 const SAVE_VERSION := 1
 const TEMP_SUFFIX := ".tmp"
 const BACKUP_SUFFIX := ".bak"
+const MAX_OFFLINE_SECONDS := 8 * 60 * 60
+const MIN_OFFLINE_SECONDS := 1
 
 var save_path := "user://savegame.json"
 var game_state: Node
+var unix_time_provider: Callable
+var last_successful_save_unix: int = 0
+var pending_offline_window: Dictionary = {}
 
 
 func _ready() -> void:
@@ -18,6 +24,50 @@ func _ready() -> void:
 
 func has_save() -> bool:
 	return FileAccess.file_exists(save_path) or FileAccess.file_exists(get_backup_path())
+
+
+func _get_now_unix() -> int:
+	if unix_time_provider.is_valid():
+		return int(unix_time_provider.call())
+	return int(Time.get_unix_time_from_system())
+
+
+func calculate_offline_window(saved_at_unix: int, now_unix: int) -> Dictionary:
+	var window := {
+		"saved_at_unix": saved_at_unix,
+		"now_unix": now_unix,
+		"raw_seconds": 0,
+		"effective_seconds": 0,
+		"truncated": false,
+		"eligible": false,
+		"reason": "",
+		"settlement_id": "",
+	}
+	if saved_at_unix <= 0:
+		window["reason"] = "missing_anchor"
+		return window
+	if now_unix < saved_at_unix:
+		window["reason"] = "clock_moved_back"
+		return window
+	var raw_seconds := now_unix - saved_at_unix
+	window["raw_seconds"] = raw_seconds
+	if raw_seconds < MIN_OFFLINE_SECONDS:
+		window["reason"] = "too_short"
+		return window
+	window["effective_seconds"] = mini(raw_seconds, MAX_OFFLINE_SECONDS)
+	window["truncated"] = raw_seconds > MAX_OFFLINE_SECONDS
+	window["eligible"] = true
+	window["reason"] = "capped" if bool(window["truncated"]) else "eligible"
+	window["settlement_id"] = "%d:%d" % [saved_at_unix, now_unix]
+	return window
+
+
+func get_pending_offline_window() -> Dictionary:
+	return pending_offline_window.duplicate(true)
+
+
+func clear_pending_offline_window() -> void:
+	pending_offline_window.clear()
 
 
 func get_backup_path() -> String:
@@ -32,9 +82,10 @@ func save_game() -> bool:
 	if game_state == null:
 		save_completed.emit(false, "游戏状态尚未初始化")
 		return false
+	var saved_at_unix := _get_now_unix()
 	var payload := {
 		"version": SAVE_VERSION,
-		"saved_at_unix": int(Time.get_unix_time_from_system()),
+		"saved_at_unix": saved_at_unix,
 		"game_state": game_state.export_save_data(),
 	}
 	var serialized := JSON.stringify(payload, "\t")
@@ -61,6 +112,7 @@ func save_game() -> bool:
 		_remove_file_if_exists(temp_path)
 		save_completed.emit(false, "存档替换失败：%s" % replace_result)
 		return false
+	last_successful_save_unix = saved_at_unix
 	save_completed.emit(true, "已保存")
 	return true
 
@@ -72,20 +124,31 @@ func load_game() -> bool:
 	if not has_save():
 		load_completed.emit(false, "尚无本地存档")
 		return false
+	pending_offline_window.clear()
+	var now_unix := _get_now_unix()
 	var primary_result := _load_from_path(save_path)
 	if bool(primary_result.get("success", false)):
+		_prepare_offline_window(primary_result, now_unix)
 		load_completed.emit(true, "已读取")
 		return true
 	var backup_path := get_backup_path()
 	if FileAccess.file_exists(backup_path):
 		var backup_result := _load_from_path(backup_path)
 		if bool(backup_result.get("success", false)):
+			_prepare_offline_window(backup_result, now_unix)
 			load_completed.emit(true, "主存档不可用，已从备份读取")
 			return true
 		load_completed.emit(false, "主存档与备份均不可用：%s；%s" % [primary_result.get("message", "未知错误"), backup_result.get("message", "未知错误")])
 		return false
 	load_completed.emit(false, str(primary_result.get("message", "存档读取失败")))
 	return false
+
+
+func _prepare_offline_window(load_result: Dictionary, now_unix: int) -> void:
+	var saved_at_unix := int(load_result.get("saved_at_unix", 0))
+	last_successful_save_unix = saved_at_unix
+	pending_offline_window = calculate_offline_window(saved_at_unix, now_unix)
+	offline_window_ready.emit(pending_offline_window.duplicate(true))
 
 
 func _load_from_path(path: String) -> Dictionary:
@@ -97,7 +160,11 @@ func _load_from_path(path: String) -> Dictionary:
 		return {"success": false, "message": "存档数据缺失"}
 	if not game_state.import_save_data(payload["game_state"]):
 		return {"success": false, "message": "存档数据校验失败"}
-	return {"success": true, "message": "已读取"}
+	return {
+		"success": true,
+		"message": "已读取",
+		"saved_at_unix": int(payload.get("saved_at_unix", 0)),
+	}
 
 
 func _read_payload(path: String) -> Dictionary:
@@ -120,6 +187,8 @@ func _read_payload(path: String) -> Dictionary:
 	var payload: Dictionary = parsed
 	if not payload.has("version") or typeof(payload["version"]) not in [TYPE_INT, TYPE_FLOAT] or int(payload["version"]) != SAVE_VERSION:
 		return {"success": false, "message": "存档版本不受支持"}
+	if payload.has("saved_at_unix") and typeof(payload["saved_at_unix"]) not in [TYPE_INT, TYPE_FLOAT]:
+		return {"success": false, "message": "存档时间字段无效"}
 	return {"success": true, "payload": payload}
 
 

@@ -6,7 +6,7 @@
 
 scripts/core/save_manager.gd使用JSON，SAVE_VERSION=1，主路径user://savegame.json，临时文件追加.tmp，备份追加.bak。未启用自定义user目录；按当前Windows Godot应用名通常映射到%APPDATA%/Godot/app_userdata/青云宗/savegame.json。本轮仅使用res://tests下的隔离路径，未打开玩家正式存档。
 
-外层：version、saved_at_unix、game_state。游戏V0.3不等于存档版本3；V0.1～V0.3仍沿用version=1。时间戳目前只记录，不产生离线收益。
+外层：version、saved_at_unix、game_state。游戏版本号不等于存档格式版本；当前仍沿用version=1。V0.5起，成功读取后以实际读取文件的saved_at_unix生成最多8小时的离线窗口；缺失时间戳的更早有效存档仍可读取，但首次不追溯收益。
 
 game_state由GameState.export_save_data导出：
 
