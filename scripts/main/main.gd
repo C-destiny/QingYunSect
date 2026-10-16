@@ -35,6 +35,7 @@ func _ready() -> void:
 	GameState.buildings_changed.connect(_refresh_buildings)
 	GameState.recruitment_changed.connect(_refresh_recruitment)
 	GameState.sustenance_changed.connect(_refresh_resources)
+	GameState.training_changed.connect(_refresh_training)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
@@ -78,6 +79,7 @@ func _process(delta: float) -> void:
 	if GameState.process_recruitment(delta):
 		SaveManager.save_game()
 	GameState.process_disciple_consumption(delta)
+	GameState.process_training(delta)
 
 
 func _refresh_resources() -> void:
@@ -112,6 +114,8 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 	production_status.visible = true
 	assign_button.visible = true
 	unassign_button.visible = true
+	assign_button.text = "派遣一人"
+	unassign_button.text = "撤回一人"
 	selection_name.text = str(resource_data["name"])
 	selection_description.text = "%s\n\n储量：%d" % [
 		resource_data["description"],
@@ -150,8 +154,20 @@ func _refresh_selected_building() -> void:
 		"已完工" if completed else "施工中（%.1f秒）" % float(building["remaining"]),
 		total_effect,
 	]
+	var is_training_ground := building_type == &"training_ground" and completed
+	assignment_status.visible = is_training_ground
+	production_status.visible = is_training_ground
+	assign_button.visible = is_training_ground
+	unassign_button.visible = is_training_ground
+	if is_training_ground:
+		_refresh_training()
 	demolish_button.disabled = not GameState.can_demolish_building(selected_building_instance)
-	building_action_status.text = "返还50%建造资源" if not demolish_button.disabled else "拆除后人口将超过上限"
+	if not demolish_button.disabled:
+		building_action_status.text = "返还50%建造资源"
+	elif building_type == &"training_ground":
+		building_action_status.text = "请先停止场内弟子修炼"
+	else:
+		building_action_status.text = "拆除后人口将超过上限"
 
 
 func _get_building_total_effect_text(building_type: StringName) -> String:
@@ -161,7 +177,31 @@ func _get_building_total_effect_text(building_type: StringName) -> String:
 		return "%d座生效 · 弟子上限 +%d" % [count, count * int(definition["disciple_capacity"])]
 	if definition.has("production_bonus"):
 		return "%d座生效 · 采集效率 +%.0f%%" % [count, float(count) * float(definition["production_bonus"]) * 100.0]
+	if definition.has("training_capacity"):
+		return "%d座生效 · 修炼位 %d" % [count, count * int(definition["training_capacity"])]
 	return "%d座生效" % count
+
+
+func _is_training_ground_selected() -> bool:
+	if selected_building_instance <= 0:
+		return false
+	var building := GameState.get_building(selected_building_instance)
+	return not building.is_empty() and bool(building.get("completed", false)) and StringName(building.get("type", "")) == &"training_ground"
+
+
+func _refresh_training() -> void:
+	if not _is_training_ground_selected():
+		return
+	assignment_status.text = "修炼弟子 %d/%d · 空闲 %d 人" % [
+		GameState.training_disciples,
+		GameState.get_training_capacity(),
+		GameState.get_idle_disciples(),
+	]
+	production_status.text = "宗门修为 %.1f · +%.1f/分钟" % [GameState.cultivation_points, GameState.get_cultivation_per_minute()]
+	assign_button.text = "安排修炼"
+	unassign_button.text = "停止修炼"
+	assign_button.disabled = GameState.get_idle_disciples() <= 0 or GameState.training_disciples >= GameState.get_training_capacity()
+	unassign_button.disabled = GameState.training_disciples <= 0
 
 
 func _demolish_selected_building() -> void:
@@ -178,12 +218,18 @@ func _demolish_selected_building() -> void:
 
 
 func _assign_disciple() -> void:
+	if _is_training_ground_selected():
+		GameState.assign_training_disciple()
+		return
 	if selected_resource.is_empty():
 		return
 	GameState.assign_disciple(selected_resource["site_id"])
 
 
 func _unassign_disciple() -> void:
+	if _is_training_ground_selected():
+		GameState.unassign_training_disciple()
+		return
 	if selected_resource.is_empty():
 		return
 	GameState.unassign_disciple(selected_resource["site_id"])
@@ -191,6 +237,9 @@ func _unassign_disciple() -> void:
 
 func _refresh_assignment() -> void:
 	_refresh_resources()
+	if _is_training_ground_selected():
+		_refresh_training()
+		return
 	var has_selection := not selected_resource.is_empty()
 	assign_button.disabled = not has_selection or GameState.get_idle_disciples() <= 0
 	unassign_button.disabled = not has_selection
@@ -230,7 +279,7 @@ func _load_game() -> void:
 
 
 func _autosave() -> void:
-	if GameState.assigned_disciples > 0 or GameState.is_recruiting():
+	if GameState.assigned_disciples > 0 or GameState.is_recruiting() or GameState.training_disciples > 0:
 		SaveManager.save_game()
 
 

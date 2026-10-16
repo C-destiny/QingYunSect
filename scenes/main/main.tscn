@@ -277,7 +277,7 @@ text = "灵田 谷+25%\n木35 灵20"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
-text = "演武场\n木60 灵40"
+text = "演武场 2修炼位\n木60 灵40"
 
 [node name="CancelBuildButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingGrid"]
 unique_name_in_owner = true

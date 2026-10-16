@@ -5,6 +5,7 @@ signal assignments_changed
 signal buildings_changed
 signal recruitment_changed
 signal sustenance_changed
+signal training_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -27,6 +28,8 @@ var buildings: Array[Dictionary] = []
 var next_building_id: int = 1
 var recruitment_remaining: float = 0.0
 var food_consumption_progress: float = 0.0
+var training_disciples: int = 0
+var cultivation_points: float = 0.0
 
 
 func get_resource_amount(resource_id: StringName) -> int:
@@ -125,6 +128,45 @@ func get_completed_building_count(building_type: StringName) -> int:
 	return count
 
 
+func get_training_capacity() -> int:
+	var definition := BuildingCatalog.get_data(&"training_ground")
+	return get_completed_building_count(&"training_ground") * int(definition.get("training_capacity", 0))
+
+
+func get_cultivation_per_minute() -> float:
+	var definition := BuildingCatalog.get_data(&"training_ground")
+	return float(training_disciples) * float(definition.get("cultivation_rate", 0.0))
+
+
+func assign_training_disciple() -> bool:
+	if get_idle_disciples() <= 0 or training_disciples >= get_training_capacity():
+		return false
+	training_disciples += 1
+	assigned_disciples += 1
+	assignments_changed.emit()
+	training_changed.emit()
+	return true
+
+
+func unassign_training_disciple() -> bool:
+	if training_disciples <= 0:
+		return false
+	training_disciples -= 1
+	assigned_disciples -= 1
+	assignments_changed.emit()
+	training_changed.emit()
+	return true
+
+
+func process_training(delta: float) -> float:
+	if training_disciples <= 0 or delta <= 0.0:
+		return 0.0
+	var gained := get_cultivation_per_minute() * delta / 60.0
+	cultivation_points += gained
+	training_changed.emit()
+	return gained
+
+
 func can_demolish_building(instance_id: int) -> bool:
 	var building := get_building(instance_id)
 	if building.is_empty():
@@ -134,6 +176,11 @@ func can_demolish_building(instance_id: int) -> bool:
 		var capacity_after := get_disciple_capacity() - int(definition.get("disciple_capacity", 0))
 		var reserved_population := total_disciples + (1 if is_recruiting() else 0)
 		if reserved_population > capacity_after:
+			return false
+	if bool(building.get("completed", false)) and StringName(building.get("type", "")) == &"training_ground":
+		var definition := BuildingCatalog.get_data(&"training_ground")
+		var training_capacity_after := get_training_capacity() - int(definition.get("training_capacity", 0))
+		if training_disciples > training_capacity_after:
 			return false
 	return true
 
@@ -274,6 +321,8 @@ func export_save_data() -> Dictionary:
 		"next_building_id": next_building_id,
 		"recruitment_remaining": recruitment_remaining,
 		"food_consumption_progress": food_consumption_progress,
+		"training_disciples": training_disciples,
+		"cultivation_points": cultivation_points,
 	}
 
 
@@ -309,6 +358,11 @@ func import_save_data(data: Dictionary) -> bool:
 		if BuildingCatalog.get_data(StringName(building.get("type", ""))).is_empty():
 			return false
 		buildings.append(building.duplicate(true))
+	training_disciples = maxi(0, int(data.get("training_disciples", 0)))
+	cultivation_points = maxf(0.0, float(data.get("cultivation_points", 0.0)))
+	assigned_disciples += training_disciples
+	if assigned_disciples > total_disciples or training_disciples > get_training_capacity():
+		return false
 	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
 	recruitment_remaining = clampf(float(data.get("recruitment_remaining", 0.0)), 0.0, RECRUIT_TIME)
 	food_consumption_progress = clampf(float(data.get("food_consumption_progress", 0.0)), 0.0, 0.999999)
@@ -319,5 +373,6 @@ func import_save_data(data: Dictionary) -> bool:
 	buildings_changed.emit()
 	recruitment_changed.emit()
 	sustenance_changed.emit()
+	training_changed.emit()
 	return true
 

@@ -39,9 +39,11 @@ const BUILDINGS := {
 	},
 	&"training_ground": {
 		"name": "演武场",
-		"description": "弟子修炼与切磋的场所。",
+		"description": "弟子修炼与切磋的场所。每座提供2个修炼位。",
 		"cost": {"wood": 60, "spirit_stone": 40},
 		"build_time": 10.0,
+		"training_capacity": 2,
+		"cultivation_rate": 1.0,
 		"color": Color(0.58, 0.28, 0.25, 1.0),
 	},
 }
