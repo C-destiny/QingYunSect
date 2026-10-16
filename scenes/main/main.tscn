@@ -388,9 +388,15 @@ theme_override_font_sizes/font_size = 14
 text = "返还50%建造资源"
 autowrap_mode = 2
 
+[node name="UpgradeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 40)
+layout_mode = 2
+text = "升级"
+
 [node name="DemolishButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(88, 40)
+custom_minimum_size = Vector2(76, 40)
 layout_mode = 2
 text = "拆除建筑"
 

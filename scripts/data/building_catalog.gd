@@ -48,6 +48,8 @@ const BUILDINGS := {
 	},
 }
 
+const MAX_BUILDING_LEVEL := 3
+
 
 static func get_data(building_id: StringName) -> Dictionary:
 	return BUILDINGS.get(building_id, {})
@@ -64,4 +66,17 @@ static func get_cost_text(building_id: StringName) -> String:
 	if int(cost.get("food", 0)) > 0:
 		parts.append("灵谷%d" % int(cost["food"]))
 	return "、".join(parts)
+
+
+static func get_upgrade_cost(building_id: StringName, target_level: int) -> Dictionary:
+	var data := get_data(building_id)
+	var base_cost: Dictionary = data.get("cost", {})
+	var result: Dictionary = {}
+	for resource_id: Variant in base_cost:
+		result[String(resource_id)] = int(base_cost[resource_id]) * target_level
+	return result
+
+
+static func get_upgrade_time(building_id: StringName, target_level: int) -> float:
+	return float(get_data(building_id).get("build_time", 0.0)) * float(target_level)
 

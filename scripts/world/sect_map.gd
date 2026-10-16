@@ -166,6 +166,10 @@ func _draw_building(building: Dictionary, origin: Vector2) -> void:
 		var progress := 1.0 - float(building["remaining"]) / float(building["build_time"])
 		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
 		draw_rect(Rect2(center + Vector2(-35, 32), Vector2(70.0 * progress, 5)), Color(0.85, 0.67, 0.28, 1.0), true)
+	elif bool(building.get("upgrading", false)):
+		var upgrade_progress := 1.0 - float(building.get("upgrade_remaining", 0.0)) / float(building.get("upgrade_time", 1.0))
+		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
+		draw_rect(Rect2(center + Vector2(-35, 32), Vector2(70.0 * upgrade_progress, 5)), Color(0.38, 0.72, 0.95, 1.0), true)
 
 
 func _draw_placement_preview(origin: Vector2) -> void:

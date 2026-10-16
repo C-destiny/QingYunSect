@@ -22,6 +22,7 @@ extends Control
 @onready var building_actions: HBoxContainer = %BuildingActions
 @onready var demolish_button: Button = %DemolishButton
 @onready var building_action_status: Label = %BuildingActionStatus
+@onready var upgrade_button: Button = %UpgradeButton
 @onready var disciple_selector: OptionButton = %DiscipleSelector
 @onready var disciple_detail: Label = %DiscipleDetail
 @onready var breakthrough_button: Button = %BreakthroughButton
@@ -70,6 +71,7 @@ func _ready() -> void:
 	cancel_build_button.pressed.connect(_cancel_building_placement)
 	recruit_button.pressed.connect(_start_recruitment)
 	demolish_button.pressed.connect(_demolish_selected_building)
+	upgrade_button.pressed.connect(_upgrade_selected_building)
 	disciple_selector.item_selected.connect(_on_disciple_selected)
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
@@ -174,9 +176,12 @@ func _refresh_selected_building() -> void:
 	var completed := bool(building.get("completed", false))
 	selection_name.text = "%s · 等级 %d" % [definition["name"], int(building.get("level", 1))]
 	var total_effect := _get_building_total_effect_text(building_type)
+	var state_text := "已完工" if completed else "施工中（%.1f秒）" % float(building["remaining"])
+	if bool(building.get("upgrading", false)):
+		state_text = "升级至等级%d（%.1f秒）" % [int(building.get("target_level", 2)), float(building.get("upgrade_remaining", 0.0))]
 	selection_description.text = "%s\n\n状态：%s\n同类总效果：%s" % [
 		definition["description"],
-		"已完工" if completed else "施工中（%.1f秒）" % float(building["remaining"]),
+		state_text,
 		total_effect,
 	]
 	var is_training_ground := building_type == &"training_ground" and completed
@@ -186,9 +191,21 @@ func _refresh_selected_building() -> void:
 	unassign_button.visible = is_training_ground
 	if is_training_ground:
 		_refresh_training()
+	var level := int(building.get("level", 1))
+	upgrade_button.visible = completed
+	upgrade_button.disabled = not GameState.can_upgrade_building(selected_building_instance)
+	if level >= BuildingCatalog.MAX_BUILDING_LEVEL:
+		upgrade_button.text = "已满级"
+	elif bool(building.get("upgrading", false)):
+		upgrade_button.text = "升级中"
+	else:
+		var upgrade_cost := BuildingCatalog.get_upgrade_cost(building_type, level + 1)
+		upgrade_button.text = "升%d级\n%s" % [level + 1, _format_cost(upgrade_cost)]
 	demolish_button.disabled = not GameState.can_demolish_building(selected_building_instance)
 	if not demolish_button.disabled:
 		building_action_status.text = "返还50%建造资源"
+	elif bool(building.get("upgrading", false)):
+		building_action_status.text = "升级期间不可拆除"
 	elif building_type == &"training_ground":
 		building_action_status.text = "请先停止场内弟子修炼"
 	else:
@@ -197,14 +214,31 @@ func _refresh_selected_building() -> void:
 
 func _get_building_total_effect_text(building_type: StringName) -> String:
 	var count := GameState.get_completed_building_count(building_type)
+	var levels := GameState.get_completed_building_levels(building_type)
 	var definition := BuildingCatalog.get_data(building_type)
 	if definition.has("disciple_capacity"):
-		return "%d座生效 · 弟子上限 +%d" % [count, count * int(definition["disciple_capacity"])]
+		return "%d座/总等级%d · 弟子上限 +%d" % [count, levels, levels * int(definition["disciple_capacity"])]
 	if definition.has("production_bonus"):
-		return "%d座生效 · 采集效率 +%.0f%%" % [count, float(count) * float(definition["production_bonus"]) * 100.0]
+		return "%d座/总等级%d · 采集效率 +%.0f%%" % [count, levels, float(levels) * float(definition["production_bonus"]) * 100.0]
 	if definition.has("training_capacity"):
-		return "%d座生效 · 修炼位 %d" % [count, count * int(definition["training_capacity"])]
+		return "%d座/总等级%d · 修炼位 %d · 速度×%.1f" % [count, levels, levels * int(definition["training_capacity"]), GameState.get_training_rate_multiplier()]
 	return "%d座生效" % count
+
+
+func _format_cost(cost: Dictionary) -> String:
+	var parts := PackedStringArray()
+	if int(cost.get("wood", 0)) > 0: parts.append("木%d" % int(cost["wood"]))
+	if int(cost.get("spirit_stone", 0)) > 0: parts.append("石%d" % int(cost["spirit_stone"]))
+	if int(cost.get("food", 0)) > 0: parts.append("谷%d" % int(cost["food"]))
+	return " ".join(parts)
+
+
+func _upgrade_selected_building() -> void:
+	if not GameState.start_building_upgrade(selected_building_instance):
+		building_action_status.text = "资源不足、建筑满级或当前无法升级"
+		return
+	building_action_status.text = "建筑升级已经开始"
+	SaveManager.save_game()
 
 
 func _is_training_ground_selected() -> bool:
@@ -511,9 +545,14 @@ func _refresh_buildings() -> void:
 	_refresh_recruitment()
 	_refresh_selected_building()
 	var constructing := 0
+	var upgrading := 0
 	for building: Dictionary in GameState.buildings:
 		if not bool(building["completed"]):
 			constructing += 1
+		elif bool(building.get("upgrading", false)):
+			upgrading += 1
 	if constructing > 0 and selected_building == &"":
 		placement_status.text = "施工中：%d 座建筑" % constructing
+	elif upgrading > 0 and selected_building == &"":
+		placement_status.text = "升级中：%d 座建筑" % upgrading
 

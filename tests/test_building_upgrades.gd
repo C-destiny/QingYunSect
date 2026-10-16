@@ -1,0 +1,35 @@
+extends SceneTree
+
+
+func _init() -> void:
+	var state := preload("res://scripts/core/game_state.gd").new()
+	root.add_child(state)
+	state.resources["wood"] = 1000
+	state.resources["spirit_stone"] = 1000
+	assert(state.start_construction(&"lumber_yard", Vector2i(0, 0)))
+	state.process_construction(6.0)
+	var building_id := int(state.buildings[0]["instance_id"])
+	assert(is_equal_approx(state.get_production_multiplier(&"wood"), 1.25))
+	var wood_before := state.get_resource_amount(&"wood")
+	var stone_before := state.get_resource_amount(&"spirit_stone")
+	assert(state.start_building_upgrade(building_id))
+	assert(state.get_resource_amount(&"wood") == wood_before - 60)
+	assert(state.get_resource_amount(&"spirit_stone") == stone_before - 30)
+	assert(not state.can_demolish_building(building_id))
+	assert(is_equal_approx(state.get_production_multiplier(&"wood"), 1.25))
+	state.process_construction(10.1)
+	assert(int(state.buildings[0]["level"]) == 2)
+	assert(is_equal_approx(state.get_production_multiplier(&"wood"), 1.5))
+	assert(state.start_building_upgrade(building_id))
+	state.process_construction(15.1)
+	assert(int(state.buildings[0]["level"]) == 3)
+	assert(is_equal_approx(state.get_production_multiplier(&"wood"), 1.75))
+	assert(not state.can_upgrade_building(building_id))
+	var saved := state.export_save_data()
+	var restored := preload("res://scripts/core/game_state.gd").new()
+	root.add_child(restored)
+	assert(restored.import_save_data(saved))
+	assert(int(restored.buildings[0]["level"]) == 3)
+	assert(is_equal_approx(restored.get_production_multiplier(&"wood"), 1.75))
+	print("PASS: building upgrade cost, timer, effects, level cap, and persistence")
+	quit()

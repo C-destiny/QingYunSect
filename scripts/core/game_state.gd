@@ -205,7 +205,7 @@ func get_disciple_capacity() -> int:
 		if not bool(building.get("completed", false)):
 			continue
 		var definition := BuildingCatalog.get_data(StringName(building.get("type", "")))
-		capacity += int(definition.get("disciple_capacity", 0))
+		capacity += int(definition.get("disciple_capacity", 0)) * int(building.get("level", 1))
 	return capacity
 
 
@@ -248,7 +248,7 @@ func get_production_multiplier(resource_id: StringName) -> float:
 			continue
 		var definition := BuildingCatalog.get_data(StringName(building.get("type", "")))
 		if StringName(definition.get("production_resource", &"")) == resource_id:
-			multiplier += float(definition.get("production_bonus", 0.0))
+			multiplier += float(definition.get("production_bonus", 0.0)) * float(building.get("level", 1))
 	return multiplier
 
 
@@ -267,14 +267,27 @@ func get_completed_building_count(building_type: StringName) -> int:
 	return count
 
 
+func get_completed_building_levels(building_type: StringName) -> int:
+	var levels := 0
+	for building: Dictionary in buildings:
+		if bool(building.get("completed", false)) and StringName(building.get("type", "")) == building_type:
+			levels += int(building.get("level", 1))
+	return levels
+
+
 func get_training_capacity() -> int:
 	var definition := BuildingCatalog.get_data(&"training_ground")
-	return get_completed_building_count(&"training_ground") * int(definition.get("training_capacity", 0))
+	return get_completed_building_levels(&"training_ground") * int(definition.get("training_capacity", 0))
+
+
+func get_training_rate_multiplier() -> float:
+	var extra_levels := get_completed_building_levels(&"training_ground") - get_completed_building_count(&"training_ground")
+	return 1.0 + float(extra_levels) * 0.5
 
 
 func get_cultivation_per_minute() -> float:
 	var definition := BuildingCatalog.get_data(&"training_ground")
-	return float(training_disciples) * float(definition.get("cultivation_rate", 0.0))
+	return float(training_disciples) * float(definition.get("cultivation_rate", 0.0)) * get_training_rate_multiplier()
 
 
 func assign_training_disciple() -> bool:
@@ -309,7 +322,7 @@ func process_training(delta: float) -> float:
 	if training_disciples <= 0 or delta <= 0.0:
 		return 0.0
 	var definition := BuildingCatalog.get_data(&"training_ground")
-	var gain_per_disciple := float(definition.get("cultivation_rate", 0.0)) * delta / 60.0
+	var gain_per_disciple := float(definition.get("cultivation_rate", 0.0)) * get_training_rate_multiplier() * delta / 60.0
 	var gained := 0.0
 	for disciple: Dictionary in disciples:
 		if StringName(disciple.get("job", "idle")) != &"training":
@@ -326,15 +339,17 @@ func can_demolish_building(instance_id: int) -> bool:
 	var building := get_building(instance_id)
 	if building.is_empty():
 		return false
+	if bool(building.get("upgrading", false)):
+		return false
 	if bool(building.get("completed", false)) and StringName(building.get("type", "")) == &"disciple_quarters":
 		var definition := BuildingCatalog.get_data(&"disciple_quarters")
-		var capacity_after := get_disciple_capacity() - int(definition.get("disciple_capacity", 0))
+		var capacity_after := get_disciple_capacity() - int(definition.get("disciple_capacity", 0)) * int(building.get("level", 1))
 		var reserved_population := total_disciples + (1 if is_recruiting() else 0)
 		if reserved_population > capacity_after:
 			return false
 	if bool(building.get("completed", false)) and StringName(building.get("type", "")) == &"training_ground":
 		var definition := BuildingCatalog.get_data(&"training_ground")
-		var training_capacity_after := get_training_capacity() - int(definition.get("training_capacity", 0))
+		var training_capacity_after := get_training_capacity() - int(definition.get("training_capacity", 0)) * int(building.get("level", 1))
 		if training_disciples > training_capacity_after:
 			return false
 	return true
@@ -359,6 +374,34 @@ func demolish_building(instance_id: int) -> Dictionary:
 		buildings_changed.emit()
 		return refund
 	return {}
+
+
+func can_upgrade_building(instance_id: int) -> bool:
+	var building := get_building(instance_id)
+	if building.is_empty() or not bool(building.get("completed", false)) or bool(building.get("upgrading", false)):
+		return false
+	var level := int(building.get("level", 1))
+	if level >= BuildingCatalog.MAX_BUILDING_LEVEL:
+		return false
+	var cost := BuildingCatalog.get_upgrade_cost(StringName(building.get("type", "")), level + 1)
+	return can_afford(cost)
+
+
+func start_building_upgrade(instance_id: int) -> bool:
+	if not can_upgrade_building(instance_id):
+		return false
+	var building := get_building(instance_id)
+	var target_level := int(building.get("level", 1)) + 1
+	var building_type := StringName(building.get("type", ""))
+	if not spend_resources(BuildingCatalog.get_upgrade_cost(building_type, target_level)):
+		return false
+	var upgrade_time := BuildingCatalog.get_upgrade_time(building_type, target_level)
+	building["upgrading"] = true
+	building["upgrade_remaining"] = upgrade_time
+	building["upgrade_time"] = upgrade_time
+	building["target_level"] = target_level
+	buildings_changed.emit()
+	return true
 
 
 func get_sustenance_multiplier() -> float:
@@ -456,6 +499,7 @@ func start_construction(building_type: StringName, cell: Vector2i) -> bool:
 		"build_time": float(definition["build_time"]),
 		"completed": false,
 		"level": 1,
+		"upgrading": false,
 	})
 	next_building_id += 1
 	buildings_changed.emit()
@@ -465,12 +509,17 @@ func start_construction(building_type: StringName, cell: Vector2i) -> bool:
 func process_construction(delta: float) -> void:
 	var changed := false
 	for building: Dictionary in buildings:
-		if bool(building["completed"]):
-			continue
-		building["remaining"] = maxf(0.0, float(building["remaining"]) - delta)
-		if is_zero_approx(float(building["remaining"])):
-			building["completed"] = true
-		changed = true
+		if not bool(building["completed"]):
+			building["remaining"] = maxf(0.0, float(building["remaining"]) - delta)
+			if is_zero_approx(float(building["remaining"])):
+				building["completed"] = true
+			changed = true
+		elif bool(building.get("upgrading", false)):
+			building["upgrade_remaining"] = maxf(0.0, float(building.get("upgrade_remaining", 0.0)) - delta)
+			if is_zero_approx(float(building["upgrade_remaining"])):
+				building["level"] = int(building.get("target_level", int(building.get("level", 1)) + 1))
+				building["upgrading"] = false
+			changed = true
 	if changed:
 		buildings_changed.emit()
 
