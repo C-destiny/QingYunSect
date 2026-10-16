@@ -2,6 +2,7 @@ extends Control
 
 signal resource_selected(resource_data: Dictionary)
 signal placement_requested(building_type: StringName, cell: Vector2i)
+signal building_selected(building: Dictionary)
 
 const GRID_SIZE := Vector2i(8, 6)
 const TILE_SIZE := Vector2(104.0, 52.0)
@@ -70,6 +71,14 @@ func _gui_input(event: InputEvent) -> void:
 				placement_requested.emit(placement_building, clicked_cell)
 			accept_event()
 			return
+		for building: Dictionary in GameState.buildings:
+			var building_cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
+			if building_cell == clicked_cell:
+				selected_cell = clicked_cell
+				building_selected.emit(building)
+				queue_redraw()
+				accept_event()
+				return
 		for resource_data: Dictionary in resource_nodes:
 			if resource_data["cell"] == clicked_cell:
 				selected_cell = clicked_cell
@@ -87,6 +96,11 @@ func start_placement(building_type: StringName) -> void:
 
 func cancel_placement() -> void:
 	placement_building = &""
+	queue_redraw()
+
+
+func clear_selection() -> void:
+	selected_cell = Vector2i(-1, -1)
 	queue_redraw()
 
 

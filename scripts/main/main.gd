@@ -19,10 +19,14 @@ extends Control
 @onready var cancel_build_button: Button = %CancelBuildButton
 @onready var recruit_button: Button = %RecruitButton
 @onready var recruitment_status: Label = %RecruitmentStatus
+@onready var building_actions: HBoxContainer = %BuildingActions
+@onready var demolish_button: Button = %DemolishButton
+@onready var building_action_status: Label = %BuildingActionStatus
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
 var build_buttons: Dictionary = {}
+var selected_building_instance: int = 0
 
 
 func _ready() -> void:
@@ -33,6 +37,7 @@ func _ready() -> void:
 	GameState.sustenance_changed.connect(_refresh_resources)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
+	sect_map.building_selected.connect(_on_building_selected)
 	assign_button.pressed.connect(_assign_disciple)
 	unassign_button.pressed.connect(_unassign_disciple)
 	save_button.pressed.connect(_save_game)
@@ -51,6 +56,7 @@ func _ready() -> void:
 		build_buttons[building_id].pressed.connect(_start_building_placement.bind(building_id))
 	cancel_build_button.pressed.connect(_cancel_building_placement)
 	recruit_button.pressed.connect(_start_recruitment)
+	demolish_button.pressed.connect(_demolish_selected_building)
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
@@ -100,12 +106,75 @@ func _refresh_resources() -> void:
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
 	selected_resource = resource_data
+	selected_building_instance = 0
+	building_actions.visible = false
+	assignment_status.visible = true
+	production_status.visible = true
+	assign_button.visible = true
+	unassign_button.visible = true
 	selection_name.text = str(resource_data["name"])
 	selection_description.text = "%s\n\n储量：%d" % [
 		resource_data["description"],
 		resource_data["reserve"],
 	]
 	_refresh_assignment()
+
+
+func _on_building_selected(building: Dictionary) -> void:
+	selected_resource = {}
+	selected_building_instance = int(building.get("instance_id", 0))
+	assignment_status.visible = false
+	production_status.visible = false
+	assign_button.visible = false
+	unassign_button.visible = false
+	building_actions.visible = true
+	_refresh_selected_building()
+
+
+func _refresh_selected_building() -> void:
+	if selected_building_instance <= 0:
+		return
+	var building := GameState.get_building(selected_building_instance)
+	if building.is_empty():
+		selected_building_instance = 0
+		building_actions.visible = false
+		sect_map.clear_selection()
+		return
+	var building_type := StringName(building.get("type", ""))
+	var definition := BuildingCatalog.get_data(building_type)
+	var completed := bool(building.get("completed", false))
+	selection_name.text = "%s · 等级 %d" % [definition["name"], int(building.get("level", 1))]
+	var total_effect := _get_building_total_effect_text(building_type)
+	selection_description.text = "%s\n\n状态：%s\n同类总效果：%s" % [
+		definition["description"],
+		"已完工" if completed else "施工中（%.1f秒）" % float(building["remaining"]),
+		total_effect,
+	]
+	demolish_button.disabled = not GameState.can_demolish_building(selected_building_instance)
+	building_action_status.text = "返还50%建造资源" if not demolish_button.disabled else "拆除后人口将超过上限"
+
+
+func _get_building_total_effect_text(building_type: StringName) -> String:
+	var count := GameState.get_completed_building_count(building_type)
+	var definition := BuildingCatalog.get_data(building_type)
+	if definition.has("disciple_capacity"):
+		return "%d座生效 · 弟子上限 +%d" % [count, count * int(definition["disciple_capacity"])]
+	if definition.has("production_bonus"):
+		return "%d座生效 · 采集效率 +%.0f%%" % [count, float(count) * float(definition["production_bonus"]) * 100.0]
+	return "%d座生效" % count
+
+
+func _demolish_selected_building() -> void:
+	var refund := GameState.demolish_building(selected_building_instance)
+	if refund.is_empty():
+		building_action_status.text = "当前无法拆除该建筑"
+		return
+	selected_building_instance = 0
+	building_actions.visible = false
+	selection_name.text = "建筑已拆除"
+	selection_description.text = "返还木材%d、灵石%d。" % [int(refund.get("wood", 0)), int(refund.get("spirit_stone", 0))]
+	sect_map.clear_selection()
+	SaveManager.save_game()
 
 
 func _assign_disciple() -> void:
@@ -238,6 +307,7 @@ func _refresh_buildings() -> void:
 	sect_map.queue_redraw()
 	_refresh_assignment()
 	_refresh_recruitment()
+	_refresh_selected_building()
 	var constructing := 0
 	for building: Dictionary in GameState.buildings:
 		if not bool(building["completed"]):

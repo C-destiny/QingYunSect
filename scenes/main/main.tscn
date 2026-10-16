@@ -294,6 +294,27 @@ theme_override_font_sizes/font_size = 15
 text = "选择建筑开始建造"
 autowrap_mode = 2
 
+[node name="BuildingActions" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Info"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BuildingActionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Info/BuildingActions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.75, 0.69, 0.58, 1)
+theme_override_font_sizes/font_size = 14
+text = "返还50%建造资源"
+autowrap_mode = 2
+
+[node name="DemolishButton" type="Button" parent="Layout/Body/Sidebar/Margin/Info/BuildingActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 40)
+layout_mode = 2
+text = "拆除建筑"
+
 [node name="Spacer" type="Control" parent="Layout/Body/Sidebar/Margin/Info"]
 layout_mode = 2
 size_flags_vertical = 3

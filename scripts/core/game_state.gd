@@ -110,6 +110,55 @@ func get_production_multiplier(resource_id: StringName) -> float:
 	return multiplier
 
 
+func get_building(instance_id: int) -> Dictionary:
+	for building: Dictionary in buildings:
+		if int(building.get("instance_id", 0)) == instance_id:
+			return building
+	return {}
+
+
+func get_completed_building_count(building_type: StringName) -> int:
+	var count := 0
+	for building: Dictionary in buildings:
+		if bool(building.get("completed", false)) and StringName(building.get("type", "")) == building_type:
+			count += 1
+	return count
+
+
+func can_demolish_building(instance_id: int) -> bool:
+	var building := get_building(instance_id)
+	if building.is_empty():
+		return false
+	if bool(building.get("completed", false)) and StringName(building.get("type", "")) == &"disciple_quarters":
+		var definition := BuildingCatalog.get_data(&"disciple_quarters")
+		var capacity_after := get_disciple_capacity() - int(definition.get("disciple_capacity", 0))
+		var reserved_population := total_disciples + (1 if is_recruiting() else 0)
+		if reserved_population > capacity_after:
+			return false
+	return true
+
+
+func demolish_building(instance_id: int) -> Dictionary:
+	if not can_demolish_building(instance_id):
+		return {}
+	for index: int in range(buildings.size()):
+		var building: Dictionary = buildings[index]
+		if int(building.get("instance_id", 0)) != instance_id:
+			continue
+		var definition := BuildingCatalog.get_data(StringName(building.get("type", "")))
+		var refund: Dictionary = {}
+		var cost: Dictionary = definition.get("cost", {})
+		for resource_id: Variant in cost:
+			var amount := floori(float(cost[resource_id]) * 0.5)
+			refund[String(resource_id)] = amount
+			resources[String(resource_id)] = get_resource_amount(StringName(resource_id)) + amount
+		buildings.remove_at(index)
+		resources_changed.emit()
+		buildings_changed.emit()
+		return refund
+	return {}
+
+
 func get_sustenance_multiplier() -> float:
 	return 1.0 if get_resource_amount(&"food") > 0 else HUNGRY_PRODUCTION_MULTIPLIER
 
@@ -195,6 +244,7 @@ func start_construction(building_type: StringName, cell: Vector2i) -> bool:
 		"remaining": float(definition["build_time"]),
 		"build_time": float(definition["build_time"]),
 		"completed": false,
+		"level": 1,
 	})
 	next_building_id += 1
 	buildings_changed.emit()
