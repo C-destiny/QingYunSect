@@ -1,0 +1,27 @@
+{
+  "title": "青云宗开发计划",
+  "owner": "C-destiny",
+  "repository": "C-destiny/QingYunSect",
+  "visibility": "private",
+  "remote_status": "NOT_CREATED",
+  "url": null,
+  "layout": "board",
+  "group_by": "Status",
+  "status_options": [
+    "待办",
+    "开发中",
+    "待验收",
+    "已完成",
+    "阻塞",
+    "暂缓",
+    "取消"
+  ],
+  "fields": [
+    "Status",
+    "版本",
+    "优先级"
+  ],
+  "items": "使用QYS-V04-001～010真实Issue；不创建重复草稿",
+  "automation": "不可因编码完成、PR合并、Issue关闭自动授予ACCEPTED；完成须负责人证据",
+  "reason": "连接器无Project接口、gh未安装、浏览器连续超时"
+}

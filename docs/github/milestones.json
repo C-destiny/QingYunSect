@@ -1,0 +1,137 @@
+{
+  "repository": "C-destiny/QingYunSect",
+  "remote_status": "NOT_CREATED",
+  "reason": "连接器无Milestone接口、gh未安装、浏览器连续超时",
+  "milestones": [
+    {
+      "version": "V0.4",
+      "title": "V0.4：战斗系统完善与经营联动",
+      "description": "状态：规划中；未验收。\n\n目标：把V0.3的基础自动战斗完善为可持续运行、可理解、可稳定结算的挂机闯关系统。\n\n完成定义：\n- 玩家能够清楚查看自动战斗过程和结果。\n- 自动战斗可以持续进行而不产生异常奖励。\n- 队伍、岗位和战斗状态一致。\n- 读取V0.3存档后可以继续游戏。\n- 战斗奖励正确进入宗门资源库存。\n- Windows测试版运行正常。\n\n存档影响：\n**预计：可能涉及。**\n\n如果新增战斗状态、统计或配置字段，需要进行兼容性迁移。\n\n不允许直接丢弃V0.3战斗存档数据。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "把V0.3的基础自动战斗完善为可持续运行、可理解、可稳定结算的挂机闯关系统。"
+    },
+    {
+      "version": "V0.5",
+      "title": "V0.5：离线收益与长期挂机",
+      "description": "状态：规划中；未验收。\n\n目标：让宗门经营和自动闯关在玩家离开游戏后仍能按照明确规则产生收益。\n\n完成定义：\n- 退出游戏后重新进入，可以得到正确的离线结算。\n- 离线收益与现有生产、战斗规则一致。\n- 不因重复加载存档而重复发奖。\n- 离线建筑计时正确。\n- V0.3及之后的有效存档能够继续使用。\n\n存档影响：\n**预计：是。**\n\n可能增加：\n\n- 上次有效结算时间。\n- 离线结算状态。\n- 待领取收益。\n- 离线战斗相关状态。\n\n具体字段由Codex结合现有存档结构设计。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "让宗门经营和自动闯关在玩家离开游戏后仍能按照明确规则产生收益。"
+    },
+    {
+      "version": "V0.6",
+      "title": "V0.6：角色养成与装备系统",
+      "description": "状态：规划中；未验收。\n\n目标：在现有弟子境界成长基础上，建立更丰富的角色属性、职业和装备成长体系。\n\n完成定义：\n- 至少两种职业能够参与现有自动战斗。\n- 装备更换能够正确影响角色属性。\n- 角色成长能够影响战斗结果。\n- 装备与角色状态可以正确存档。\n- 原有弟子与宗门数据不丢失。\n- 不破坏现有岗位互斥规则。\n\n存档影响：\n**预计：是，且属于重要结构变更。**\n\n可能新增角色职业、装备实例、装备库存、角色与装备关联等数据。\n\n必须先制定迁移方案，再修改存档结构。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "在现有弟子境界成长基础上，建立更丰富的角色属性、职业和装备成长体系。"
+    },
+    {
+      "version": "V0.7",
+      "title": "V0.7：宗门经营扩展与系统整合",
+      "description": "状态：规划中；未验收。\n\n目标：让建筑、资源、宗门等级、角色培养和挂机奖励形成更完整、更有策略性的成长循环。\n\n完成定义：\n- 宗门经营与角色成长能够相互促进。\n- 资源产出和消耗不存在明显的无限刷取漏洞。\n- 扩展地图后原有建筑数据仍然正确。\n- 玩家能够完成连续的宗门升级目标。\n- 存档兼容性测试通过。\n\n存档影响：\n**预计：是。**\n\n尤其是地图尺寸、建筑位置、资源类型和宗门等级上限变更，必须进行专项迁移测试。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "让建筑、资源、宗门等级、角色培养和挂机奖励形成更完整、更有策略性的成长循环。"
+    },
+    {
+      "version": "V0.8",
+      "title": "V0.8：单人肉鸽战斗原型",
+      "description": "状态：规划中；未验收。\n\n目标：开发与现有自动挂机不同的、由玩家主动操作的俯视角肉鸽战斗系统。\n\n完成定义：\n- 可以控制角色在竞技场移动和战斗。\n- 怪物能够生成、追踪、攻击和死亡。\n- 玩家可以获得并选择局内强化。\n- 可以完成一局简化肉鸽战斗。\n- 战斗结束后不会破坏角色和宗门数据。\n\n存档影响：\n**预计：是。**\n\n可能新增：\n\n- 副本参与状态。\n- 角色占用状态。\n- 副本统计。\n- 奖励记录。\n\n第一阶段不要求保存正在进行中的完整肉鸽战局。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "开发与现有自动挂机不同的、由玩家主动操作的俯视角肉鸽战斗系统。"
+    },
+    {
+      "version": "V0.9",
+      "title": "V0.9：单人肉鸽完整闭环",
+      "description": "状态：规划中；未验收。\n\n目标：把肉鸽原型扩展为能够持续挑战、获得奖励并反哺宗门的完整单人副本玩法。\n\n完成定义：\n- 玩家可以完整进行一局约15分钟的单人副本。\n- 随机强化能够明显影响战斗方式。\n- 至少存在一个完整Boss挑战流程。\n- 胜负结算正确。\n- 奖励能够回流宗门或角色成长。\n- 副本退出后角色状态恢复正确。\n- 单人状态下游戏核心系统形成完整闭环。\n\n存档影响：\n**预计：是。**\n\n新增副本记录、奖励和成长统计等持久化信息。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "把肉鸽原型扩展为能够持续挑战、获得奖励并反哺宗门的完整单人副本玩法。"
+    },
+    {
+      "version": "V0.10",
+      "title": "V0.10：多人联机技术验证",
+      "description": "状态：规划中；未验收。\n\n目标：验证现有单人肉鸽架构是否能够支持稳定的双人实时合作。\n\n完成定义：\n- 两台不同Windows电脑可以连接同一测试房间。\n- 双方能够看到对方移动。\n- 基础战斗状态保持合理一致。\n- 常见连接失败不会造成游戏崩溃。\n- 形成正式联机架构决策记录。\n\n存档影响：\n**预计：不一定。**\n\n技术实验应尽量与正式存档隔离。\n\n如果新增持久化联机统计或房间信息，需要单独评估。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "验证现有单人肉鸽架构是否能够支持稳定的双人实时合作。"
+    },
+    {
+      "version": "V0.11",
+      "title": "V0.11：双人合作肉鸽",
+      "description": "状态：规划中；未验收。\n\n目标：将单人肉鸽扩展为可以稳定完成完整副本的双人合作玩法。\n\n完成定义：\n- 两名玩家能够共同开始副本。\n- 能够合作完成完整副本。\n- 技能、怪物、生命和胜负状态同步合理。\n- 双方获得正确奖励。\n- 常见断线情形不会损坏存档。\n\n存档影响：\n**预计：可能涉及。**\n\n需要评估多人奖励记录和角色状态持久化。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "将单人肉鸽扩展为可以稳定完成完整副本的双人合作玩法。"
+    },
+    {
+      "version": "V0.12",
+      "title": "V0.12：四人合作与联机完善",
+      "description": "状态：规划中；未验收。\n\n目标：把双人合作扩展至最多四人，并完善联机稳定性与多人平衡。\n\n完成定义：\n- 四名玩家能够在不同Windows电脑上合作通关。\n- 不存在明显的奖励重复发放问题。\n- 不存在严重的角色状态错乱。\n- 常见网络异常有合理处理结果。\n- 单人模式不因加入联机而失效。\n\n存档影响：\n**预计：可能涉及。**\n\n如多人奖励和角色状态需要新增字段，应保持旧存档兼容。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "把双人合作扩展至最多四人，并完善联机稳定性与多人平衡。"
+    },
+    {
+      "version": "V0.13",
+      "title": "V0.13：正式内容扩展",
+      "description": "状态：规划中；未验收。\n\n目标：在核心玩法稳定的基础上，补足V1.0所需的职业、建筑、装备、关卡和副本内容。\n\n完成定义：\n- 各系统具备足够支撑持续游玩的内容。\n- 新增内容遵守现有数据结构和数值规则。\n- 不因扩充内容破坏原有存档。\n- 不存在明显的职业或装备失衡。\n- 新玩家可以持续获得明确成长目标。\n\n存档影响：\n**预计：是。**\n\n新增内容可能涉及装备、角色、建筑、关卡和奖励配置。\n\n优先采用数据驱动扩展，减少对存档结构的修改。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "在核心玩法稳定的基础上，补足V1.0所需的职业、建筑、装备、关卡和副本内容。"
+    },
+    {
+      "version": "V0.14",
+      "title": "V0.14：美术、音效与用户体验完善",
+      "description": "状态：规划中；未验收。\n\n目标：将功能完整的测试游戏打磨为具有统一国风视觉风格和良好操作体验的作品。\n\n完成定义：\n- 游戏整体视觉风格统一。\n- 关键操作具备清晰反馈。\n- 新玩家能够理解基础玩法。\n- 常用分辨率下界面可用。\n- 两台开发电脑均能稳定运行。\n\n存档影响：\n**预计：可能涉及。**\n\n设置项可能需要独立配置存储。\n\n原则上不应因为美术替换而修改核心游戏存档。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "将功能完整的测试游戏打磨为具有统一国风视觉风格和良好操作体验的作品。"
+    },
+    {
+      "version": "V0.15",
+      "title": "V0.15：完整测试与发布准备",
+      "description": "状态：规划中；未验收。\n\n目标：通过功能、存档、性能、联机和Windows导出测试，使游戏达到正式交付标准。\n\n完成定义：\n- 不存在阻断主要玩法的严重缺陷。\n- 核心资源与奖励结算正确。\n- 旧存档迁移通过测试。\n- Windows版本可以独立运行。\n- 多人合作达到可接受稳定性。\n- 朋友能够正常安装或解压运行并试玩。\n\n存档影响：\n**原则上不新增重大结构变更。**\n\n此阶段以修复、迁移验证和稳定性为主。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "通过功能、存档、性能、联机和Windows导出测试，使游戏达到正式交付标准。"
+    },
+    {
+      "version": "V1.0",
+      "title": "V1.0：完整游戏交付",
+      "description": "状态：规划中；未验收。\n\n目标：交付一款可以单人长期经营宗门，也可以最多四人合作挑战肉鸽副本的完整Windows游戏。\n\n完成定义：\n必须同时满足：\n\n1. 宗门经营、角色培养、挂机和肉鸽形成完整循环。\n2. 单人模式能够独立游玩。\n3. 最多四人可以合作完成副本。\n4. 核心存档可靠。\n5. Windows正式版可正常运行。\n6. 主要功能经过测试。\n7. 项目负责人确认可以交付朋友游玩。\n\n存档影响：\n**正式发布时锁定V1.0存档规范。**\n\n之后的更新必须遵守版本迁移策略。\n\n以 PROJECT_DEVELOPMENT_PLAN.md 对应章节为准。只有负责人明确验收才能关闭 Milestone。后续版本仅概要，不创建细碎 Issues。",
+      "state": "open",
+      "github_number": null,
+      "github_url": null,
+      "sync_status": "NOT_CREATED",
+      "goal": "交付一款可以单人长期经营宗门，也可以最多四人合作挑战肉鸽副本的完整Windows游戏。"
+    }
+  ]
+}
