@@ -40,8 +40,13 @@ const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 @onready var join_battle_button: Button = %JoinBattleButton
 @onready var leave_battle_button: Button = %LeaveBattleButton
 @onready var battle_stage_selector: OptionButton = %BattleStageSelector
+@onready var battle_progress_summary: Label = %BattleProgressSummary
+@onready var battle_party_members: Label = %BattlePartyMembers
 @onready var battle_stats: Label = %BattleStats
+@onready var enemy_battle_info: Label = %EnemyBattleInfo
+@onready var player_battle_hp_text: Label = %PlayerBattleHpText
 @onready var player_battle_hp: ProgressBar = %PlayerBattleHp
+@onready var enemy_battle_hp_text: Label = %EnemyBattleHpText
 @onready var enemy_battle_hp: ProgressBar = %EnemyBattleHp
 @onready var battle_status: Label = %BattleStatus
 @onready var battle_toggle_button: Button = %BattleToggleButton
@@ -63,6 +68,7 @@ func _ready() -> void:
 	GameState.sustenance_changed.connect(_refresh_resources)
 	GameState.training_changed.connect(_refresh_training)
 	GameState.disciples_changed.connect(_refresh_disciple_roster)
+	GameState.disciples_changed.connect(_refresh_battle)
 	GameState.sect_progress_changed.connect(_refresh_sect_progress)
 	GameState.buildings_changed.connect(_refresh_sect_progress)
 	GameState.disciples_changed.connect(_refresh_sect_progress)
@@ -597,17 +603,41 @@ func _toggle_battle() -> void:
 
 func _refresh_battle() -> void:
 	var names := PackedStringArray()
+	var member_lines := PackedStringArray()
 	for disciple_id: int in GameState.battle_party:
 		var disciple := GameState.get_disciple(disciple_id)
 		if not disciple.is_empty():
-			names.append(str(disciple.get("name", "无名弟子")))
+			var disciple_name := str(disciple.get("name", "无名弟子"))
+			var realm_level := int(disciple.get("realm_level", 1))
+			var member_stats := GameState.get_disciple_battle_stats(disciple_id)
+			names.append(disciple_name)
+			member_lines.append("• %s · 炼气%d层 · 生命%.0f 攻击%.0f 防御%.0f · 参战中" % [
+				disciple_name, realm_level, member_stats["hp"], member_stats["attack"], member_stats["defense"],
+			])
 	battle_party_status.text = "战斗队伍 %d/%d：%s" % [GameState.battle_party.size(), BattleCatalogData.MAX_PARTY_SIZE, "、".join(names) if not names.is_empty() else "尚未编成"]
+	battle_party_members.text = "\n".join(member_lines) if not member_lines.is_empty() else "暂无参战弟子；请从弟子名册选择成员入队。"
 	var party := GameState.get_battle_party_stats()
-	battle_stats.text = "队伍属性：生命%.0f · 攻击%.0f · 防御%.0f · 已胜%d场" % [party["hp"], party["attack"], party["defense"], GameState.battle_victories]
+	battle_stats.text = "队伍合计：生命%.0f · 攻击%.0f · 防御%.0f · 已胜%d场\n生命为队伍共用，不采用逐人受击。" % [party["hp"], party["attack"], party["defense"], GameState.battle_victories]
+	var stage: Dictionary = BattleCatalogData.get_stage(GameState.selected_battle_stage)
+	var active_stage_text := "当前未挑战"
+	if GameState.get_battle_phase() == &"fighting":
+		active_stage_text = "正在挑战 %d.%s" % [GameState.selected_battle_stage, stage["name"]]
+	elif GameState.get_battle_phase() == &"repeat_wait":
+		active_stage_text = "等待重战 %d.%s" % [GameState.selected_battle_stage, stage["name"]]
+	battle_progress_summary.text = "选中关卡 %d.%s · %s\n已解锁 1-%d · 已通关至 %d/%d" % [
+		GameState.selected_battle_stage, stage["name"], active_stage_text,
+		GameState.highest_unlocked_stage, GameState.highest_cleared_stage, BattleCatalogData.get_stage_count(),
+	]
+	enemy_battle_info.text = "敌方：%s · 生命%.0f · 攻击%.0f · 防御%.0f\n胜利奖励：%s" % [
+		stage["enemy"], stage["hp"], stage["attack"], stage["defense"],
+		BattleCatalogData.get_reward_text(GameState.selected_battle_stage),
+	]
 	player_battle_hp.max_value = maxf(1.0, GameState.battle_player_max_hp)
 	player_battle_hp.value = GameState.battle_player_hp
 	enemy_battle_hp.max_value = maxf(1.0, GameState.battle_enemy_max_hp)
 	enemy_battle_hp.value = GameState.battle_enemy_hp
+	player_battle_hp_text.text = "我方共用生命：%.0f / %.0f" % [GameState.battle_player_hp, GameState.battle_player_max_hp]
+	enemy_battle_hp_text.text = "敌方生命：%.0f / %.0f" % [GameState.battle_enemy_hp, GameState.battle_enemy_max_hp]
 	player_battle_hp.tooltip_text = "我方生命 %.0f / %.0f" % [GameState.battle_player_hp, GameState.battle_player_max_hp]
 	enemy_battle_hp.tooltip_text = "敌方生命 %.0f / %.0f" % [GameState.battle_enemy_hp, GameState.battle_enemy_max_hp]
 	battle_status.text = GameState.battle_message

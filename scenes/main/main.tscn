@@ -142,7 +142,7 @@ mouse_filter = 0
 script = ExtResource("2_map")
 
 [node name="Sidebar" type="PanelContainer" parent="Layout/Body"]
-custom_minimum_size = Vector2(330, 0)
+custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Layout/Body/Sidebar"]
@@ -369,6 +369,22 @@ unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 38)
 
+[node name="BattleProgressSummary" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.75, 0.43, 1)
+theme_override_font_sizes/font_size = 14
+text = "选中关卡 1.山门试炼 · 当前未挑战\n已解锁 1-1 · 已通关至 0/5"
+autowrap_mode = 2
+
+[node name="BattlePartyMembers" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "暂无参战弟子；请从弟子名册选择成员入队。"
+autowrap_mode = 2
+
 [node name="BattleStats" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -377,11 +393,31 @@ theme_override_font_sizes/font_size = 14
 text = "队伍属性：生命0 · 攻击0 · 防御0"
 autowrap_mode = 2
 
+[node name="EnemyBattleInfo" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.67, 0.55, 1)
+theme_override_font_sizes/font_size = 14
+text = "敌方：山野狼群 · 生命120 · 攻击9 · 防御2\n胜利奖励：木材20、灵谷10"
+autowrap_mode = 2
+
+[node name="PlayerBattleHpText" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "我方共用生命：0 / 0"
+
 [node name="PlayerBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 18)
 show_percentage = false
+
+[node name="EnemyBattleHpText" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "敌方生命：0 / 0"
 
 [node name="EnemyBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
