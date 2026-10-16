@@ -193,12 +193,15 @@ func set_disciple_job(disciple_id: int, job: StringName) -> bool:
 		return false
 	var disciple := get_disciple(disciple_id)
 	var current_job := StringName(disciple.get("job", "idle"))
+	if current_job == job:
+		return true
+	var party_changed := current_job == &"combat" or job == &"combat"
 	if current_job == &"combat":
 		battle_party.erase(disciple_id)
 	if job == &"combat" and disciple_id not in battle_party:
 		battle_party.append(disciple_id)
 	disciple["job"] = String(job)
-	if battle_running:
+	if party_changed and (battle_running or auto_battle_enabled):
 		stop_auto_battle("队伍发生变化，战斗已停止")
 	_sync_aggregate_state_from_disciples()
 	assignments_changed.emit()
@@ -206,6 +209,30 @@ func set_disciple_job(disciple_id: int, job: StringName) -> bool:
 	disciples_changed.emit()
 	battle_changed.emit()
 	return true
+
+
+func get_combat_job_disciple_ids() -> Array[int]:
+	var result: Array[int] = []
+	for disciple: Dictionary in disciples:
+		if StringName(disciple.get("job", "idle")) == &"combat":
+			result.append(int(disciple.get("id", 0)))
+	result.sort()
+	return result
+
+
+func is_battle_party_consistent() -> bool:
+	if battle_party.size() > BattleCatalogData.MAX_PARTY_SIZE:
+		return false
+	var party_ids := battle_party.duplicate()
+	party_ids.sort()
+	for index: int in range(1, party_ids.size()):
+		if party_ids[index] == party_ids[index - 1]:
+			return false
+	for disciple_id: int in party_ids:
+		var disciple := get_disciple(disciple_id)
+		if disciple.is_empty() or StringName(disciple.get("job", "idle")) != &"combat":
+			return false
+	return party_ids == get_combat_job_disciple_ids()
 
 
 func get_site_workforce_power(site_id: StringName) -> float:
@@ -276,7 +303,7 @@ func get_battle_phase() -> StringName:
 func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
 	if battle_running:
 		return false
-	if battle_party.is_empty() or not select_battle_stage(stage_id):
+	if battle_party.is_empty() or not is_battle_party_consistent() or not select_battle_stage(stage_id):
 		battle_message = "需要至少一名战斗弟子，且关卡必须已解锁"
 		battle_changed.emit()
 		return false
@@ -305,6 +332,9 @@ func stop_auto_battle(message: String = "已停止自动战斗") -> void:
 
 func process_battle(delta: float) -> bool:
 	if delta <= 0.0:
+		return false
+	if (battle_running or auto_battle_enabled) and (battle_party.is_empty() or not is_battle_party_consistent()):
+		stop_auto_battle("战斗队伍数据异常，自动战斗已停止")
 		return false
 	if not battle_running:
 		if auto_battle_enabled and battle_restart_cooldown > 0.0:
@@ -820,18 +850,22 @@ func import_save_data(data: Dictionary) -> bool:
 				disciple["cultivation"] = cultivation_points / float(recipients.size())
 	_sync_aggregate_state_from_disciples()
 	battle_party.clear()
-	var loaded_party: Array = data.get("battle_party", [])
-	for raw_id: Variant in loaded_party:
-		var disciple_id := int(raw_id)
-		var disciple := get_disciple(disciple_id)
-		if disciple.is_empty() or StringName(disciple.get("job", "idle")) != &"combat" or disciple_id in battle_party:
+	if data.has("battle_party"):
+		var loaded_party_value: Variant = data["battle_party"]
+		if not loaded_party_value is Array:
 			return false
-		battle_party.append(disciple_id)
-	if loaded_party.is_empty():
+		var loaded_party: Array = loaded_party_value
+		for raw_id: Variant in loaded_party:
+			var disciple_id := int(raw_id)
+			var disciple := get_disciple(disciple_id)
+			if disciple.is_empty() or StringName(disciple.get("job", "idle")) != &"combat" or disciple_id in battle_party:
+				return false
+			battle_party.append(disciple_id)
+	else:
 		for disciple: Dictionary in disciples:
 			if StringName(disciple.get("job", "idle")) == &"combat":
 				battle_party.append(int(disciple["id"]))
-	if battle_party.size() > BattleCatalogData.MAX_PARTY_SIZE:
+	if not is_battle_party_consistent():
 		return false
 	if total_disciples != saved_total or training_disciples > get_training_capacity():
 		return false
