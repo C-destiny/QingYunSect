@@ -2,12 +2,11 @@
 
 快照日期：2026-10-16。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
 
-- 当前历史已完成版本：V0.3（1567995 / v0.3.0）；V0.1、V0.2、V0.3依负责人本轮明确要求归档已完成。
-- 目标版本：V0.4 战斗系统完善与经营联动，状态：规划中。
-- 当前任务：QYS-V04-007～010合并开发已完成，正在执行版本级验证并准备负责人验收；GitHub里程碑/看板创建仍受工具阻塞。
-- 本轮授权：负责人明确验收QYS-V04-006，并要求一起完成QYS-V04-007～010。
-- V0.4批准范围共10项（含核验和版本交付），当前ACCEPTED为6/10；QYS-V04-007～010编码测试完成后仍保持待验收，不能提前计入完成。
-- V0.5～V1.0仅路线和里程碑草案，未创建细碎任务。
+- 当前历史已完成版本：V0.4；负责人于2026-10-17明确确认整体验收完毕，QYS-V04-001～010均ACCEPTED。
+- 目标版本：V0.5 离线收益与长期挂机，已批准开发。
+- 当前任务：QYS-V05-001，时间基线、存档迁移与结算契约。
+- V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
+- V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
 | 编号 / GitHub | 任务 | 优先级 | 本轮快照 |
 |---|---|---|---|
@@ -17,14 +16,14 @@
 | [QYS-V04-004](https://github.com/C-destiny/QingYunSect/issues/4) | 统一战斗奖励入口与重复结算防护 | P0 | 已验收（2026-10-17） |
 | [QYS-V04-005](https://github.com/C-destiny/QingYunSect/issues/5) | V0.3存档迁移与安全恢复 | P0 | 已验收（2026-10-17） |
 | [QYS-V04-006](https://github.com/C-destiny/QingYunSect/issues/6) | 战斗界面与成员敌方关卡信息 | P1 | 已验收（2026-10-17） |
-| [QYS-V04-007](https://github.com/C-destiny/QingYunSect/issues/7) | 结构化战斗日志与胜负奖励展示 | P1 | 待验收 |
-| [QYS-V04-008](https://github.com/C-destiny/QingYunSect/issues/8) | 战斗与宗门生产收益对照及数值确认 | P1 | 待验收；建议保留现行数值 |
-| [QYS-V04-009](https://github.com/C-destiny/QingYunSect/issues/9) | 长时间挂机及跨系统回归测试 | P0 | 待验收；8小时模拟与30分钟真实运行通过 |
-| [QYS-V04-010](https://github.com/C-destiny/QingYunSect/issues/10) | V0.4 Windows交付与负责人版本验收 | P0 | 待验收；候选包已生成 |
+| [QYS-V04-007](https://github.com/C-destiny/QingYunSect/issues/7) | 结构化战斗日志与胜负奖励展示 | P1 | 已验收（2026-10-17） |
+| [QYS-V04-008](https://github.com/C-destiny/QingYunSect/issues/8) | 战斗与宗门生产收益对照及数值确认 | P1 | 已验收（2026-10-17，保留现行数值） |
+| [QYS-V04-009](https://github.com/C-destiny/QingYunSect/issues/9) | 长时间挂机及跨系统回归测试 | P0 | 已验收（2026-10-17） |
+| [QYS-V04-010](https://github.com/C-destiny/QingYunSect/issues/10) | V0.4 Windows交付与负责人版本验收 | P0 | 已验收（2026-10-17） |
 
 ## 下一步
 
-完成长时验证与GitHub状态同步后，提交QYS-V04-007～010及整个V0.4给负责人合并验收。验收确认前不关闭Issue #7～#10、不创建完成标签、不进入V0.5。
+先完成V0.4合并与标签，再在独立V0.5分支实施QYS-V05-001；完成编码和测试后进入待负责人验收。
 
 ## 同步欠账
 
