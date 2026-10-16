@@ -11,6 +11,10 @@ extends Control
 @onready var production_status: Label = %ProductionStatus
 @onready var assign_button: Button = %AssignButton
 @onready var unassign_button: Button = %UnassignButton
+@onready var save_button: Button = %SaveButton
+@onready var load_button: Button = %LoadButton
+@onready var save_status: Label = %SaveStatus
+@onready var autosave_timer: Timer = %AutosaveTimer
 
 var selected_resource: Dictionary = {}
 
@@ -21,9 +25,16 @@ func _ready() -> void:
 	sect_map.resource_selected.connect(_on_resource_selected)
 	assign_button.pressed.connect(_assign_disciple)
 	unassign_button.pressed.connect(_unassign_disciple)
+	save_button.pressed.connect(_save_game)
+	load_button.pressed.connect(_load_game)
+	autosave_timer.timeout.connect(_autosave)
+	SaveManager.save_completed.connect(_on_save_completed)
+	SaveManager.load_completed.connect(_on_load_completed)
+	if SaveManager.has_save():
+		SaveManager.load_game()
 	_refresh_resources()
 	_refresh_assignment()
-	print("青云宗 V0.1：弟子分配与自动采集启动成功")
+	print("青云宗 V0.1：本地存档系统启动成功")
 
 
 func _process(delta: float) -> void:
@@ -79,4 +90,32 @@ func _refresh_assignment() -> void:
 	var total_rate := float(selected_resource["rate"]) * float(workers)
 	assignment_status.text = "已分配 %d 人 · 空闲 %d 人" % [workers, GameState.get_idle_disciples()]
 	production_status.text = "%s +%.0f/分钟" % [selected_resource["resource_name"], total_rate]
+
+
+func _save_game() -> void:
+	SaveManager.save_game()
+
+
+func _load_game() -> void:
+	SaveManager.load_game()
+
+
+func _autosave() -> void:
+	if GameState.assigned_disciples > 0:
+		SaveManager.save_game()
+
+
+func _on_save_completed(success: bool, message: String) -> void:
+	save_status.text = message
+	save_status.modulate = Color(0.55, 0.85, 0.62) if success else Color(0.9, 0.45, 0.4)
+	load_button.disabled = not SaveManager.has_save()
+
+
+func _on_load_completed(success: bool, message: String) -> void:
+	save_status.text = message
+	save_status.modulate = Color(0.55, 0.85, 0.62) if success else Color(0.9, 0.45, 0.4)
+	load_button.disabled = not SaveManager.has_save()
+	if success:
+		_refresh_resources()
+		_refresh_assignment()
 

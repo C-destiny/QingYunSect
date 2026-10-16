@@ -95,6 +95,36 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "弟子  0/0"
 
+[node name="SaveControls" type="VBoxContainer" parent="Layout/Header/Margin/Row"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Buttons" type="HBoxContainer" parent="Layout/Header/Margin/Row/SaveControls"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LoadButton" type="Button" parent="Layout/Header/Margin/Row/SaveControls/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "读取"
+
+[node name="SaveButton" type="Button" parent="Layout/Header/Margin/Row/SaveControls/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "保存"
+
+[node name="SaveStatus" type="Label" parent="Layout/Header/Margin/Row/SaveControls"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
+theme_override_font_sizes/font_size = 13
+text = "本地存档"
+horizontal_alignment = 2
+
 [node name="Body" type="HBoxContainer" parent="Layout"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -194,4 +224,9 @@ theme_override_colors/font_color = Color(0.45, 0.57, 0.54, 1)
 theme_override_font_sizes/font_size = 15
 text = "当前开放区域：8 × 6\n规划地图：40 × 40\n\n提示：每名弟子都会按资源点基础效率持续工作"
 autowrap_mode = 2
+
+[node name="AutosaveTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 10.0
+autostart = true
 

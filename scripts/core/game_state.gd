@@ -83,3 +83,40 @@ func process_production(site_id: StringName, resource_id: StringName, rate_per_m
 		add_resource(resource_id, completed)
 	return completed
 
+
+func export_save_data() -> Dictionary:
+	return {
+		"resources": resources.duplicate(true),
+		"total_disciples": total_disciples,
+		"assignments": assignments.duplicate(true),
+		"production_progress": production_progress.duplicate(true),
+	}
+
+
+func import_save_data(data: Dictionary) -> bool:
+	if not data.has("resources") or not data.has("assignments"):
+		return false
+	var loaded_resources: Dictionary = data["resources"]
+	for resource_id: StringName in RESOURCE_IDS:
+		var key := String(resource_id)
+		if not loaded_resources.has(key):
+			return false
+		resources[key] = maxi(0, int(loaded_resources[key]))
+	total_disciples = maxi(0, int(data.get("total_disciples", 3)))
+	assignments.clear()
+	assigned_disciples = 0
+	var loaded_assignments: Dictionary = data["assignments"]
+	for site_id: Variant in loaded_assignments:
+		var worker_count := maxi(0, int(loaded_assignments[site_id]))
+		assignments[String(site_id)] = worker_count
+		assigned_disciples += worker_count
+	if assigned_disciples > total_disciples:
+		return false
+	production_progress.clear()
+	var loaded_progress: Dictionary = data.get("production_progress", {})
+	for site_id: Variant in loaded_progress:
+		production_progress[String(site_id)] = clampf(float(loaded_progress[site_id]), 0.0, 0.999999)
+	resources_changed.emit()
+	assignments_changed.emit()
+	return true
+
