@@ -30,6 +30,7 @@ func _ready() -> void:
 	GameState.assignments_changed.connect(_refresh_assignment)
 	GameState.buildings_changed.connect(_refresh_buildings)
 	GameState.recruitment_changed.connect(_refresh_recruitment)
+	GameState.sustenance_changed.connect(_refresh_resources)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	assign_button.pressed.connect(_assign_disciple)
@@ -70,17 +71,27 @@ func _process(delta: float) -> void:
 	GameState.process_construction(delta)
 	if GameState.process_recruitment(delta):
 		SaveManager.save_game()
+	GameState.process_disciple_consumption(delta)
 
 
 func _refresh_resources() -> void:
 	wood_label.text = "木材  %d" % GameState.get_resource_amount("wood")
 	spirit_stone_label.text = "灵石  %d" % GameState.get_resource_amount("spirit_stone")
-	food_label.text = "灵谷  %d" % GameState.get_resource_amount("food")
+	var food_rate := _get_food_production_per_minute()
+	var food_net := food_rate - GameState.get_food_consumption_per_minute()
+	var food_amount := GameState.get_resource_amount("food")
+	if food_net < 0.0:
+		var sustain_minutes := float(food_amount) / -food_net
+		food_label.text = "灵谷 %d · 净%.1f/分 · %.1f分" % [food_amount, food_net, sustain_minutes]
+	else:
+		food_label.text = "灵谷 %d · 净+%.1f/分" % [food_amount, food_net]
 	disciples_label.text = "弟子  %d/%d · 上限 %d" % [
 		GameState.assigned_disciples,
 		GameState.total_disciples,
 		GameState.get_disciple_capacity(),
 	]
+	if GameState.get_sustenance_multiplier() < 1.0:
+		disciples_label.text += " · 缺粮"
 	if not build_buttons.is_empty():
 		for building_id: StringName in build_buttons:
 			var definition := BuildingCatalog.get_data(building_id)
@@ -120,14 +131,25 @@ func _refresh_assignment() -> void:
 		return
 	var workers := GameState.get_assignment(selected_resource["site_id"])
 	unassign_button.disabled = workers <= 0
-	var multiplier := GameState.get_production_multiplier(selected_resource["resource_id"])
+	var building_multiplier := GameState.get_production_multiplier(selected_resource["resource_id"])
+	var sustenance_multiplier := GameState.get_sustenance_multiplier()
+	var multiplier := building_multiplier * sustenance_multiplier
 	var total_rate := float(selected_resource["rate"]) * multiplier * float(workers)
 	assignment_status.text = "已分配 %d 人 · 空闲 %d 人" % [workers, GameState.get_idle_disciples()]
 	production_status.text = "%s +%.1f/分钟 · 建筑加成 +%.0f%%" % [
 		selected_resource["resource_name"],
 		total_rate,
-		(multiplier - 1.0) * 100.0,
+		(building_multiplier - 1.0) * 100.0,
 	]
+	if sustenance_multiplier < 1.0:
+		production_status.text += " · 缺粮效率50%"
+
+
+func _get_food_production_per_minute() -> float:
+	for resource_data: Dictionary in sect_map.resource_nodes:
+		if StringName(resource_data["resource_id"]) == &"food":
+			return float(resource_data["rate"]) * float(GameState.get_assignment(resource_data["site_id"])) * GameState.get_production_multiplier(&"food") * GameState.get_sustenance_multiplier()
+	return 0.0
 
 
 func _save_game() -> void:

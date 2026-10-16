@@ -4,11 +4,14 @@ signal resources_changed
 signal assignments_changed
 signal buildings_changed
 signal recruitment_changed
+signal sustenance_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
 const RECRUIT_COST := {"spirit_stone": 25, "food": 20}
 const RECRUIT_TIME := 5.0
+const FOOD_CONSUMPTION_PER_DISCIPLE := 1.0
+const HUNGRY_PRODUCTION_MULTIPLIER := 0.5
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -23,6 +26,7 @@ var production_progress: Dictionary = {}
 var buildings: Array[Dictionary] = []
 var next_building_id: int = 1
 var recruitment_remaining: float = 0.0
+var food_consumption_progress: float = 0.0
 
 
 func get_resource_amount(resource_id: StringName) -> int:
@@ -106,6 +110,32 @@ func get_production_multiplier(resource_id: StringName) -> float:
 	return multiplier
 
 
+func get_sustenance_multiplier() -> float:
+	return 1.0 if get_resource_amount(&"food") > 0 else HUNGRY_PRODUCTION_MULTIPLIER
+
+
+func get_food_consumption_per_minute() -> float:
+	return float(total_disciples) * FOOD_CONSUMPTION_PER_DISCIPLE
+
+
+func process_disciple_consumption(delta: float) -> int:
+	if total_disciples <= 0 or delta <= 0.0:
+		return 0
+	food_consumption_progress += get_food_consumption_per_minute() * delta / 60.0
+	var requested := floori(food_consumption_progress)
+	if requested <= 0:
+		return 0
+	food_consumption_progress -= float(requested)
+	var consumed := mini(requested, get_resource_amount(&"food"))
+	if consumed > 0:
+		resources["food"] = get_resource_amount(&"food") - consumed
+		resources_changed.emit()
+	if consumed < requested:
+		food_consumption_progress = 0.0
+	sustenance_changed.emit()
+	return consumed
+
+
 func get_assignment(site_id: StringName) -> int:
 	return int(assignments.get(site_id, 0))
 
@@ -134,7 +164,7 @@ func process_production(site_id: StringName, resource_id: StringName, rate_per_m
 	if workers <= 0 or rate_per_minute <= 0.0:
 		return 0
 	var progress := float(production_progress.get(site_id, 0.0))
-	progress += rate_per_minute * get_production_multiplier(resource_id) * float(workers) * delta / 60.0
+	progress += rate_per_minute * get_production_multiplier(resource_id) * get_sustenance_multiplier() * float(workers) * delta / 60.0
 	var completed := floori(progress)
 	production_progress[site_id] = progress - float(completed)
 	if completed > 0:
@@ -193,6 +223,7 @@ func export_save_data() -> Dictionary:
 		"buildings": buildings.duplicate(true),
 		"next_building_id": next_building_id,
 		"recruitment_remaining": recruitment_remaining,
+		"food_consumption_progress": food_consumption_progress,
 	}
 
 
@@ -230,11 +261,13 @@ func import_save_data(data: Dictionary) -> bool:
 		buildings.append(building.duplicate(true))
 	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
 	recruitment_remaining = clampf(float(data.get("recruitment_remaining", 0.0)), 0.0, RECRUIT_TIME)
+	food_consumption_progress = clampf(float(data.get("food_consumption_progress", 0.0)), 0.0, 0.999999)
 	if total_disciples + (1 if is_recruiting() else 0) > get_disciple_capacity():
 		return false
 	resources_changed.emit()
 	assignments_changed.emit()
 	buildings_changed.emit()
 	recruitment_changed.emit()
+	sustenance_changed.emit()
 	return true
 
