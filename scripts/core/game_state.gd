@@ -1,5 +1,7 @@
 extends Node
 
+const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
+
 signal resources_changed
 signal assignments_changed
 signal buildings_changed
@@ -8,6 +10,7 @@ signal sustenance_changed
 signal training_changed
 signal disciples_changed
 signal sect_progress_changed
+signal battle_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -22,6 +25,8 @@ const DISCIPLE_GIVEN_NAMES := ["青竹", "云舟", "明溪", "知远", "怀瑾",
 const MAX_SECT_LEVEL := 5
 const SECT_LEVEL_REQUIREMENTS := [0, 100, 250, 500, 900]
 const SECT_PRODUCTION_BONUS_PER_LEVEL := 0.05
+const BATTLE_ROUND_TIME := 1.0
+const BATTLE_RESTART_DELAY := 2.0
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -42,6 +47,20 @@ var cultivation_points: float = 0.0
 var disciples: Array[Dictionary] = []
 var next_disciple_id: int = 1
 var sect_level: int = 1
+var battle_party: Array[int] = []
+var selected_battle_stage: int = 1
+var highest_unlocked_stage: int = 1
+var highest_cleared_stage: int = 0
+var battle_victories: int = 0
+var battle_running: bool = false
+var auto_battle_enabled: bool = false
+var battle_player_hp: float = 0.0
+var battle_player_max_hp: float = 0.0
+var battle_enemy_hp: float = 0.0
+var battle_enemy_max_hp: float = 0.0
+var battle_round_progress: float = 0.0
+var battle_restart_cooldown: float = 0.0
+var battle_message: String = "请先编成队伍并选择关卡"
 
 
 func _ready() -> void:
@@ -149,11 +168,12 @@ func get_disciple_job_text(job: StringName) -> String:
 		&"mine": return "灵石矿采掘"
 		&"field": return "灵田耕作"
 		&"training": return "演武场修炼"
+		&"combat": return "外山战斗"
 		_: return "空闲"
 
 
 func can_set_disciple_job(disciple_id: int, job: StringName) -> bool:
-	if job not in [&"idle", &"forest", &"mine", &"field", &"training"]:
+	if job not in [&"idle", &"forest", &"mine", &"field", &"training", &"combat"]:
 		return false
 	var disciple := get_disciple(disciple_id)
 	if disciple.is_empty():
@@ -163,6 +183,8 @@ func can_set_disciple_job(disciple_id: int, job: StringName) -> bool:
 		return true
 	if job == &"training" and training_disciples >= get_training_capacity():
 		return false
+	if job == &"combat" and current_job != &"combat" and battle_party.size() >= BattleCatalogData.MAX_PARTY_SIZE:
+		return false
 	return true
 
 
@@ -170,11 +192,19 @@ func set_disciple_job(disciple_id: int, job: StringName) -> bool:
 	if not can_set_disciple_job(disciple_id, job):
 		return false
 	var disciple := get_disciple(disciple_id)
+	var current_job := StringName(disciple.get("job", "idle"))
+	if current_job == &"combat":
+		battle_party.erase(disciple_id)
+	if job == &"combat" and disciple_id not in battle_party:
+		battle_party.append(disciple_id)
 	disciple["job"] = String(job)
+	if battle_running:
+		stop_auto_battle("队伍发生变化，战斗已停止")
 	_sync_aggregate_state_from_disciples()
 	assignments_changed.emit()
 	training_changed.emit()
 	disciples_changed.emit()
+	battle_changed.emit()
 	return true
 
 
@@ -202,6 +232,121 @@ func _sync_aggregate_state_from_disciples() -> void:
 		elif job == &"training":
 			training_disciples += 1
 			assigned_disciples += 1
+		elif job == &"combat":
+			assigned_disciples += 1
+
+
+func get_disciple_battle_stats(disciple_id: int) -> Dictionary:
+	var disciple := get_disciple(disciple_id)
+	if disciple.is_empty():
+		return {}
+	var realm_level := int(disciple.get("realm_level", 1))
+	return {
+		"hp": 100.0 + float(realm_level - 1) * 20.0,
+		"attack": 10.0 + float(realm_level - 1) * 3.0,
+		"defense": 5.0 + float(realm_level - 1) * 2.0,
+	}
+
+
+func get_battle_party_stats() -> Dictionary:
+	var result := {"hp": 0.0, "attack": 0.0, "defense": 0.0}
+	for disciple_id: int in battle_party:
+		var stats := get_disciple_battle_stats(disciple_id)
+		if stats.is_empty():
+			continue
+		result["hp"] += float(stats["hp"])
+		result["attack"] += float(stats["attack"])
+		result["defense"] += float(stats["defense"])
+	return result
+
+
+func select_battle_stage(stage_id: int) -> bool:
+	if battle_running and stage_id != selected_battle_stage:
+		return false
+	if stage_id < 1 or stage_id > highest_unlocked_stage or BattleCatalogData.get_stage(stage_id).is_empty():
+		return false
+	selected_battle_stage = stage_id
+	battle_changed.emit()
+	return true
+
+
+func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
+	if battle_party.is_empty() or not select_battle_stage(stage_id):
+		battle_message = "需要至少一名战斗弟子，且关卡必须已解锁"
+		battle_changed.emit()
+		return false
+	var stage: Dictionary = BattleCatalogData.get_stage(stage_id)
+	var party_stats := get_battle_party_stats()
+	battle_player_max_hp = float(party_stats["hp"])
+	battle_player_hp = battle_player_max_hp
+	battle_enemy_max_hp = float(stage["hp"])
+	battle_enemy_hp = battle_enemy_max_hp
+	battle_round_progress = 0.0
+	battle_restart_cooldown = 0.0
+	battle_running = true
+	auto_battle_enabled = true
+	battle_message = "正在挑战%s · %s" % [stage["name"], stage["enemy"]]
+	battle_changed.emit()
+	return true
+
+
+func stop_auto_battle(message: String = "已停止自动战斗") -> void:
+	battle_running = false
+	auto_battle_enabled = false
+	battle_restart_cooldown = 0.0
+	battle_message = message
+	battle_changed.emit()
+
+
+func process_battle(delta: float) -> bool:
+	if delta <= 0.0:
+		return false
+	if not battle_running:
+		if auto_battle_enabled and battle_restart_cooldown > 0.0:
+			battle_restart_cooldown = maxf(0.0, battle_restart_cooldown - delta)
+			if is_zero_approx(battle_restart_cooldown):
+				start_auto_battle(selected_battle_stage)
+		return false
+	battle_round_progress += delta
+	var won := false
+	var changed := false
+	while battle_running and battle_round_progress >= BATTLE_ROUND_TIME:
+		changed = true
+		battle_round_progress -= BATTLE_ROUND_TIME
+		var stage: Dictionary = BattleCatalogData.get_stage(selected_battle_stage)
+		var party_stats := get_battle_party_stats()
+		var party_damage := maxf(1.0, float(party_stats["attack"]) - float(stage["defense"]))
+		battle_enemy_hp = maxf(0.0, battle_enemy_hp - party_damage)
+		if is_zero_approx(battle_enemy_hp):
+			_complete_battle_victory(stage)
+			won = true
+			break
+		var enemy_damage := maxf(1.0, float(stage["attack"]) - float(party_stats["defense"]))
+		battle_player_hp = maxf(0.0, battle_player_hp - enemy_damage)
+		if is_zero_approx(battle_player_hp):
+			battle_running = false
+			auto_battle_enabled = false
+			battle_message = "挑战失败，调整队伍或提升境界后再来"
+			break
+		battle_message = "第%d轮 · 我方造成%.0f伤害，敌方造成%.0f伤害" % [
+			ceili((battle_player_max_hp - battle_player_hp) / enemy_damage), party_damage, enemy_damage,
+		]
+	if changed:
+		battle_changed.emit()
+	return won
+
+
+func _complete_battle_victory(stage: Dictionary) -> void:
+	var rewards: Dictionary = stage.get("rewards", {})
+	for resource_id: Variant in rewards:
+		resources[String(resource_id)] = get_resource_amount(StringName(resource_id)) + int(rewards[resource_id])
+	battle_victories += 1
+	highest_cleared_stage = maxi(highest_cleared_stage, selected_battle_stage)
+	highest_unlocked_stage = mini(BattleCatalogData.get_stage_count(), maxi(highest_unlocked_stage, selected_battle_stage + 1))
+	battle_running = false
+	battle_restart_cooldown = BATTLE_RESTART_DELAY if auto_battle_enabled else 0.0
+	battle_message = "胜利！%s已回流宗门，%.0f秒后再次挑战" % [BattleCatalogData.get_reward_text(selected_battle_stage), BATTLE_RESTART_DELAY]
+	resources_changed.emit()
 
 
 func get_disciple_capacity() -> int:
@@ -577,6 +722,20 @@ func export_save_data() -> Dictionary:
 		"disciples": disciples.duplicate(true),
 		"next_disciple_id": next_disciple_id,
 		"sect_level": sect_level,
+		"battle_party": battle_party.duplicate(),
+		"selected_battle_stage": selected_battle_stage,
+		"highest_unlocked_stage": highest_unlocked_stage,
+		"highest_cleared_stage": highest_cleared_stage,
+		"battle_victories": battle_victories,
+		"battle_running": battle_running,
+		"auto_battle_enabled": auto_battle_enabled,
+		"battle_player_hp": battle_player_hp,
+		"battle_player_max_hp": battle_player_max_hp,
+		"battle_enemy_hp": battle_enemy_hp,
+		"battle_enemy_max_hp": battle_enemy_max_hp,
+		"battle_round_progress": battle_round_progress,
+		"battle_restart_cooldown": battle_restart_cooldown,
+		"battle_message": battle_message,
 	}
 
 
@@ -619,7 +778,7 @@ func import_save_data(data: Dictionary) -> bool:
 			var job := StringName(disciple.get("job", "idle"))
 			if disciple_id <= 0 or used_ids.has(disciple_id) or realm_level < 1 or realm_level > REALM_MAX_LEVEL:
 				return false
-			if job not in [&"idle", &"forest", &"mine", &"field", &"training"]:
+			if job not in [&"idle", &"forest", &"mine", &"field", &"training", &"combat"]:
 				return false
 			used_ids[disciple_id] = true
 			disciple["name"] = str(disciple.get("name", "无名弟子"))
@@ -655,12 +814,39 @@ func import_save_data(data: Dictionary) -> bool:
 			for disciple: Dictionary in recipients:
 				disciple["cultivation"] = cultivation_points / float(recipients.size())
 	_sync_aggregate_state_from_disciples()
+	battle_party.clear()
+	var loaded_party: Array = data.get("battle_party", [])
+	for raw_id: Variant in loaded_party:
+		var disciple_id := int(raw_id)
+		var disciple := get_disciple(disciple_id)
+		if disciple.is_empty() or StringName(disciple.get("job", "idle")) != &"combat" or disciple_id in battle_party:
+			return false
+		battle_party.append(disciple_id)
+	if loaded_party.is_empty():
+		for disciple: Dictionary in disciples:
+			if StringName(disciple.get("job", "idle")) == &"combat":
+				battle_party.append(int(disciple["id"]))
+	if battle_party.size() > BattleCatalogData.MAX_PARTY_SIZE:
+		return false
 	if total_disciples != saved_total or training_disciples > get_training_capacity():
 		return false
 	next_building_id = maxi(1, int(data.get("next_building_id", buildings.size() + 1)))
 	recruitment_remaining = clampf(float(data.get("recruitment_remaining", 0.0)), 0.0, RECRUIT_TIME)
 	food_consumption_progress = clampf(float(data.get("food_consumption_progress", 0.0)), 0.0, 0.999999)
 	sect_level = clampi(int(data.get("sect_level", 1)), 1, MAX_SECT_LEVEL)
+	highest_unlocked_stage = clampi(int(data.get("highest_unlocked_stage", 1)), 1, BattleCatalogData.get_stage_count())
+	highest_cleared_stage = clampi(int(data.get("highest_cleared_stage", 0)), 0, BattleCatalogData.get_stage_count())
+	selected_battle_stage = clampi(int(data.get("selected_battle_stage", 1)), 1, highest_unlocked_stage)
+	battle_victories = maxi(0, int(data.get("battle_victories", 0)))
+	battle_running = bool(data.get("battle_running", false)) and not battle_party.is_empty()
+	auto_battle_enabled = bool(data.get("auto_battle_enabled", false)) and not battle_party.is_empty()
+	battle_player_max_hp = maxf(0.0, float(data.get("battle_player_max_hp", 0.0)))
+	battle_player_hp = clampf(float(data.get("battle_player_hp", battle_player_max_hp)), 0.0, battle_player_max_hp)
+	battle_enemy_max_hp = maxf(0.0, float(data.get("battle_enemy_max_hp", 0.0)))
+	battle_enemy_hp = clampf(float(data.get("battle_enemy_hp", battle_enemy_max_hp)), 0.0, battle_enemy_max_hp)
+	battle_round_progress = clampf(float(data.get("battle_round_progress", 0.0)), 0.0, BATTLE_ROUND_TIME)
+	battle_restart_cooldown = maxf(0.0, float(data.get("battle_restart_cooldown", 0.0)))
+	battle_message = str(data.get("battle_message", "请先编成队伍并选择关卡"))
 	if total_disciples + (1 if is_recruiting() else 0) > get_disciple_capacity():
 		return false
 	resources_changed.emit()
@@ -671,5 +857,6 @@ func import_save_data(data: Dictionary) -> bool:
 	training_changed.emit()
 	disciples_changed.emit()
 	sect_progress_changed.emit()
+	battle_changed.emit()
 	return true
 

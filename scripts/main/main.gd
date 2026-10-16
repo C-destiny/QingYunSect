@@ -1,5 +1,7 @@
 extends Control
 
+const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
+
 @onready var wood_label: Label = %Wood
 @onready var spirit_stone_label: Label = %SpiritStone
 @onready var food_label: Label = %Food
@@ -34,13 +36,22 @@ extends Control
 @onready var sect_level_status: Label = %SectLevelStatus
 @onready var sect_progress: ProgressBar = %SectProgress
 @onready var sect_upgrade_button: Button = %SectUpgradeButton
+@onready var battle_party_status: Label = %BattlePartyStatus
+@onready var join_battle_button: Button = %JoinBattleButton
+@onready var leave_battle_button: Button = %LeaveBattleButton
+@onready var battle_stage_selector: OptionButton = %BattleStageSelector
+@onready var battle_stats: Label = %BattleStats
+@onready var player_battle_hp: ProgressBar = %PlayerBattleHp
+@onready var enemy_battle_hp: ProgressBar = %EnemyBattleHp
+@onready var battle_status: Label = %BattleStatus
+@onready var battle_toggle_button: Button = %BattleToggleButton
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
 var build_buttons: Dictionary = {}
 var selected_building_instance: int = 0
 var selected_disciple_id: int = 0
-const DISCIPLE_JOBS := [&"idle", &"forest", &"mine", &"field", &"training"]
+const DISCIPLE_JOBS := [&"idle", &"forest", &"mine", &"field", &"training", &"combat"]
 var roster_signature: String = ""
 
 
@@ -56,6 +67,7 @@ func _ready() -> void:
 	GameState.buildings_changed.connect(_refresh_sect_progress)
 	GameState.disciples_changed.connect(_refresh_sect_progress)
 	GameState.training_changed.connect(_refresh_sect_progress)
+	GameState.battle_changed.connect(_refresh_battle)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
@@ -85,7 +97,11 @@ func _ready() -> void:
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
 	roster_filter.item_selected.connect(_on_roster_view_changed)
 	roster_sort.item_selected.connect(_on_roster_view_changed)
-	for filter_name: String in ["全部弟子", "空闲", "采集工作", "修炼中", "可突破"]:
+	join_battle_button.pressed.connect(_join_selected_disciple_to_battle)
+	leave_battle_button.pressed.connect(_remove_selected_disciple_from_battle)
+	battle_stage_selector.item_selected.connect(_on_battle_stage_selected)
+	battle_toggle_button.pressed.connect(_toggle_battle)
+	for filter_name: String in ["全部弟子", "空闲", "采集工作", "修炼中", "可突破", "战斗队伍"]:
 		roster_filter.add_item(filter_name)
 	for sort_name: String in ["按姓名", "境界降序", "修为降序", "按岗位"]:
 		roster_sort.add_item(sort_name)
@@ -100,7 +116,9 @@ func _ready() -> void:
 	_refresh_recruitment()
 	_refresh_disciple_roster()
 	_refresh_sect_progress()
-	print("青云宗 V0.2：宗门发展系统启动成功")
+	_refresh_battle_stages()
+	_refresh_battle()
+	print("青云宗 V0.3：挂机战斗原型启动成功")
 
 
 func _process(delta: float) -> void:
@@ -116,6 +134,9 @@ func _process(delta: float) -> void:
 		SaveManager.save_game()
 	GameState.process_disciple_consumption(delta)
 	GameState.process_training(delta)
+	if GameState.process_battle(delta):
+		_refresh_battle_stages()
+		SaveManager.save_game()
 
 
 func _refresh_resources() -> void:
@@ -387,6 +408,7 @@ func _get_visible_disciples() -> Array[Dictionary]:
 			2: include = job in [&"forest", &"mine", &"field"]
 			3: include = job == &"training"
 			4: include = GameState.can_breakthrough(int(disciple.get("id", 0)))
+			5: include = job == &"combat"
 		if include:
 			result.append(disciple)
 	match roster_sort.selected:
@@ -407,6 +429,7 @@ func _on_disciple_selected(index: int) -> void:
 		return
 	selected_disciple_id = int(disciple_selector.get_item_metadata(index))
 	_refresh_disciple_detail()
+	_refresh_battle()
 
 
 func _refresh_disciple_detail() -> void:
@@ -443,6 +466,8 @@ func _refresh_disciple_detail() -> void:
 	for index: int in range(disciple_job_selector.item_count):
 		var job := StringName(disciple_job_selector.get_item_metadata(index))
 		disciple_job_selector.set_item_disabled(index, job == &"training" and current_job != &"training" and GameState.training_disciples >= GameState.get_training_capacity())
+		if job == &"combat":
+			disciple_job_selector.set_item_disabled(index, current_job != &"combat" and GameState.battle_party.size() >= BattleCatalogData.MAX_PARTY_SIZE)
 		if job == current_job:
 			disciple_job_selector.select(index)
 
@@ -457,7 +482,7 @@ func _on_disciple_job_selected(index: int) -> void:
 		disciple_job_status.modulate = Color(0.55, 0.85, 0.62)
 		SaveManager.save_game()
 	else:
-		disciple_job_status.text = "无法调整岗位：演武场修炼位不足"
+		disciple_job_status.text = "无法调整岗位：修炼位或战斗队伍名额不足"
 		disciple_job_status.modulate = Color(0.9, 0.55, 0.42)
 		_refresh_disciple_detail()
 
@@ -522,6 +547,77 @@ func _on_load_completed(success: bool, message: String) -> void:
 		_refresh_assignment()
 		_refresh_buildings()
 		_refresh_recruitment()
+		_refresh_battle_stages()
+		_refresh_battle()
+
+
+func _join_selected_disciple_to_battle() -> void:
+	if selected_disciple_id > 0 and GameState.set_disciple_job(selected_disciple_id, &"combat"):
+		SaveManager.save_game()
+	else:
+		battle_status.text = "无法入队：请选择弟子或先腾出队伍名额"
+
+
+func _remove_selected_disciple_from_battle() -> void:
+	var disciple := GameState.get_disciple(selected_disciple_id)
+	if not disciple.is_empty() and StringName(disciple.get("job", "idle")) == &"combat" and GameState.set_disciple_job(selected_disciple_id, &"idle"):
+		SaveManager.save_game()
+
+
+func _refresh_battle_stages() -> void:
+	var previous_stage := GameState.selected_battle_stage
+	battle_stage_selector.clear()
+	for stage_id: int in range(1, BattleCatalogData.get_stage_count() + 1):
+		var stage: Dictionary = BattleCatalogData.get_stage(stage_id)
+		var unlocked := stage_id <= GameState.highest_unlocked_stage
+		var label := "%d. %s · %s" % [stage_id, stage["name"], BattleCatalogData.get_reward_text(stage_id)]
+		if not unlocked:
+			label += "（未解锁）"
+		battle_stage_selector.add_item(label)
+		battle_stage_selector.set_item_metadata(stage_id - 1, stage_id)
+		battle_stage_selector.set_item_disabled(stage_id - 1, not unlocked)
+	battle_stage_selector.select(clampi(previous_stage - 1, 0, battle_stage_selector.item_count - 1))
+
+
+func _on_battle_stage_selected(index: int) -> void:
+	if index < 0 or index >= battle_stage_selector.item_count:
+		return
+	if GameState.select_battle_stage(int(battle_stage_selector.get_item_metadata(index))):
+		_refresh_battle()
+		SaveManager.save_game()
+
+
+func _toggle_battle() -> void:
+	if GameState.auto_battle_enabled:
+		GameState.stop_auto_battle()
+	else:
+		GameState.start_auto_battle()
+	SaveManager.save_game()
+
+
+func _refresh_battle() -> void:
+	var names := PackedStringArray()
+	for disciple_id: int in GameState.battle_party:
+		var disciple := GameState.get_disciple(disciple_id)
+		if not disciple.is_empty():
+			names.append(str(disciple.get("name", "无名弟子")))
+	battle_party_status.text = "战斗队伍 %d/%d：%s" % [GameState.battle_party.size(), BattleCatalogData.MAX_PARTY_SIZE, "、".join(names) if not names.is_empty() else "尚未编成"]
+	var party := GameState.get_battle_party_stats()
+	battle_stats.text = "队伍属性：生命%.0f · 攻击%.0f · 防御%.0f · 已胜%d场" % [party["hp"], party["attack"], party["defense"], GameState.battle_victories]
+	player_battle_hp.max_value = maxf(1.0, GameState.battle_player_max_hp)
+	player_battle_hp.value = GameState.battle_player_hp
+	enemy_battle_hp.max_value = maxf(1.0, GameState.battle_enemy_max_hp)
+	enemy_battle_hp.value = GameState.battle_enemy_hp
+	player_battle_hp.tooltip_text = "我方生命 %.0f / %.0f" % [GameState.battle_player_hp, GameState.battle_player_max_hp]
+	enemy_battle_hp.tooltip_text = "敌方生命 %.0f / %.0f" % [GameState.battle_enemy_hp, GameState.battle_enemy_max_hp]
+	battle_status.text = GameState.battle_message
+	battle_toggle_button.text = "停止自动战斗" if GameState.auto_battle_enabled else "开始自动战斗"
+	battle_toggle_button.disabled = GameState.battle_party.is_empty()
+	battle_stage_selector.disabled = GameState.battle_running
+	var selected := GameState.get_disciple(selected_disciple_id)
+	var selected_in_party := not selected.is_empty() and StringName(selected.get("job", "idle")) == &"combat"
+	join_battle_button.disabled = selected.is_empty() or selected_in_party or GameState.battle_party.size() >= BattleCatalogData.MAX_PARTY_SIZE
+	leave_battle_button.disabled = not selected_in_party
 
 
 func _start_recruitment() -> void:

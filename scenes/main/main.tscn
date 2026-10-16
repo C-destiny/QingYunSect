@@ -63,7 +63,7 @@ text = "青云宗"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 16
-text = "V0.2 · 宗门发展"
+text = "V0.3 · 外山征战"
 
 [node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
 layout_mode = 2
@@ -330,6 +330,78 @@ custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "修为不足，无法突破"
+
+[node name="BattleDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+
+[node name="BattleHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 0.42, 1)
+theme_override_font_sizes/font_size = 21
+text = "外山征战"
+
+[node name="BattlePartyStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "战斗队伍 0/3"
+autowrap_mode = 2
+
+[node name="BattlePartyButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="JoinBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattlePartyButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "选中弟子入队"
+
+[node name="LeaveBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattlePartyButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "选中弟子离队"
+
+[node name="BattleStageSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+
+[node name="BattleStats" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.82, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "队伍属性：生命0 · 攻击0 · 防御0"
+autowrap_mode = 2
+
+[node name="PlayerBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 18)
+show_percentage = false
+
+[node name="EnemyBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 18)
+show_percentage = false
+
+[node name="BattleStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.73, 0.48, 1)
+theme_override_font_sizes/font_size = 14
+text = "请先编成队伍并选择关卡"
+autowrap_mode = 2
+
+[node name="BattleToggleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+text = "开始自动战斗"
 
 [node name="BuildHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 layout_mode = 2
