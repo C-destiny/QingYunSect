@@ -25,8 +25,8 @@ const DISCIPLE_GIVEN_NAMES := ["青竹", "云舟", "明溪", "知远", "怀瑾",
 const MAX_SECT_LEVEL := 5
 const SECT_LEVEL_REQUIREMENTS := [0, 100, 250, 500, 900]
 const SECT_PRODUCTION_BONUS_PER_LEVEL := 0.05
-const BATTLE_ROUND_TIME := 1.0
-const BATTLE_RESTART_DELAY := 2.0
+const BATTLE_ROUND_TIME := BattleCatalogData.ROUND_TIME
+const BATTLE_RESTART_DELAY := BattleCatalogData.RESTART_DELAY
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -240,12 +240,7 @@ func get_disciple_battle_stats(disciple_id: int) -> Dictionary:
 	var disciple := get_disciple(disciple_id)
 	if disciple.is_empty():
 		return {}
-	var realm_level := int(disciple.get("realm_level", 1))
-	return {
-		"hp": 100.0 + float(realm_level - 1) * 20.0,
-		"attack": 10.0 + float(realm_level - 1) * 3.0,
-		"defense": 5.0 + float(realm_level - 1) * 2.0,
-	}
+	return BattleCatalogData.get_disciple_stats(int(disciple.get("realm_level", 1)))
 
 
 func get_battle_party_stats() -> Dictionary:
@@ -270,7 +265,17 @@ func select_battle_stage(stage_id: int) -> bool:
 	return true
 
 
+func get_battle_phase() -> StringName:
+	if battle_running:
+		return &"fighting"
+	if auto_battle_enabled and battle_restart_cooldown > 0.0:
+		return &"repeat_wait"
+	return &"stopped"
+
+
 func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
+	if battle_running:
+		return false
 	if battle_party.is_empty() or not select_battle_stage(stage_id):
 		battle_message = "需要至少一名战斗弟子，且关卡必须已解锁"
 		battle_changed.emit()
@@ -315,13 +320,13 @@ func process_battle(delta: float) -> bool:
 		battle_round_progress -= BATTLE_ROUND_TIME
 		var stage: Dictionary = BattleCatalogData.get_stage(selected_battle_stage)
 		var party_stats := get_battle_party_stats()
-		var party_damage := maxf(1.0, float(party_stats["attack"]) - float(stage["defense"]))
+		var party_damage := BattleCatalogData.calculate_damage(float(party_stats["attack"]), float(stage["defense"]))
 		battle_enemy_hp = maxf(0.0, battle_enemy_hp - party_damage)
 		if is_zero_approx(battle_enemy_hp):
 			_complete_battle_victory(stage)
 			won = true
 			break
-		var enemy_damage := maxf(1.0, float(stage["attack"]) - float(party_stats["defense"]))
+		var enemy_damage := BattleCatalogData.calculate_damage(float(stage["attack"]), float(party_stats["defense"]))
 		battle_player_hp = maxf(0.0, battle_player_hp - enemy_damage)
 		if is_zero_approx(battle_player_hp):
 			battle_running = false
