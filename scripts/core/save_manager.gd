@@ -15,6 +15,7 @@ var game_state: Node
 var unix_time_provider: Callable
 var last_successful_save_unix: int = 0
 var pending_offline_window: Dictionary = {}
+var last_offline_receipt: Dictionary = {}
 
 
 func _ready() -> void:
@@ -68,6 +69,30 @@ func get_pending_offline_window() -> Dictionary:
 
 func clear_pending_offline_window() -> void:
 	pending_offline_window.clear()
+
+
+func settle_pending_offline_progress() -> Dictionary:
+	if pending_offline_window.is_empty():
+		return {"success": false, "message": "没有待结算的离线时段"}
+	if not bool(pending_offline_window.get("eligible", false)):
+		last_offline_receipt = pending_offline_window.duplicate(true)
+		last_offline_receipt["success"] = true
+		last_offline_receipt["applied"] = false
+		pending_offline_window.clear()
+		return last_offline_receipt.duplicate(true)
+	var rollback_data: Dictionary = game_state.export_save_data()
+	var receipt: Dictionary = game_state.apply_offline_progress(pending_offline_window)
+	receipt["success"] = true
+	receipt["applied"] = true
+	if not save_game():
+		game_state.import_save_data(rollback_data)
+		receipt["success"] = false
+		receipt["applied"] = false
+		receipt["message"] = "离线结算保存失败，已恢复结算前状态"
+		return receipt
+	last_offline_receipt = receipt.duplicate(true)
+	pending_offline_window.clear()
+	return receipt
 
 
 func get_backup_path() -> String:

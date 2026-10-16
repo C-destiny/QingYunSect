@@ -1,5 +1,7 @@
 extends Control
 
+const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
+
 signal resource_selected(resource_data: Dictionary)
 signal placement_requested(building_type: StringName, cell: Vector2i)
 signal building_selected(building: Dictionary)
@@ -12,9 +14,9 @@ const TILE_OUTLINE := Color(0.27, 0.43, 0.37, 0.72)
 const SELECTED_OUTLINE := Color(0.86, 0.76, 0.37, 1.0)
 
 var resource_nodes: Array[Dictionary] = [
-	{"site_id": &"forest", "resource_id": &"wood", "cell": Vector2i(1, 1), "name": "青松林", "description": "宗门西侧的成片青松，可安排普通弟子伐木。", "reserve": 600, "rate": 12.0, "resource_name": "木材", "color": Color(0.24, 0.68, 0.39, 1.0)},
-	{"site_id": &"mine", "resource_id": &"spirit_stone", "cell": Vector2i(6, 1), "name": "浅层灵石矿", "description": "灵气稀薄但易于开采的矿脉，是宗门初期灵石来源。", "reserve": 420, "rate": 8.0, "resource_name": "灵石", "color": Color(0.35, 0.73, 0.9, 1.0)},
-	{"site_id": &"field", "resource_id": &"food", "cell": Vector2i(2, 4), "name": "荒芜灵田", "description": "经过整理即可种植灵谷，为弟子提供日常消耗。", "reserve": 500, "rate": 10.0, "resource_name": "灵谷", "color": Color(0.84, 0.67, 0.25, 1.0)},
+	{"site_id": &"forest", "resource_id": &"wood", "cell": Vector2i(1, 1), "name": "青松林", "description": "宗门西侧的成片青松，可安排普通弟子伐木。", "reserve": 600, "rate": float(ResourceCatalogData.SITES[&"forest"]["rate"]), "resource_name": "木材", "color": Color(0.24, 0.68, 0.39, 1.0)},
+	{"site_id": &"mine", "resource_id": &"spirit_stone", "cell": Vector2i(6, 1), "name": "浅层灵石矿", "description": "灵气稀薄但易于开采的矿脉，是宗门初期灵石来源。", "reserve": 420, "rate": float(ResourceCatalogData.SITES[&"mine"]["rate"]), "resource_name": "灵石", "color": Color(0.35, 0.73, 0.9, 1.0)},
+	{"site_id": &"field", "resource_id": &"food", "cell": Vector2i(2, 4), "name": "荒芜灵田", "description": "经过整理即可种植灵谷，为弟子提供日常消耗。", "reserve": 500, "rate": float(ResourceCatalogData.SITES[&"field"]["rate"]), "resource_name": "灵谷", "color": Color(0.84, 0.67, 0.25, 1.0)},
 ]
 
 var selected_cell := Vector2i(-1, -1)

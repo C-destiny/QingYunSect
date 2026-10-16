@@ -23,15 +23,15 @@
 
 ## 下一步
 
-QYS-V05-001已编码并通过22组快速回归，等待负责人验收；验收后进入QYS-V05-002离线经营与灵谷分段计算。
+QYS-V05-001已由负责人验收；QYS-V05-002～005已编码并通过26组快速回归，等待负责人验收。
 
 | 编号 / GitHub | V0.5任务 | 优先级 | 本轮快照 |
 |---|---|---|---|
-| [QYS-V05-001](https://github.com/C-destiny/QingYunSect/issues/11) | 时间基线、存档迁移与结算契约 | P0 | 待验收 |
-| [QYS-V05-002](https://github.com/C-destiny/QingYunSect/issues/12) | 离线经营与灵谷分段计算 | P0 | 待开发 |
-| [QYS-V05-003](https://github.com/C-destiny/QingYunSect/issues/13) | 离线战斗解析模拟 | P0 | 待开发 |
-| [QYS-V05-004](https://github.com/C-destiny/QingYunSect/issues/14) | 离线施工招募与修炼推进 | P1 | 待开发 |
-| [QYS-V05-005](https://github.com/C-destiny/QingYunSect/issues/15) | 离线结算原子性与防重复领取 | P0 | 待开发 |
+| [QYS-V05-001](https://github.com/C-destiny/QingYunSect/issues/11) | 时间基线、存档迁移与结算契约 | P0 | 已验收（2026-10-17） |
+| [QYS-V05-002](https://github.com/C-destiny/QingYunSect/issues/12) | 离线经营与灵谷分段计算 | P0 | 待验收 |
+| [QYS-V05-003](https://github.com/C-destiny/QingYunSect/issues/13) | 离线战斗解析模拟 | P0 | 待验收 |
+| [QYS-V05-004](https://github.com/C-destiny/QingYunSect/issues/14) | 离线施工招募与修炼推进 | P1 | 待验收 |
+| [QYS-V05-005](https://github.com/C-destiny/QingYunSect/issues/15) | 离线结算原子性与防重复领取 | P0 | 待验收 |
 | [QYS-V05-006](https://github.com/C-destiny/QingYunSect/issues/16) | 离线收益明细界面 | P1 | 待开发 |
 | [QYS-V05-007](https://github.com/C-destiny/QingYunSect/issues/17) | V0.5回归、长时与Windows交付 | P0 | 待开发 |
 

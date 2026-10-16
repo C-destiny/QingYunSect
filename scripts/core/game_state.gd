@@ -1,6 +1,7 @@
 extends Node
 
 const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
+const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 
 signal resources_changed
 signal assignments_changed
@@ -788,6 +789,189 @@ func process_construction(delta: float) -> void:
 			changed = true
 	if changed:
 		buildings_changed.emit()
+
+
+func apply_offline_progress(window: Dictionary) -> Dictionary:
+	var seconds := float(window.get("effective_seconds", 0))
+	var receipt := {
+		"settlement_id": str(window.get("settlement_id", "")),
+		"effective_seconds": int(seconds),
+		"resources": {"wood": 0, "spirit_stone": 0, "food": 0},
+		"food_consumed": 0,
+		"cultivation_gained": 0.0,
+		"battle_victories": 0,
+		"construction_completed": 0,
+		"upgrades_completed": 0,
+		"recruited": 0,
+		"battle_reason": "not_running",
+	}
+	if not bool(window.get("eligible", false)) or seconds <= 0.0:
+		return receipt
+	var before_resources := resources.duplicate(true)
+	_process_offline_timed_activities(seconds, receipt)
+	var battle_result := _process_offline_battle(seconds)
+	receipt["battle_victories"] = int(battle_result.get("victories", 0))
+	receipt["battle_reason"] = str(battle_result.get("reason", "not_running"))
+	for resource_id: StringName in RESOURCE_IDS:
+		receipt["resources"][String(resource_id)] = get_resource_amount(resource_id) - int(before_resources.get(String(resource_id), 0))
+	return receipt
+
+
+func _process_offline_timed_activities(seconds: float, receipt: Dictionary) -> void:
+	var remaining := seconds
+	while remaining > 0.000001:
+		var segment := remaining
+		if is_recruiting():
+			segment = minf(segment, recruitment_remaining)
+		for building: Dictionary in buildings:
+			if not bool(building.get("completed", false)):
+				segment = minf(segment, float(building.get("remaining", segment)))
+			elif bool(building.get("upgrading", false)):
+				segment = minf(segment, float(building.get("upgrade_remaining", segment)))
+		if segment <= 0.000001:
+			break
+		receipt["cultivation_gained"] = float(receipt["cultivation_gained"]) + process_training(segment)
+		receipt["food_consumed"] = int(receipt["food_consumed"]) + _process_offline_production_and_food(segment)
+		var before_building_states: Dictionary = {}
+		for building: Dictionary in buildings:
+			before_building_states[int(building.get("instance_id", 0))] = {
+				"completed": bool(building.get("completed", false)),
+				"upgrading": bool(building.get("upgrading", false)),
+			}
+		var was_recruiting := is_recruiting()
+		process_construction(segment)
+		if was_recruiting and process_recruitment(segment):
+			receipt["recruited"] = int(receipt["recruited"]) + 1
+		for building: Dictionary in buildings:
+			var previous: Dictionary = before_building_states.get(int(building.get("instance_id", 0)), {})
+			if not bool(previous.get("completed", true)) and bool(building.get("completed", false)):
+				receipt["construction_completed"] = int(receipt["construction_completed"]) + 1
+			if bool(previous.get("upgrading", false)) and not bool(building.get("upgrading", false)):
+				receipt["upgrades_completed"] = int(receipt["upgrades_completed"]) + 1
+		remaining -= segment
+
+
+func _get_site_rate_per_minute(site_id: StringName, resource_id: StringName, sustenance_multiplier: float) -> float:
+	var site: Dictionary = ResourceCatalogData.get_site(site_id)
+	if site.is_empty() or StringName(site.get("resource_id", &"")) != resource_id:
+		return 0.0
+	return float(site.get("rate", 0.0)) * get_production_multiplier(resource_id) * get_sect_production_multiplier() * sustenance_multiplier * get_site_workforce_power(site_id)
+
+
+func _process_offline_production_and_food(seconds: float) -> int:
+	var consumption_rate := get_food_consumption_per_minute()
+	var normal_food_rate := _get_site_rate_per_minute(&"field", &"food", 1.0)
+	var normal_seconds := seconds
+	if get_resource_amount(&"food") <= 0:
+		normal_seconds = 0.0
+	elif consumption_rate > normal_food_rate:
+		var available_food := float(get_resource_amount(&"food")) + float(production_progress.get("field", 0.0)) - food_consumption_progress
+		normal_seconds = clampf(available_food * 60.0 / (consumption_rate - normal_food_rate), 0.0, seconds)
+	var consumed := _process_offline_production_phase(normal_seconds, 1.0)
+	var hungry_seconds := seconds - normal_seconds
+	if hungry_seconds > 0.0:
+		consumed += _process_offline_production_phase(hungry_seconds, HUNGRY_PRODUCTION_MULTIPLIER)
+	return consumed
+
+
+func _process_offline_production_phase(seconds: float, sustenance_multiplier: float) -> int:
+	if seconds <= 0.0:
+		return 0
+	for site_id: StringName in ResourceCatalogData.SITES:
+		var site: Dictionary = ResourceCatalogData.get_site(site_id)
+		var resource_id := StringName(site["resource_id"])
+		var rate := _get_site_rate_per_minute(site_id, resource_id, sustenance_multiplier)
+		var progress := float(production_progress.get(site_id, 0.0)) + rate * seconds / 60.0
+		var completed := floori(progress)
+		production_progress[String(site_id)] = progress - float(completed)
+		if completed > 0:
+			add_resource(resource_id, completed)
+	return process_disciple_consumption(seconds)
+
+
+func _process_offline_battle(seconds: float) -> Dictionary:
+	if seconds <= 0.0 or not auto_battle_enabled:
+		return {"victories": 0, "reason": "not_running"}
+	if battle_party.is_empty() or not is_battle_party_consistent():
+		stop_auto_battle("离线结算发现队伍异常，自动战斗已停止")
+		return {"victories": 0, "reason": "invalid_party"}
+	var stage: Dictionary = BattleCatalogData.get_stage(selected_battle_stage)
+	var party_stats := get_battle_party_stats()
+	var party_damage := BattleCatalogData.calculate_damage(float(party_stats["attack"]), float(stage["defense"]))
+	var enemy_damage := BattleCatalogData.calculate_damage(float(stage["attack"]), float(party_stats["defense"]))
+	var full_win_rounds := ceili(float(stage["hp"]) / party_damage)
+	var full_loss_rounds := ceili(float(party_stats["hp"]) / enemy_damage)
+	if full_win_rounds > full_loss_rounds:
+		stop_auto_battle("离线挑战失败，自动战斗已停止")
+		return {"victories": 0, "reason": "defeat"}
+	var remaining := seconds
+	if not battle_running:
+		var wait := minf(remaining, battle_restart_cooldown)
+		battle_restart_cooldown -= wait
+		remaining -= wait
+		if remaining <= 0.0:
+			return {"victories": 0, "reason": "waiting"}
+		_start_offline_battle_encounter(stage, party_stats)
+	var current_win_rounds := ceili(battle_enemy_hp / party_damage)
+	var current_loss_rounds := ceili(battle_player_hp / enemy_damage)
+	if current_win_rounds > current_loss_rounds:
+		stop_auto_battle("离线挑战失败，自动战斗已停止")
+		return {"victories": 0, "reason": "defeat"}
+	var first_win_seconds := maxf(0.0, float(current_win_rounds) * BATTLE_ROUND_TIME - battle_round_progress)
+	if remaining < first_win_seconds:
+		var rounds := floori((battle_round_progress + remaining) / BATTLE_ROUND_TIME)
+		battle_round_progress = fmod(battle_round_progress + remaining, BATTLE_ROUND_TIME)
+		battle_round_number += rounds
+		battle_enemy_hp = maxf(0.0, battle_enemy_hp - party_damage * float(rounds))
+		battle_player_hp = maxf(0.0, battle_player_hp - enemy_damage * float(mini(rounds, maxi(0, current_win_rounds - 1))))
+		battle_changed.emit()
+		return {"victories": 0, "reason": "partial"}
+	remaining -= first_win_seconds
+	var cycle_seconds := float(full_win_rounds) * BATTLE_ROUND_TIME + BATTLE_RESTART_DELAY
+	var victories := 1 + floori(remaining / cycle_seconds)
+	var rewards: Dictionary = stage.get("rewards", {})
+	for resource_id: Variant in rewards:
+		resources[String(resource_id)] = get_resource_amount(StringName(resource_id)) + int(rewards[resource_id]) * victories
+	battle_victories += victories
+	highest_cleared_stage = maxi(highest_cleared_stage, selected_battle_stage)
+	highest_unlocked_stage = mini(BattleCatalogData.get_stage_count(), maxi(highest_unlocked_stage, selected_battle_stage + 1))
+	battle_encounter_sequence += maxi(0, victories - 1)
+	last_settled_battle_encounter_id = battle_encounter_sequence
+	var leftover := fmod(remaining, cycle_seconds)
+	battle_running = false
+	active_battle_encounter_id = 0
+	battle_restart_cooldown = BATTLE_RESTART_DELAY
+	battle_round_progress = 0.0
+	battle_round_number = 0
+	if leftover < BATTLE_RESTART_DELAY:
+		battle_restart_cooldown = BATTLE_RESTART_DELAY - leftover
+	else:
+		_start_offline_battle_encounter(stage, party_stats)
+		var combat_leftover := leftover - BATTLE_RESTART_DELAY
+		var partial_rounds := floori(combat_leftover / BATTLE_ROUND_TIME)
+		battle_round_progress = fmod(combat_leftover, BATTLE_ROUND_TIME)
+		battle_round_number = partial_rounds
+		battle_enemy_hp = maxf(0.0, battle_enemy_max_hp - party_damage * float(partial_rounds))
+		battle_player_hp = maxf(0.0, battle_player_max_hp - enemy_damage * float(partial_rounds))
+	battle_message = "离线自动战斗完成：%d胜，继续挑战%s" % [victories, stage["name"]]
+	last_battle_result = {"result": "离线胜利", "stage_id": selected_battle_stage, "encounter_id": last_settled_battle_encounter_id, "reward_text": BattleCatalogData.get_reward_text(selected_battle_stage), "victories": victories}
+	_append_battle_log("离线战斗：%d胜，获得%s × %d" % [victories, BattleCatalogData.get_reward_text(selected_battle_stage), victories])
+	resources_changed.emit()
+	battle_changed.emit()
+	return {"victories": victories, "reason": "victory"}
+
+
+func _start_offline_battle_encounter(stage: Dictionary, party_stats: Dictionary) -> void:
+	battle_encounter_sequence += 1
+	active_battle_encounter_id = battle_encounter_sequence
+	battle_running = true
+	battle_player_max_hp = float(party_stats["hp"])
+	battle_player_hp = battle_player_max_hp
+	battle_enemy_max_hp = float(stage["hp"])
+	battle_enemy_hp = battle_enemy_max_hp
+	battle_round_progress = 0.0
+	battle_round_number = 0
+	battle_restart_cooldown = 0.0
 
 
 func export_save_data() -> Dictionary:
