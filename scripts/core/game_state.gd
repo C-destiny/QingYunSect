@@ -33,6 +33,8 @@ const BATTLE_ROUND_TIME := BattleCatalogData.ROUND_TIME
 const BATTLE_RESTART_DELAY := BattleCatalogData.RESTART_DELAY
 const BATTLE_LOG_LIMIT := 30
 const MAX_EQUIPMENT_INVENTORY := 60
+const EQUIPMENT_DROP_INTERVAL := 5
+const EQUIPMENT_DROP_TEMPLATES := [&"initiate_weapon", &"cloud_robe", &"spirit_ring"]
 const PROFESSION_IDS := [&"sword", &"mage"]
 const EQUIPMENT_SLOT_IDS := [&"weapon", &"armor", &"ring"]
 const EQUIPMENT_QUALITY_IDS := [&"common", &"rare", &"epic"]
@@ -174,6 +176,45 @@ func create_equipment_instance(template_id: StringName, quality: StringName) -> 
 	equipment_inventory.append(equipment)
 	equipment_changed.emit()
 	return instance_id
+
+
+func _get_equipment_drop_definition(drop_number: int) -> Dictionary:
+	if drop_number <= 0:
+		return {}
+	var quality: StringName = &"common"
+	if drop_number % 10 == 0:
+		quality = &"epic"
+	elif drop_number % 3 == 0:
+		quality = &"rare"
+	return {
+		"template_id": EQUIPMENT_DROP_TEMPLATES[(drop_number - 1) % EQUIPMENT_DROP_TEMPLATES.size()],
+		"quality": quality,
+	}
+
+
+func _grant_equipment_drops(previous_victories: int, added_victories: int) -> Array[Dictionary]:
+	var drops: Array[Dictionary] = []
+	if previous_victories < 0 or added_victories <= 0:
+		return drops
+	var first_drop_number := previous_victories / EQUIPMENT_DROP_INTERVAL + 1
+	var last_drop_number := (previous_victories + added_victories) / EQUIPMENT_DROP_INTERVAL
+	for drop_number: int in range(first_drop_number, last_drop_number + 1):
+		var definition := _get_equipment_drop_definition(drop_number)
+		var instance_id := create_equipment_instance(definition["template_id"], definition["quality"])
+		if instance_id <= 0:
+			break
+		drops.append(get_equipment_instance(instance_id).duplicate(true))
+	return drops
+
+
+func get_equipment_drop_text(drops: Array) -> String:
+	if drops.is_empty():
+		return "无"
+	var names := PackedStringArray()
+	for raw_drop: Variant in drops:
+		if raw_drop is Dictionary:
+			names.append(EquipmentCatalogData.get_display_name(raw_drop))
+	return "、".join(names) if not names.is_empty() else "无"
 
 
 func get_equipment_owner(instance_id: int) -> int:
@@ -576,15 +617,22 @@ func _complete_battle_victory(stage: Dictionary, encounter_id: int = -1) -> bool
 	last_settled_battle_encounter_id = encounter_id
 	for resource_id: Variant in rewards:
 		resources[String(resource_id)] = get_resource_amount(StringName(resource_id)) + int(rewards[resource_id])
+	var previous_victories := battle_victories
 	battle_victories += 1
+	var equipment_drops := _grant_equipment_drops(previous_victories, 1)
 	highest_cleared_stage = maxi(highest_cleared_stage, selected_battle_stage)
 	highest_unlocked_stage = mini(BattleCatalogData.get_stage_count(), maxi(highest_unlocked_stage, selected_battle_stage + 1))
 	battle_running = false
 	active_battle_encounter_id = 0
 	battle_restart_cooldown = BATTLE_RESTART_DELAY if auto_battle_enabled else 0.0
-	battle_message = "胜利！%s已回流宗门，%.0f秒后再次挑战" % [BattleCatalogData.get_reward_text(selected_battle_stage), BATTLE_RESTART_DELAY]
-	last_battle_result = {"result": "胜利", "stage_id": selected_battle_stage, "encounter_id": encounter_id, "reward_text": BattleCatalogData.get_reward_text(selected_battle_stage)}
-	_append_battle_log("战斗胜利：获得%s" % BattleCatalogData.get_reward_text(selected_battle_stage))
+	var drop_text := get_equipment_drop_text(equipment_drops)
+	battle_message = "胜利！%s已回流宗门%s，%.0f秒后再次挑战" % [
+		BattleCatalogData.get_reward_text(selected_battle_stage),
+		"，获得装备%s" % drop_text if not equipment_drops.is_empty() else "",
+		BATTLE_RESTART_DELAY,
+	]
+	last_battle_result = {"result": "胜利", "stage_id": selected_battle_stage, "encounter_id": encounter_id, "reward_text": BattleCatalogData.get_reward_text(selected_battle_stage), "equipment_drops": equipment_drops}
+	_append_battle_log("战斗胜利：获得%s%s" % [BattleCatalogData.get_reward_text(selected_battle_stage), "，装备%s" % drop_text if not equipment_drops.is_empty() else ""])
 	resources_changed.emit()
 	return true
 
@@ -966,6 +1014,7 @@ func apply_offline_progress(window: Dictionary) -> Dictionary:
 		"food_consumed": 0,
 		"cultivation_gained": 0.0,
 		"battle_victories": 0,
+		"equipment_drops": [],
 		"construction_completed": 0,
 		"upgrades_completed": 0,
 		"recruited": 0,
@@ -978,6 +1027,7 @@ func apply_offline_progress(window: Dictionary) -> Dictionary:
 	var battle_result := _process_offline_battle(seconds)
 	receipt["battle_victories"] = int(battle_result.get("victories", 0))
 	receipt["battle_reason"] = str(battle_result.get("reason", "not_running"))
+	receipt["equipment_drops"] = battle_result.get("equipment_drops", []).duplicate(true)
 	for resource_id: StringName in RESOURCE_IDS:
 		receipt["resources"][String(resource_id)] = get_resource_amount(resource_id) - int(before_resources.get(String(resource_id), 0))
 	return receipt
@@ -1057,10 +1107,10 @@ func _process_offline_production_phase(seconds: float, sustenance_multiplier: fl
 
 func _process_offline_battle(seconds: float) -> Dictionary:
 	if seconds <= 0.0 or not auto_battle_enabled:
-		return {"victories": 0, "reason": "not_running"}
+		return {"victories": 0, "reason": "not_running", "equipment_drops": []}
 	if battle_party.is_empty() or not is_battle_party_consistent():
 		stop_auto_battle("离线结算发现队伍异常，自动战斗已停止")
-		return {"victories": 0, "reason": "invalid_party"}
+		return {"victories": 0, "reason": "invalid_party", "equipment_drops": []}
 	var stage: Dictionary = BattleCatalogData.get_stage(selected_battle_stage)
 	var party_stats := get_battle_party_stats()
 	var party_damage := BattleCatalogData.calculate_damage(float(party_stats["attack"]), float(stage["defense"]))
@@ -1069,20 +1119,20 @@ func _process_offline_battle(seconds: float) -> Dictionary:
 	var full_loss_rounds := ceili(float(party_stats["hp"]) / enemy_damage)
 	if full_win_rounds > full_loss_rounds:
 		stop_auto_battle("离线挑战失败，自动战斗已停止")
-		return {"victories": 0, "reason": "defeat"}
+		return {"victories": 0, "reason": "defeat", "equipment_drops": []}
 	var remaining := seconds
 	if not battle_running:
 		var wait := minf(remaining, battle_restart_cooldown)
 		battle_restart_cooldown -= wait
 		remaining -= wait
 		if remaining <= 0.0:
-			return {"victories": 0, "reason": "waiting"}
+			return {"victories": 0, "reason": "waiting", "equipment_drops": []}
 		_start_offline_battle_encounter(stage, party_stats)
 	var current_win_rounds := ceili(battle_enemy_hp / party_damage)
 	var current_loss_rounds := ceili(battle_player_hp / enemy_damage)
 	if current_win_rounds > current_loss_rounds:
 		stop_auto_battle("离线挑战失败，自动战斗已停止")
-		return {"victories": 0, "reason": "defeat"}
+		return {"victories": 0, "reason": "defeat", "equipment_drops": []}
 	var first_win_seconds := maxf(0.0, float(current_win_rounds) * BATTLE_ROUND_TIME - battle_round_progress)
 	if remaining < first_win_seconds:
 		var rounds := floori((battle_round_progress + remaining) / BATTLE_ROUND_TIME)
@@ -1091,14 +1141,16 @@ func _process_offline_battle(seconds: float) -> Dictionary:
 		battle_enemy_hp = maxf(0.0, battle_enemy_hp - party_damage * float(rounds))
 		battle_player_hp = maxf(0.0, battle_player_hp - enemy_damage * float(mini(rounds, maxi(0, current_win_rounds - 1))))
 		battle_changed.emit()
-		return {"victories": 0, "reason": "partial"}
+		return {"victories": 0, "reason": "partial", "equipment_drops": []}
 	remaining -= first_win_seconds
 	var cycle_seconds := float(full_win_rounds) * BATTLE_ROUND_TIME + BATTLE_RESTART_DELAY
 	var victories := 1 + floori(remaining / cycle_seconds)
 	var rewards: Dictionary = stage.get("rewards", {})
 	for resource_id: Variant in rewards:
 		resources[String(resource_id)] = get_resource_amount(StringName(resource_id)) + int(rewards[resource_id]) * victories
+	var previous_victories := battle_victories
 	battle_victories += victories
+	var equipment_drops := _grant_equipment_drops(previous_victories, victories)
 	highest_cleared_stage = maxi(highest_cleared_stage, selected_battle_stage)
 	highest_unlocked_stage = mini(BattleCatalogData.get_stage_count(), maxi(highest_unlocked_stage, selected_battle_stage + 1))
 	battle_encounter_sequence += maxi(0, victories - 1)
@@ -1119,12 +1171,13 @@ func _process_offline_battle(seconds: float) -> Dictionary:
 		battle_round_number = partial_rounds
 		battle_enemy_hp = maxf(0.0, battle_enemy_max_hp - party_damage * float(partial_rounds))
 		battle_player_hp = maxf(0.0, battle_player_max_hp - enemy_damage * float(partial_rounds))
-	battle_message = "离线自动战斗完成：%d胜，继续挑战%s" % [victories, stage["name"]]
-	last_battle_result = {"result": "离线胜利", "stage_id": selected_battle_stage, "encounter_id": last_settled_battle_encounter_id, "reward_text": BattleCatalogData.get_reward_text(selected_battle_stage), "victories": victories}
-	_append_battle_log("离线战斗：%d胜，获得%s × %d" % [victories, BattleCatalogData.get_reward_text(selected_battle_stage), victories])
+	var drop_text := get_equipment_drop_text(equipment_drops)
+	battle_message = "离线自动战斗完成：%d胜%s，继续挑战%s" % [victories, "、装备%s" % drop_text if not equipment_drops.is_empty() else "", stage["name"]]
+	last_battle_result = {"result": "离线胜利", "stage_id": selected_battle_stage, "encounter_id": last_settled_battle_encounter_id, "reward_text": BattleCatalogData.get_reward_text(selected_battle_stage), "victories": victories, "equipment_drops": equipment_drops}
+	_append_battle_log("离线战斗：%d胜，获得%s × %d%s" % [victories, BattleCatalogData.get_reward_text(selected_battle_stage), victories, "，装备%s" % drop_text if not equipment_drops.is_empty() else ""])
 	resources_changed.emit()
 	battle_changed.emit()
-	return {"victories": victories, "reason": "victory"}
+	return {"victories": victories, "reason": "victory", "equipment_drops": equipment_drops}
 
 
 func _start_offline_battle_encounter(stage: Dictionary, party_stats: Dictionary) -> void:

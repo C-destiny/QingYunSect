@@ -23,7 +23,7 @@ static func is_valid(profession_id: StringName) -> bool:
 	return not get_data(profession_id).is_empty()
 
 
-static func get_name(profession_id: StringName) -> String:
+static func get_display_name(profession_id: StringName) -> String:
 	return str(get_data(profession_id).get("name", "未知职业"))
 
 

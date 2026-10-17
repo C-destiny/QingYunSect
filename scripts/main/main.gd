@@ -1,6 +1,8 @@
 extends Control
 
 const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
+const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
+const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
 
 @onready var wood_label: Label = %Wood
 @onready var spirit_stone_label: Label = %SpiritStone
@@ -33,6 +35,12 @@ const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 @onready var roster_filter: OptionButton = %RosterFilter
 @onready var roster_sort: OptionButton = %RosterSort
 @onready var cultivation_progress: ProgressBar = %CultivationProgress
+@onready var equipment_stats: Label = %EquipmentStats
+@onready var equipment_slot_selector: OptionButton = %EquipmentSlotSelector
+@onready var equipment_inventory_selector: OptionButton = %EquipmentInventorySelector
+@onready var equip_button: Button = %EquipButton
+@onready var unequip_button: Button = %UnequipButton
+@onready var equipment_status: Label = %EquipmentStatus
 @onready var sect_level_status: Label = %SectLevelStatus
 @onready var sect_progress: ProgressBar = %SectProgress
 @onready var sect_upgrade_button: Button = %SectUpgradeButton
@@ -78,6 +86,8 @@ func _ready() -> void:
 	GameState.disciples_changed.connect(_refresh_sect_progress)
 	GameState.training_changed.connect(_refresh_sect_progress)
 	GameState.battle_changed.connect(_refresh_battle)
+	GameState.equipment_changed.connect(_refresh_equipment_panel)
+	GameState.equipment_changed.connect(_refresh_battle)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
@@ -111,6 +121,10 @@ func _ready() -> void:
 	leave_battle_button.pressed.connect(_remove_selected_disciple_from_battle)
 	battle_stage_selector.item_selected.connect(_on_battle_stage_selected)
 	battle_toggle_button.pressed.connect(_toggle_battle)
+	equipment_slot_selector.item_selected.connect(_on_equipment_slot_selected)
+	equipment_inventory_selector.item_selected.connect(_on_equipment_inventory_selected)
+	equip_button.pressed.connect(_equip_selected_item)
+	unequip_button.pressed.connect(_unequip_selected_item)
 	for filter_name: String in ["全部弟子", "空闲", "采集工作", "修炼中", "可突破", "战斗队伍"]:
 		roster_filter.add_item(filter_name)
 	for sort_name: String in ["按姓名", "境界降序", "修为降序", "按岗位"]:
@@ -118,6 +132,9 @@ func _ready() -> void:
 	for job: StringName in DISCIPLE_JOBS:
 		disciple_job_selector.add_item(GameState.get_disciple_job_text(job))
 		disciple_job_selector.set_item_metadata(disciple_job_selector.item_count - 1, String(job))
+	for slot: StringName in GameState.EQUIPMENT_SLOT_IDS:
+		equipment_slot_selector.add_item(str(EquipmentCatalogData.SLOTS[String(slot)]))
+		equipment_slot_selector.set_item_metadata(equipment_slot_selector.item_count - 1, String(slot))
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
@@ -128,7 +145,7 @@ func _ready() -> void:
 	_refresh_sect_progress()
 	_refresh_battle_stages()
 	_refresh_battle()
-	print("青云宗 V0.5 验收候选：离线收益与长期挂机版启动成功")
+	print("青云宗 V0.6 验收候选：角色养成与装备版启动成功")
 
 
 func _process(delta: float) -> void:
@@ -439,6 +456,7 @@ func _on_disciple_selected(index: int) -> void:
 		return
 	selected_disciple_id = int(disciple_selector.get_item_metadata(index))
 	_refresh_disciple_detail()
+	_refresh_equipment_panel()
 	_refresh_battle()
 
 
@@ -449,6 +467,7 @@ func _refresh_disciple_detail() -> void:
 		breakthrough_button.disabled = true
 		disciple_job_selector.disabled = true
 		cultivation_progress.value = 0.0
+		_refresh_equipment_panel()
 		return
 	disciple_job_selector.disabled = false
 	var realm_level := int(disciple.get("realm_level", 1))
@@ -457,8 +476,8 @@ func _refresh_disciple_detail() -> void:
 	if realm_level >= GameState.REALM_MAX_LEVEL:
 		cultivation_progress.max_value = 1.0
 		cultivation_progress.value = 1.0
-		disciple_detail.text = "%s · %s\n修为 %.1f · 岗位：%s\n个人采集加成 +%.0f%%" % [
-			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), cultivation,
+		disciple_detail.text = "%s · %s · %s\n修为 %.1f · 岗位：%s\n个人采集加成 +%.0f%%" % [
+			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), ProfessionCatalogData.get_display_name(StringName(disciple.get("profession", ""))), cultivation,
 			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
 		]
 		breakthrough_button.text = "已达炼气九层"
@@ -466,8 +485,8 @@ func _refresh_disciple_detail() -> void:
 		var requirement := GameState.get_breakthrough_requirement(realm_level)
 		cultivation_progress.max_value = requirement
 		cultivation_progress.value = cultivation
-		disciple_detail.text = "%s · %s\n修为 %.1f / %.0f · 岗位：%s\n个人采集加成 +%.0f%%" % [
-			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), cultivation, requirement,
+		disciple_detail.text = "%s · %s · %s\n修为 %.1f / %.0f · 岗位：%s\n个人采集加成 +%.0f%%" % [
+			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), ProfessionCatalogData.get_display_name(StringName(disciple.get("profession", ""))), cultivation, requirement,
 			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
 		]
 		breakthrough_button.text = "突破至%s" % GameState.get_realm_name(realm_level + 1)
@@ -480,6 +499,96 @@ func _refresh_disciple_detail() -> void:
 			disciple_job_selector.set_item_disabled(index, current_job != &"combat" and GameState.battle_party.size() >= BattleCatalogData.MAX_PARTY_SIZE)
 		if job == current_job:
 			disciple_job_selector.select(index)
+	_refresh_equipment_panel()
+
+
+func _get_selected_equipment_slot() -> StringName:
+	var index := equipment_slot_selector.selected
+	if index < 0 or index >= equipment_slot_selector.item_count:
+		return &"weapon"
+	return StringName(equipment_slot_selector.get_item_metadata(index))
+
+
+func _format_equipment_stats(stats: Dictionary) -> String:
+	return "生命%+.0f 攻击%+.0f 防御%+.0f" % [
+		float(stats.get("hp", 0.0)), float(stats.get("attack", 0.0)), float(stats.get("defense", 0.0)),
+	]
+
+
+func _refresh_equipment_panel() -> void:
+	if not is_instance_valid(equipment_stats) or not is_instance_valid(equipment_inventory_selector):
+		return
+	var disciple := GameState.get_disciple(selected_disciple_id)
+	if disciple.is_empty():
+		equipment_stats.text = "请选择弟子查看职业与装备属性"
+		equipment_inventory_selector.clear()
+		equipment_inventory_selector.add_item("暂无可管理装备")
+		equipment_inventory_selector.set_item_metadata(0, 0)
+		equip_button.disabled = true
+		unequip_button.disabled = true
+		return
+	var stats := GameState.get_disciple_battle_stats(selected_disciple_id)
+	var profession_name := ProfessionCatalogData.get_display_name(StringName(disciple.get("profession", "")))
+	var equipped: Dictionary = disciple.get("equipment", {})
+	var equipment_names := PackedStringArray()
+	for slot: StringName in GameState.EQUIPMENT_SLOT_IDS:
+		var item := GameState.get_equipment_instance(int(equipped.get(String(slot), 0)))
+		equipment_names.append("%s：%s" % [EquipmentCatalogData.SLOTS[String(slot)], EquipmentCatalogData.get_display_name(item) if not item.is_empty() else "未装备"])
+	equipment_stats.text = "%s · 库存 %d/%d\n境界基础 %s\n职业修正后 %s\n装备加成 %s\n最终属性 生命%.0f 攻击%.0f 防御%.0f\n%s" % [
+		profession_name, GameState.equipment_inventory.size(), GameState.MAX_EQUIPMENT_INVENTORY,
+		_format_equipment_stats(stats.get("realm_stats", {})), _format_equipment_stats(stats.get("profession_stats", {})),
+		_format_equipment_stats(stats.get("equipment_bonus", {})), stats.get("hp", 0.0), stats.get("attack", 0.0), stats.get("defense", 0.0),
+		"　".join(equipment_names),
+	]
+	var selected_slot := _get_selected_equipment_slot()
+	var current_id := int(equipped.get(String(selected_slot), 0))
+	equipment_inventory_selector.clear()
+	for item: Dictionary in GameState.equipment_inventory:
+		if StringName(item.get("slot", "")) != selected_slot:
+			continue
+		var owner_id := GameState.get_equipment_owner(int(item.get("id", 0)))
+		if owner_id != 0 and owner_id != selected_disciple_id:
+			continue
+		var label := "%s · %s%s" % [EquipmentCatalogData.get_display_name(item), _format_equipment_stats(item.get("stats", {})), "（已装备）" if int(item.get("id", 0)) == current_id else ""]
+		equipment_inventory_selector.add_item(label)
+		equipment_inventory_selector.set_item_metadata(equipment_inventory_selector.item_count - 1, int(item.get("id", 0)))
+	if equipment_inventory_selector.item_count == 0:
+		equipment_inventory_selector.add_item("该部位暂无可用装备")
+		equipment_inventory_selector.set_item_metadata(0, 0)
+	var selected_item_id := int(equipment_inventory_selector.get_item_metadata(equipment_inventory_selector.selected))
+	equip_button.disabled = selected_item_id <= 0 or selected_item_id == current_id
+	unequip_button.disabled = current_id <= 0
+
+
+func _on_equipment_slot_selected(_index: int) -> void:
+	equipment_status.text = ""
+	_refresh_equipment_panel()
+
+
+func _on_equipment_inventory_selected(_index: int) -> void:
+	_refresh_equipment_panel()
+
+
+func _equip_selected_item() -> void:
+	if selected_disciple_id <= 0 or equipment_inventory_selector.selected < 0:
+		return
+	var instance_id := int(equipment_inventory_selector.get_item_metadata(equipment_inventory_selector.selected))
+	if instance_id > 0 and GameState.equip_item(selected_disciple_id, instance_id):
+		equipment_status.text = "装备已穿戴并保存"
+		equipment_status.modulate = Color(0.55, 0.85, 0.62)
+		SaveManager.save_game()
+	else:
+		equipment_status.text = "无法穿戴：装备可能已被其他弟子占用"
+		equipment_status.modulate = Color(0.9, 0.55, 0.42)
+	_refresh_equipment_panel()
+
+
+func _unequip_selected_item() -> void:
+	if selected_disciple_id > 0 and GameState.unequip_item(selected_disciple_id, _get_selected_equipment_slot()):
+		equipment_status.text = "装备已卸下并保存"
+		equipment_status.modulate = Color(0.55, 0.85, 0.62)
+		SaveManager.save_game()
+	_refresh_equipment_panel()
 
 
 func _on_disciple_job_selected(index: int) -> void:
@@ -562,6 +671,7 @@ func _on_load_completed(success: bool, message: String) -> void:
 		_refresh_recruitment()
 		_refresh_battle_stages()
 		_refresh_battle()
+		_refresh_equipment_panel()
 
 
 func _handle_offline_receipt(window: Dictionary, receipt: Dictionary) -> void:
@@ -606,6 +716,7 @@ func _format_offline_receipt(window: Dictionary, receipt: Dictionary) -> String:
 	lines.append("弟子消耗灵谷：%d" % int(receipt.get("food_consumed", 0)))
 	lines.append("演武修为：+%.1f" % float(receipt.get("cultivation_gained", 0.0)))
 	lines.append("自动战斗胜利：%d场（%s）" % [int(receipt.get("battle_victories", 0)), _get_offline_battle_reason_text(str(receipt.get("battle_reason", "not_running")))])
+	lines.append("获得装备：%s" % GameState.get_equipment_drop_text(receipt.get("equipment_drops", [])))
 	lines.append("完成事项：建筑%d　升级%d　招募%d" % [
 		int(receipt.get("construction_completed", 0)),
 		int(receipt.get("upgrades_completed", 0)),
