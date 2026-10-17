@@ -4,7 +4,7 @@
 
 - 当前历史已完成版本：V0.5；负责人于2026-10-17明确确认整体验收完毕，QYS-V05-001～007均ACCEPTED。
 - 目标版本：V0.6 角色养成与装备系统，负责人于2026-10-17明确批准开发。
-- 当前任务：QYS-V06-001～004已编码并通过32组快速回归，等待负责人验收。
+- 当前任务：QYS-V06-001～008均已编码测试；36组快速回归、8小时模拟和Windows候选包验证通过，全部等待负责人验收。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -45,14 +45,14 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 | [QYS-V06-002](https://github.com/C-destiny/QingYunSect/issues/19) | 剑修与法修职业属性 | P0 | 待验收 |
 | [QYS-V06-003](https://github.com/C-destiny/QingYunSect/issues/20) | 三部位装备目录与实例库存 | P0 | 待验收 |
 | [QYS-V06-004](https://github.com/C-destiny/QingYunSect/issues/21) | 穿戴卸下与战斗属性联动 | P0 | 待验收 |
-| [QYS-V06-005](https://github.com/C-destiny/QingYunSect/issues/22) | 装备掉落与统一结算 | P0 | 待办 |
-| [QYS-V06-006](https://github.com/C-destiny/QingYunSect/issues/23) | 角色与装备管理界面 | P1 | 待办 |
-| [QYS-V06-007](https://github.com/C-destiny/QingYunSect/issues/24) | 跨系统回归与存档安全 | P0 | 待办 |
-| [QYS-V06-008](https://github.com/C-destiny/QingYunSect/issues/25) | V0.6 Windows交付与版本验收 | P0 | 待办 |
+| [QYS-V06-005](https://github.com/C-destiny/QingYunSect/issues/22) | 装备掉落与统一结算 | P0 | 待验收 |
+| [QYS-V06-006](https://github.com/C-destiny/QingYunSect/issues/23) | 角色与装备管理界面 | P1 | 待验收 |
+| [QYS-V06-007](https://github.com/C-destiny/QingYunSect/issues/24) | 跨系统回归与存档安全 | P0 | 待验收 |
+| [QYS-V06-008](https://github.com/C-destiny/QingYunSect/issues/25) | V0.6 Windows交付与版本验收 | P0 | 待验收 |
 
 ## 同步欠账
 
-- V0.4的10个Issue、V0.5的7个Issue均已验收关闭；V0.6的8个Issue已创建，其中#18～#21待验收、#22～#25待办；均未关联Milestone。
+- V0.4的10个Issue、V0.5的7个Issue均已验收关闭；V0.6的8个Issue已创建且全部处于TESTED/待验收；均未关联Milestone。
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
