@@ -52,6 +52,8 @@ const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 @onready var battle_log_label: Label = %BattleLog
 @onready var last_battle_result_label: Label = %LastBattleResult
 @onready var battle_toggle_button: Button = %BattleToggleButton
+@onready var offline_summary_dialog: AcceptDialog = %OfflineSummaryDialog
+@onready var offline_summary_text: Label = %OfflineSummaryText
 
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
@@ -126,7 +128,7 @@ func _ready() -> void:
 	_refresh_sect_progress()
 	_refresh_battle_stages()
 	_refresh_battle()
-	print("青云宗 V0.4 验收候选：自动战斗完善版启动成功")
+	print("青云宗 V0.5 验收候选：离线收益与长期挂机版启动成功")
 
 
 func _process(delta: float) -> void:
@@ -551,12 +553,75 @@ func _on_load_completed(success: bool, message: String) -> void:
 	save_status.modulate = Color(0.55, 0.85, 0.62) if success else Color(0.9, 0.45, 0.4)
 	load_button.disabled = not SaveManager.has_save()
 	if success:
+		var offline_window := SaveManager.get_pending_offline_window()
+		var offline_receipt := SaveManager.settle_pending_offline_progress()
+		_handle_offline_receipt(offline_window, offline_receipt)
 		_refresh_resources()
 		_refresh_assignment()
 		_refresh_buildings()
 		_refresh_recruitment()
 		_refresh_battle_stages()
 		_refresh_battle()
+
+
+func _handle_offline_receipt(window: Dictionary, receipt: Dictionary) -> void:
+	if window.is_empty():
+		return
+	var reason := str(window.get("reason", ""))
+	if reason == "too_short":
+		return
+	if reason == "missing_anchor":
+		offline_summary_text.text = "这是旧版本存档，缺少可靠的离线时间起点。\n本次不追溯发放收益；已从现在开始建立时间基线。"
+		offline_summary_dialog.popup_centered()
+		SaveManager.save_game()
+		return
+	if reason == "clock_moved_back":
+		offline_summary_text.text = "检测到系统时间早于存档时间。\n为保护存档，本次不计算离线收益。"
+		offline_summary_dialog.popup_centered()
+		return
+	if not bool(receipt.get("success", false)):
+		offline_summary_text.text = "离线收益结算失败，游戏状态已恢复。\n%s\n稍后可重新读取存档再试。" % str(receipt.get("message", "未知错误"))
+		offline_summary_dialog.popup_centered()
+		return
+	offline_summary_text.text = _format_offline_receipt(window, receipt)
+	offline_summary_dialog.popup_centered()
+
+
+func _format_offline_receipt(window: Dictionary, receipt: Dictionary) -> String:
+	var effective_seconds := int(window.get("effective_seconds", 0))
+	var hours := effective_seconds / 3600
+	var minutes := (effective_seconds % 3600) / 60
+	var duration_text := "%d小时%d分钟" % [hours, minutes] if hours > 0 else "%d分钟" % minutes
+	if effective_seconds < 60:
+		duration_text = "%d秒" % effective_seconds
+	var lines := PackedStringArray(["离线时长：%s" % duration_text])
+	if bool(window.get("truncated", false)):
+		lines.append("已达到8小时收益上限（实际离线时间更长）")
+	var resource_delta: Dictionary = receipt.get("resources", {})
+	lines.append("资源净变化：木材%+d　灵石%+d　灵谷%+d" % [
+		int(resource_delta.get("wood", 0)),
+		int(resource_delta.get("spirit_stone", 0)),
+		int(resource_delta.get("food", 0)),
+	])
+	lines.append("弟子消耗灵谷：%d" % int(receipt.get("food_consumed", 0)))
+	lines.append("演武修为：+%.1f" % float(receipt.get("cultivation_gained", 0.0)))
+	lines.append("自动战斗胜利：%d场（%s）" % [int(receipt.get("battle_victories", 0)), _get_offline_battle_reason_text(str(receipt.get("battle_reason", "not_running")))])
+	lines.append("完成事项：建筑%d　升级%d　招募%d" % [
+		int(receipt.get("construction_completed", 0)),
+		int(receipt.get("upgrades_completed", 0)),
+		int(receipt.get("recruited", 0)),
+	])
+	return "\n".join(lines)
+
+
+func _get_offline_battle_reason_text(reason: String) -> String:
+	match reason:
+		"victory": return "持续挑战"
+		"defeat": return "挑战失败并停止"
+		"invalid_party": return "队伍异常并停止"
+		"waiting": return "仍在重战等待"
+		"partial": return "本场尚未结束"
+		_: return "未开启自动战斗"
 
 
 func _join_selected_disciple_to_battle() -> void:

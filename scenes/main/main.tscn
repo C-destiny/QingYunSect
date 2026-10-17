@@ -63,7 +63,7 @@ text = "青云宗"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 16
-text = "V0.4 验收候选 · 自动战斗完善"
+text = "V0.5 验收候选 · 离线收益"
 
 [node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
 layout_mode = 2
@@ -559,4 +559,32 @@ autowrap_mode = 2
 unique_name_in_owner = true
 wait_time = 10.0
 autostart = true
+
+[node name="OfflineSummaryDialog" type="AcceptDialog" parent="."]
+unique_name_in_owner = true
+title = "离线收益"
+initial_position = 2
+size = Vector2i(560, 360)
+ok_button_text = "收下收益"
+
+[node name="Margin" type="MarginContainer" parent="OfflineSummaryDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 18.0
+offset_right = -24.0
+offset_bottom = -54.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OfflineSummaryText" type="Label" parent="OfflineSummaryDialog/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.88, 0.78, 1)
+theme_override_font_sizes/font_size = 18
+text = "离线收益明细"
+vertical_alignment = 1
+autowrap_mode = 2
 
