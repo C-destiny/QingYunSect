@@ -128,14 +128,17 @@ theme_override_font_sizes/font_size = 13
 text = "本地存档"
 horizontal_alignment = 2
 
-[node name="Body" type="HBoxContainer" parent="Layout"]
+[node name="Body" type="Control" parent="Layout"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 18
 
 [node name="MapPanel" type="PanelContainer" parent="Layout/Body"]
-layout_mode = 2
-size_flags_horizontal = 3
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="SectMap" type="Control" parent="Layout/Body/MapPanel"]
 unique_name_in_owner = true
@@ -144,14 +147,61 @@ layout_mode = 2
 mouse_filter = 0
 script = ExtResource("2_map")
 
-[node name="Sidebar" type="PanelContainer" parent="Layout/Body"]
-custom_minimum_size = Vector2(420, 0)
-layout_mode = 2
+[node name="Sidebar" type="Panel" parent="Layout/Body"]
+visible = false
+z_index = 10
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -576.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = -96.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="PanelTitle" type="Label" parent="Layout/Body/Sidebar"]
+z_index = 1
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 19.0
+offset_right = -170.0
+offset_bottom = 55.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
+theme_override_font_sizes/font_size = 21
+text = "宗门管理"
+vertical_alignment = 1
+
+[node name="CloseManagementButton" type="Button" parent="Layout/Body/Sidebar"]
+unique_name_in_owner = true
+z_index = 1
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -152.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = 54.0
+grow_horizontal = 0
+text = "关闭面板 ×"
 
 [node name="Margin" type="MarginContainer" parent="Layout/Body/Sidebar"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
+theme_override_constants/margin_top = 66
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
@@ -168,6 +218,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 16
 
 [node name="Heading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 26
@@ -212,6 +263,7 @@ disabled = true
 text = "宗门等级不足，无法扩张"
 
 [node name="NavigationRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 6
 
@@ -430,6 +482,7 @@ text = "修为不足，无法突破"
 layout_mode = 2
 
 [node name="EquipmentHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.85, 0.95, 1)
 theme_override_font_sizes/font_size = 18
@@ -752,6 +805,7 @@ layout_mode = 2
 text = "拆除建筑"
 
 [node name="Spacer" type="Control" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+custom_minimum_size = Vector2(0, 360)
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -761,6 +815,65 @@ theme_override_colors/font_color = Color(0.45, 0.57, 0.54, 1)
 theme_override_font_sizes/font_size = 15
 text = "当前开放区域：8 × 6\n规划地图：40 × 40\n\n提示：每名弟子都会按资源点基础效率持续工作"
 autowrap_mode = 2
+
+[node name="BottomNav" type="PanelContainer" parent="Layout/Body"]
+z_index = 20
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 420.0
+offset_top = -78.0
+offset_right = -420.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Margin" type="MarginContainer" parent="Layout/Body/BottomNav"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Buttons" type="HBoxContainer" parent="Layout/Body/BottomNav/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OpenSectPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "宗门"
+
+[node name="OpenBuildPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "建设"
+
+[node name="OpenDisciplesPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "弟子"
+
+[node name="OpenGrowthPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "养成"
+
+[node name="OpenBattlePanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "挂机"
 
 [node name="AutosaveTimer" type="Timer" parent="."]
 unique_name_in_owner = true

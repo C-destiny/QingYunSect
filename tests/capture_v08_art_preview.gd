@@ -1,6 +1,7 @@
 extends SceneTree
 
 const OUTPUT_PATH := "res://builds/v08-art-preview.png"
+const DRAWER_OUTPUT_PATH := "res://builds/v08-art-preview-drawer.png"
 const TEST_SAVE_PATH := "res://tests/.capture_v08_art_preview.json"
 var state: Node
 
@@ -44,5 +45,11 @@ func _capture() -> void:
 	var image := root.get_texture().get_image()
 	var error := image.save_png(OUTPUT_PATH)
 	assert(error == OK)
-	print("PASS: saved V0.8 art preview to %s" % OUTPUT_PATH)
+	main._navigate_sidebar(main.get_node("%BuildHeading"))
+	for frame_index: int in range(5):
+		await process_frame
+	var drawer_image := root.get_texture().get_image()
+	var drawer_error := drawer_image.save_png(DRAWER_OUTPUT_PATH)
+	assert(drawer_error == OK)
+	print("PASS: saved V0.8 art previews to %s and %s" % [OUTPUT_PATH, DRAWER_OUTPUT_PATH])
 	quit()

@@ -26,9 +26,25 @@ func _run() -> void:
 	assert(main.theme != null)
 	assert(main.theme.has_stylebox("normal", "Button"))
 	assert(main.theme.has_stylebox("panel", "PanelContainer"))
+	var body: Control = main.get_node("Layout/Body")
 	var sidebar: Control = main.get_node("Layout/Body/Sidebar")
 	var map: Control = main.get_node("%SectMap")
-	assert(sidebar.custom_minimum_size.x == 420.0)
+	assert(not (body is HBoxContainer))
+	assert(sidebar.custom_minimum_size.x == 560.0)
+	assert(not sidebar.visible)
+	assert(main.get_node("Layout/Body/BottomNav").visible)
+	for button_name: String in [
+		"OpenSectPanelButton",
+		"OpenBuildPanelButton",
+		"OpenDisciplesPanelButton",
+		"OpenGrowthPanelButton",
+		"OpenBattlePanelButton",
+	]:
+		assert(main.get_node("%%%s" % button_name) is Button)
+	main._open_management_panel(main.get_node("%RosterHeading"))
+	assert(sidebar.visible)
+	main._close_management_panel()
+	assert(not sidebar.visible)
 	assert(ProjectSettings.get_setting("display/window/size/viewport_width") == 1920)
 	assert(ProjectSettings.get_setting("display/window/size/viewport_height") == 1080)
 	assert(ProjectSettings.get_setting("display/window/size/window_width_override") == 1280)
@@ -74,5 +90,5 @@ func _run() -> void:
 
 	main.queue_free()
 	_cleanup()
-	print("PASS: V0.8 theme, fixed sidebar, map contract, painted environment atlases, and two transparent character models")
+	print("PASS: V0.8 theme, full-map drawer navigation, map contract, painted environment atlases, and two transparent character models")
 	quit()

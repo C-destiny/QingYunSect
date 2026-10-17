@@ -56,6 +56,7 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var sect_upgrade_button: Button = %SectUpgradeButton
 @onready var territory_status: Label = %TerritoryStatus
 @onready var territory_unlock_button: Button = %TerritoryUnlockButton
+@onready var management_sidebar: Control = $Layout/Body/Sidebar
 @onready var sidebar_scroll: ScrollContainer = %Scroll
 @onready var goal_status: Label = %GoalStatus
 @onready var goal_resource_feedback: Label = %GoalResourceFeedback
@@ -63,8 +64,16 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var nav_management_button: Button = %NavManagementButton
 @onready var nav_disciples_button: Button = %NavDisciplesButton
 @onready var nav_battle_button: Button = %NavBattleButton
+@onready var close_management_button: Button = %CloseManagementButton
+@onready var open_sect_panel_button: Button = %OpenSectPanelButton
+@onready var open_build_panel_button: Button = %OpenBuildPanelButton
+@onready var open_disciples_panel_button: Button = %OpenDisciplesPanelButton
+@onready var open_growth_panel_button: Button = %OpenGrowthPanelButton
+@onready var open_battle_panel_button: Button = %OpenBattlePanelButton
+@onready var sect_heading: Label = %Heading
 @onready var management_heading: Label = %BuildHeading
 @onready var disciples_heading: Label = %RosterHeading
+@onready var growth_heading: Label = %EquipmentHeading
 @onready var battle_heading: Label = %BattleHeading
 @onready var battle_party_status: Label = %BattlePartyStatus
 @onready var join_battle_button: Button = %JoinBattleButton
@@ -169,6 +178,12 @@ func _ready() -> void:
 	nav_management_button.pressed.connect(_navigate_sidebar.bind(management_heading))
 	nav_disciples_button.pressed.connect(_navigate_sidebar.bind(disciples_heading))
 	nav_battle_button.pressed.connect(_navigate_sidebar.bind(battle_heading))
+	close_management_button.pressed.connect(_close_management_panel)
+	open_sect_panel_button.pressed.connect(_navigate_sidebar.bind(sect_heading))
+	open_build_panel_button.pressed.connect(_navigate_sidebar.bind(management_heading))
+	open_disciples_panel_button.pressed.connect(_navigate_sidebar.bind(disciples_heading))
+	open_growth_panel_button.pressed.connect(_navigate_sidebar.bind(growth_heading))
+	open_battle_panel_button.pressed.connect(_navigate_sidebar.bind(battle_heading))
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
 	roster_filter.item_selected.connect(_on_roster_view_changed)
 	roster_sort.item_selected.connect(_on_roster_view_changed)
@@ -262,6 +277,7 @@ func _refresh_resources() -> void:
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
+	_open_management_panel()
 	selected_resource = resource_data
 	selected_building_instance = 0
 	building_actions.visible = false
@@ -280,6 +296,7 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 
 
 func _on_building_selected(building: Dictionary) -> void:
+	_open_management_panel()
 	selected_resource = {}
 	selected_building_instance = int(building.get("instance_id", 0))
 	assignment_status.visible = false
@@ -464,8 +481,32 @@ func _get_food_production_per_minute() -> float:
 
 
 func _navigate_sidebar(target: Control) -> void:
+	_open_management_panel(target)
+
+
+func _open_management_panel(target: Control = null) -> void:
+	management_sidebar.visible = true
 	if is_instance_valid(target):
-		sidebar_scroll.ensure_control_visible(target)
+		call_deferred("_ensure_sidebar_target_visible", target)
+
+
+func _ensure_sidebar_target_visible(target: Control) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if management_sidebar.visible and is_instance_valid(target):
+		var target_offset := target.global_position.y - sidebar_scroll.global_position.y
+		sidebar_scroll.scroll_vertical = maxi(0, sidebar_scroll.scroll_vertical + int(target_offset) - 8)
+
+
+func _close_management_panel() -> void:
+	management_sidebar.visible = false
+	open_sect_panel_button.grab_focus()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and management_sidebar.visible:
+		_close_management_panel()
+		get_viewport().set_input_as_handled()
 
 
 func _format_resource_gaps(gaps: Dictionary) -> String:
@@ -861,6 +902,7 @@ func _on_region_selected(region_id: StringName) -> void:
 	var region := TerritoryCatalogData.get_data(region_id)
 	if region.is_empty():
 		return
+	_open_management_panel()
 	selected_resource = {}
 	selected_building_instance = 0
 	building_actions.visible = false
