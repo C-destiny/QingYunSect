@@ -1,0 +1,28 @@
+extends SceneTree
+
+
+func _init() -> void:
+	var state := preload("res://scripts/core/game_state.gd").new()
+	root.add_child(state)
+	state.get_idle_disciples()
+	var sword_id := int(state.disciples[0]["id"])
+	var mage_id := int(state.disciples[1]["id"])
+	assert(state.disciples[0]["profession"] == "sword")
+	assert(state.disciples[1]["profession"] == "mage")
+	var sword := state.get_disciple_battle_stats(sword_id)
+	var mage := state.get_disciple_battle_stats(mage_id)
+	assert(float(sword["hp"]) > float(mage["hp"]))
+	assert(float(sword["defense"]) > float(mage["defense"]))
+	assert(float(mage["attack"]) > float(sword["attack"]))
+	assert(state.set_disciple_job(sword_id, &"combat"))
+	assert(state.set_disciple_job(mage_id, &"combat"))
+	assert(state.start_auto_battle(1))
+	var party := state.get_battle_party_stats()
+	assert(is_equal_approx(float(party["hp"]), float(sword["hp"]) + float(mage["hp"])))
+	state.stop_auto_battle()
+	assert(state.set_disciple_job(sword_id, &"forest"))
+	assert(state.set_disciple_job(mage_id, &"forest"))
+	assert(is_equal_approx(state.get_site_workforce_power(&"forest"), 2.0))
+	assert(is_equal_approx(state.get_food_consumption_per_minute(), 3.0))
+	print("PASS: sword and mage professions share battle formulas without changing economy rules")
+	quit()

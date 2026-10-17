@@ -2,6 +2,8 @@ extends Node
 
 const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
+const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
+const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
 
 signal resources_changed
 signal assignments_changed
@@ -12,6 +14,7 @@ signal training_changed
 signal disciples_changed
 signal sect_progress_changed
 signal battle_changed
+signal equipment_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -29,6 +32,7 @@ const SECT_PRODUCTION_BONUS_PER_LEVEL := 0.05
 const BATTLE_ROUND_TIME := BattleCatalogData.ROUND_TIME
 const BATTLE_RESTART_DELAY := BattleCatalogData.RESTART_DELAY
 const BATTLE_LOG_LIMIT := 30
+const MAX_EQUIPMENT_INVENTORY := 60
 const PROFESSION_IDS := [&"sword", &"mage"]
 const EQUIPMENT_SLOT_IDS := [&"weapon", &"armor", &"ring"]
 const EQUIPMENT_QUALITY_IDS := [&"common", &"rare", &"epic"]
@@ -159,29 +163,96 @@ func get_equipment_instance(instance_id: int) -> Dictionary:
 	return {}
 
 
+func create_equipment_instance(template_id: StringName, quality: StringName) -> int:
+	if equipment_inventory.size() >= MAX_EQUIPMENT_INVENTORY:
+		return 0
+	var equipment := EquipmentCatalogData.build_instance(next_equipment_instance_id, template_id, quality)
+	if equipment.is_empty():
+		return 0
+	var instance_id := next_equipment_instance_id
+	next_equipment_instance_id += 1
+	equipment_inventory.append(equipment)
+	equipment_changed.emit()
+	return instance_id
+
+
+func get_equipment_owner(instance_id: int) -> int:
+	if instance_id <= 0:
+		return 0
+	for disciple: Dictionary in disciples:
+		var equipped: Dictionary = disciple.get("equipment", {})
+		for slot: StringName in EQUIPMENT_SLOT_IDS:
+			if int(equipped.get(String(slot), 0)) == instance_id:
+				return int(disciple.get("id", 0))
+	return 0
+
+
+func equip_item(disciple_id: int, instance_id: int) -> bool:
+	var disciple := get_disciple(disciple_id)
+	var equipment := get_equipment_instance(instance_id)
+	if disciple.is_empty() or equipment.is_empty():
+		return false
+	var owner_id := get_equipment_owner(instance_id)
+	if owner_id != 0 and owner_id != disciple_id:
+		return false
+	var slot := StringName(equipment["slot"])
+	var equipped: Dictionary = disciple.get("equipment", {})
+	if int(equipped.get(String(slot), 0)) == instance_id:
+		return true
+	_stop_battle_for_loadout_change(disciple)
+	equipped[String(slot)] = instance_id
+	disciple["equipment"] = equipped
+	equipment_changed.emit()
+	disciples_changed.emit()
+	battle_changed.emit()
+	return true
+
+
+func unequip_item(disciple_id: int, slot: StringName) -> bool:
+	if slot not in EQUIPMENT_SLOT_IDS:
+		return false
+	var disciple := get_disciple(disciple_id)
+	if disciple.is_empty():
+		return false
+	var equipped: Dictionary = disciple.get("equipment", {})
+	if int(equipped.get(String(slot), 0)) == 0:
+		return true
+	_stop_battle_for_loadout_change(disciple)
+	equipped[String(slot)] = 0
+	disciple["equipment"] = equipped
+	equipment_changed.emit()
+	disciples_changed.emit()
+	battle_changed.emit()
+	return true
+
+
+func _stop_battle_for_loadout_change(disciple: Dictionary) -> void:
+	if StringName(disciple.get("job", "idle")) == &"combat" and (battle_running or auto_battle_enabled):
+		stop_auto_battle("参战弟子更换装备，自动战斗已停止")
+
+
+func get_disciple_equipment_bonus(disciple_id: int) -> Dictionary:
+	var bonus := {"hp": 0.0, "attack": 0.0, "defense": 0.0}
+	var disciple := get_disciple(disciple_id)
+	if disciple.is_empty():
+		return bonus
+	var equipped: Dictionary = disciple.get("equipment", {})
+	for slot: StringName in EQUIPMENT_SLOT_IDS:
+		var equipment := get_equipment_instance(int(equipped.get(String(slot), 0)))
+		var stats: Dictionary = equipment.get("stats", {})
+		for stat_id: String in bonus:
+			bonus[stat_id] += float(stats.get(stat_id, 0.0))
+	return bonus
+
+
 func _validate_equipment_instance(raw_equipment: Variant, used_ids: Dictionary) -> Dictionary:
-	if not raw_equipment is Dictionary:
+	var equipment := EquipmentCatalogData.normalize_instance(raw_equipment)
+	if equipment.is_empty():
 		return {}
-	var equipment: Dictionary = raw_equipment.duplicate(true)
-	var instance_id := int(equipment.get("id", 0))
-	var template_id := str(equipment.get("template_id", ""))
-	var slot := StringName(equipment.get("slot", ""))
-	var quality := StringName(equipment.get("quality", ""))
-	var stats_value: Variant = equipment.get("stats", {})
-	if instance_id <= 0 or used_ids.has(instance_id) or template_id.is_empty():
+	var instance_id := int(equipment["id"])
+	if used_ids.has(instance_id):
 		return {}
-	if slot not in EQUIPMENT_SLOT_IDS or quality not in EQUIPMENT_QUALITY_IDS or not stats_value is Dictionary:
-		return {}
-	var stats: Dictionary = stats_value
-	for stat_id: Variant in stats:
-		if StringName(stat_id) not in [&"hp", &"attack", &"defense"] or typeof(stats[stat_id]) not in [TYPE_INT, TYPE_FLOAT] or float(stats[stat_id]) < 0.0:
-			return {}
 	used_ids[instance_id] = true
-	equipment["id"] = instance_id
-	equipment["template_id"] = template_id
-	equipment["slot"] = String(slot)
-	equipment["quality"] = String(quality)
-	equipment["stats"] = stats.duplicate(true)
 	return equipment
 
 
@@ -362,7 +433,21 @@ func get_disciple_battle_stats(disciple_id: int) -> Dictionary:
 	var disciple := get_disciple(disciple_id)
 	if disciple.is_empty():
 		return {}
-	return BattleCatalogData.get_disciple_stats(int(disciple.get("realm_level", 1)))
+	var realm_stats := BattleCatalogData.get_disciple_stats(int(disciple.get("realm_level", 1)))
+	var profession := StringName(disciple.get("profession", _get_default_profession(disciple_id)))
+	var profession_stats := ProfessionCatalogData.apply_to_stats(profession, realm_stats)
+	if profession_stats.is_empty():
+		return {}
+	var equipment_bonus := get_disciple_equipment_bonus(disciple_id)
+	return {
+		"hp": float(profession_stats["hp"]) + float(equipment_bonus["hp"]),
+		"attack": float(profession_stats["attack"]) + float(equipment_bonus["attack"]),
+		"defense": float(profession_stats["defense"]) + float(equipment_bonus["defense"]),
+		"profession": String(profession),
+		"realm_stats": realm_stats,
+		"profession_stats": profession_stats,
+		"equipment_bonus": equipment_bonus,
+	}
 
 
 func get_battle_party_stats() -> Dictionary:
@@ -1142,6 +1227,8 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	var loaded_equipment_value: Variant = data.get("equipment_inventory", [])
 	if not loaded_equipment_value is Array:
 		return false
+	if loaded_equipment_value.size() > MAX_EQUIPMENT_INVENTORY:
+		return false
 	var used_equipment_ids: Dictionary = {}
 	for raw_equipment: Variant in loaded_equipment_value:
 		var equipment := _validate_equipment_instance(raw_equipment, used_equipment_ids)
@@ -1177,7 +1264,7 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 			disciple["cultivation"] = maxf(0.0, float(disciple.get("cultivation", 0.0)))
 			disciple["job"] = String(job)
 			var profession := StringName(disciple.get("profession", _get_default_profession(disciple_id)))
-			if profession not in PROFESSION_IDS:
+			if not ProfessionCatalogData.is_valid(profession):
 				return false
 			disciple["profession"] = String(profession)
 			var normalized_equipment := _normalize_disciple_equipment(disciple.get("equipment", {}))
@@ -1299,6 +1386,7 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	sustenance_changed.emit()
 	training_changed.emit()
 	disciples_changed.emit()
+	equipment_changed.emit()
 	sect_progress_changed.emit()
 	battle_changed.emit()
 	return true

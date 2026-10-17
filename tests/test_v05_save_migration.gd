@@ -40,13 +40,7 @@ func _init() -> void:
 	assert(not manager.load_game())
 	assert(state.export_save_data() == before_missing_schema)
 
-	var valid_equipment := {
-		"id": 1,
-		"template_id": "migration_test_sword",
-		"slot": "weapon",
-		"quality": "common",
-		"stats": {"attack": 1.0},
-	}
+	var valid_equipment := preload("res://scripts/data/equipment_catalog.gd").build_instance(1, &"initiate_weapon", &"common")
 	var valid_state := state.export_save_data()
 	valid_state["equipment_inventory"] = [valid_equipment]
 	valid_state["next_equipment_instance_id"] = 2

@@ -18,6 +18,7 @@ func _init() -> void:
 	assert(is_equal_approx(BattleCatalogData.calculate_damage(15.0, 4.0), 11.0))
 
 	assert(state.get_battle_phase() == &"stopped")
+	var initial_disciple_stats := state.get_disciple_battle_stats(disciple_id)
 	assert(state.start_auto_battle(1))
 	assert(state.get_battle_phase() == &"fighting")
 	state.process_battle(1.0)
@@ -35,9 +36,11 @@ func _init() -> void:
 	var disciple := state.get_disciple(disciple_id)
 	disciple["cultivation"] = state.get_breakthrough_requirement(1)
 	assert(state.breakthrough_disciple(disciple_id))
-	assert(is_equal_approx(state.battle_player_max_hp, 100.0))
+	assert(is_equal_approx(state.battle_player_max_hp, float(initial_disciple_stats["hp"])))
+	var post_breakthrough_stats := state.get_disciple_battle_stats(disciple_id)
+	var expected_damage := BattleCatalogData.calculate_damage(float(post_breakthrough_stats["attack"]), float(BattleCatalogData.get_stage(1)["defense"]))
 	state.process_battle(1.0)
-	assert(is_equal_approx(state.battle_enemy_hp, enemy_hp_after_round - 11.0))
+	assert(is_equal_approx(state.battle_enemy_hp, enemy_hp_after_round - expected_damage))
 
 	var wood_before := state.get_resource_amount(&"wood")
 	assert(state.process_battle(1000.0))
