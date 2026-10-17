@@ -37,8 +37,7 @@ func _run() -> void:
 	await process_frame
 	assert(not dialog.visible)
 	main.get_node("%AutosaveTimer").stop()
-	main.queue_free()
-	await process_frame
+	main.free()
 	manager.unix_time_provider = Callable()
 	_cleanup()
 	print("PASS: offline summary settles on load, displays receipt, and does not repeat")
