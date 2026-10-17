@@ -1,0 +1,46 @@
+extends SceneTree
+
+
+func _init() -> void:
+	var state := preload("res://scripts/core/game_state.gd").new()
+	root.add_child(state)
+	state.resources = {"wood": 5000, "spirit_stone": 5000, "food": 5000}
+	var base_training_multiplier := state.get_training_rate_multiplier()
+	assert(state.start_construction(&"artifact_forge", Vector2i(0, 0)))
+	assert(state.start_construction(&"scripture_library", Vector2i(1, 0)))
+	assert(state.get_forging_level() == 0)
+	assert(is_equal_approx(state.get_training_rate_multiplier(), base_training_multiplier))
+	state.process_construction(12.1)
+	assert(state.get_forging_level() == 1)
+	assert(is_equal_approx(state.get_training_rate_multiplier(), base_training_multiplier))
+	state.process_construction(2.0)
+	assert(is_equal_approx(state.get_training_rate_multiplier(), base_training_multiplier * 1.2))
+
+	var forge_id := int(state.buildings[0]["instance_id"])
+	assert(state.start_building_upgrade(forge_id))
+	assert(state.get_forging_level() == 1)
+	state.process_construction(23.9)
+	assert(state.get_forging_level() == 1)
+	state.process_construction(0.2)
+	assert(state.get_forging_level() == 2)
+
+	assert(state.start_construction(&"artifact_forge", Vector2i(2, 0)))
+	state.process_construction(12.1)
+	assert(state.get_completed_building_count(&"artifact_forge") == 2)
+	assert(state.get_completed_building_levels(&"artifact_forge") == 3)
+	assert(state.get_forging_level() == 3)
+	var prosperity := state.get_sect_prosperity()
+	assert(prosperity > 0)
+
+	var saved := state.export_save_data()
+	var restored := preload("res://scripts/core/game_state.gd").new()
+	root.add_child(restored)
+	assert(restored.import_save_data(saved))
+	assert(restored.get_forging_level() == 3)
+	assert(is_equal_approx(restored.get_training_rate_multiplier(), base_training_multiplier * 1.2))
+	var refund := restored.demolish_building(int(restored.buildings[2]["instance_id"]))
+	assert(int(refund.get("wood", 0)) == 60)
+	assert(int(refund.get("spirit_stone", 0)) == 45)
+	assert(restored.get_forging_level() == 2)
+	print("PASS: V0.7 forge/library construction, delayed effects, upgrades, prosperity, persistence, and demolition")
+	quit()

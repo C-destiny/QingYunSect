@@ -4,6 +4,7 @@ const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
 const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
+const EquipmentCraftingCatalogData = preload("res://scripts/data/equipment_crafting_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 
 signal resources_changed
@@ -179,6 +180,40 @@ func create_equipment_instance(template_id: StringName, quality: StringName) -> 
 	next_equipment_instance_id += 1
 	equipment_inventory.append(equipment)
 	equipment_changed.emit()
+	return instance_id
+
+
+func get_forging_level() -> int:
+	return mini(BuildingCatalog.MAX_BUILDING_LEVEL, get_completed_building_levels(&"artifact_forge"))
+
+
+func get_equipment_crafting_recipe(template_id: StringName, quality: StringName) -> Dictionary:
+	return EquipmentCraftingCatalogData.get_recipe(template_id, quality)
+
+
+func can_craft_equipment(template_id: StringName, quality: StringName) -> bool:
+	var recipe := get_equipment_crafting_recipe(template_id, quality)
+	if recipe.is_empty() or equipment_inventory.size() >= MAX_EQUIPMENT_INVENTORY:
+		return false
+	if get_forging_level() < int(recipe.get("required_forge_level", 1)):
+		return false
+	return can_afford(recipe.get("cost", {}))
+
+
+func craft_equipment(template_id: StringName, quality: StringName) -> int:
+	if not can_craft_equipment(template_id, quality):
+		return 0
+	var recipe := get_equipment_crafting_recipe(template_id, quality)
+	var cost: Dictionary = recipe.get("cost", {})
+	var resources_before := resources.duplicate(true)
+	if not spend_resources(cost):
+		return 0
+	var instance_id := create_equipment_instance(template_id, quality)
+	if instance_id <= 0:
+		resources = resources_before
+		resources_changed.emit()
+		return 0
+	equipment_crafts_completed += 1
 	return instance_id
 
 
@@ -767,7 +802,9 @@ func get_training_capacity() -> int:
 
 func get_training_rate_multiplier() -> float:
 	var extra_levels := get_completed_building_levels(&"training_ground") - get_completed_building_count(&"training_ground")
-	return 1.0 + float(extra_levels) * 0.5
+	var scripture_definition := BuildingCatalog.get_data(&"scripture_library")
+	var scripture_bonus := float(scripture_definition.get("training_bonus", 0.0)) * float(get_completed_building_levels(&"scripture_library"))
+	return (1.0 + float(extra_levels) * 0.5) * (1.0 + scripture_bonus)
 
 
 func get_cultivation_per_minute() -> float:

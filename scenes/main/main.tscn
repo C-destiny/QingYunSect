@@ -407,6 +407,41 @@ theme_override_font_sizes/font_size = 13
 text = "战斗中更换参战弟子装备会安全停止自动战斗"
 autowrap_mode = 2
 
+[node name="CraftingHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.68, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "炼器打造"
+
+[node name="CraftingSelectors" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CraftTemplateSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CraftingSelectors"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CraftQualitySelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CraftingSelectors"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CraftButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+disabled = true
+text = "需要已完工炼器坊"
+
+[node name="CraftingStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.68, 1)
+theme_override_font_sizes/font_size = 13
+text = "选择装备模板与品质查看固定配方"
+autowrap_mode = 2
+
 [node name="BattleDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 layout_mode = 2
 
@@ -577,6 +612,20 @@ custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "演武场 2修炼位\n木材60 灵石40"
+
+[node name="ArtifactForgeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "炼器坊 打造等级+1\n木材120 灵石90"
+
+[node name="ScriptureLibraryButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "藏经阁 修炼+20%\n木材100 灵石120"
 
 [node name="CancelBuildButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
 unique_name_in_owner = true

@@ -4,7 +4,7 @@
 
 - 当前历史已完成版本：V0.6；负责人于2026-10-17明确确认整体验收完毕，QYS-V06-001～008均ACCEPTED。
 - 目标版本：V0.7 宗门经营扩展与系统整合，负责人于2026-10-17明确批准开始开发。
-- 当前任务：QYS-V07-001～003已通过40组快速回归并等待验收；下一项为QYS-V07-004炼器坊与藏经阁。
+- 当前任务：QYS-V07-001～005已通过43组快速回归并等待验收；下一项为QYS-V07-006培养与挂机建筑联动及数值核验。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -52,15 +52,15 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 
 ## V0.7 已批准任务
 
-完整边界和验收标准见docs/V0.7_DEVELOPMENT_PLAN.md。QYS-V07-001已完成范围与基线核验、等待负责人验收；后续任务保持待办，不因规划完成而视为已实现。
+完整边界和验收标准见docs/V0.7_DEVELOPMENT_PLAN.md。QYS-V07-001～005已完成编码或核验并等待负责人验收；后续任务保持待办，不因规划完成而视为已实现。
 
 | 编号 / GitHub | V0.7任务 | 优先级 | 本轮快照 |
 |---|---|---|---|
 | [QYS-V07-001](https://github.com/C-destiny/QingYunSect/issues/26) | 范围固化与经营基线核验 | P0 | 待验收 |
 | [QYS-V07-002](https://github.com/C-destiny/QingYunSect/issues/27) | version 3存档与领地迁移契约 | P0 | 待验收 |
 | [QYS-V07-003](https://github.com/C-destiny/QingYunSect/issues/28) | 12×8分阶段领地扩张 | P0 | 待验收 |
-| [QYS-V07-004](https://github.com/C-destiny/QingYunSect/issues/29) | 炼器坊与藏经阁建筑 | P0 | 待办 |
-| [QYS-V07-005](https://github.com/C-destiny/QingYunSect/issues/30) | 确定性装备打造与资源消耗 | P0 | 待办 |
+| [QYS-V07-004](https://github.com/C-destiny/QingYunSect/issues/29) | 炼器坊与藏经阁建筑 | P0 | 待验收 |
+| [QYS-V07-005](https://github.com/C-destiny/QingYunSect/issues/30) | 确定性装备打造与资源消耗 | P0 | 待验收 |
 | [QYS-V07-006](https://github.com/C-destiny/QingYunSect/issues/31) | 培养与挂机的建筑联动 | P0 | 待办 |
 | [QYS-V07-007](https://github.com/C-destiny/QingYunSect/issues/32) | 宗门发展目标导航与资源反馈 | P1 | 待办 |
 | [QYS-V07-008](https://github.com/C-destiny/QingYunSect/issues/33) | 经营平衡长时与跨系统回归 | P0 | 待办 |
@@ -68,7 +68,7 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 
 ## 同步欠账
 
-- V0.4的10个Issue、V0.5的7个Issue、V0.6的8个Issue均已验收关闭；V0.7的9个Issue已创建，其中#26待验收、#27～#34待办；均未关联Milestone。
+- V0.4的10个Issue、V0.5的7个Issue、V0.6的8个Issue均已验收关闭；V0.7的9个Issue已创建，其中#26～#30待验收、#31～#34待办；均未关联Milestone。
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。

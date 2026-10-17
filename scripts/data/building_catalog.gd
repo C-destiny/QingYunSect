@@ -46,6 +46,22 @@ const BUILDINGS := {
 		"cultivation_rate": 1.0,
 		"color": Color(0.58, 0.28, 0.25, 1.0),
 	},
+	&"artifact_forge": {
+		"name": "炼器坊",
+		"description": "锻造制式装备。已完工总等级决定可打造的装备品质。",
+		"cost": {"wood": 120, "spirit_stone": 90},
+		"build_time": 12.0,
+		"forging_level": 1,
+		"color": Color(0.62, 0.34, 0.2, 1.0),
+	},
+	&"scripture_library": {
+		"name": "藏经阁",
+		"description": "收藏修行典籍。每个已完工等级使演武修炼速度提高20%。",
+		"cost": {"wood": 100, "spirit_stone": 120},
+		"build_time": 14.0,
+		"training_bonus": 0.2,
+		"color": Color(0.36, 0.35, 0.62, 1.0),
+	},
 }
 
 const MAX_BUILDING_LEVEL := 3

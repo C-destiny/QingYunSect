@@ -2,6 +2,7 @@ extends Control
 
 const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
+const EquipmentCraftingCatalogData = preload("res://scripts/data/equipment_crafting_catalog.gd")
 const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 
@@ -42,6 +43,10 @@ const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 @onready var equip_button: Button = %EquipButton
 @onready var unequip_button: Button = %UnequipButton
 @onready var equipment_status: Label = %EquipmentStatus
+@onready var craft_template_selector: OptionButton = %CraftTemplateSelector
+@onready var craft_quality_selector: OptionButton = %CraftQualitySelector
+@onready var craft_button: Button = %CraftButton
+@onready var crafting_status: Label = %CraftingStatus
 @onready var sect_level_status: Label = %SectLevelStatus
 @onready var sect_progress: ProgressBar = %SectProgress
 @onready var sect_upgrade_button: Button = %SectUpgradeButton
@@ -110,6 +115,8 @@ func _ready() -> void:
 		&"spirit_mine": %SpiritMineButton,
 		&"spirit_field": %SpiritFieldButton,
 		&"training_ground": %TrainingGroundButton,
+		&"artifact_forge": %ArtifactForgeButton,
+		&"scripture_library": %ScriptureLibraryButton,
 	}
 	for building_id: StringName in build_buttons:
 		build_buttons[building_id].pressed.connect(_start_building_placement.bind(building_id))
@@ -132,6 +139,9 @@ func _ready() -> void:
 	equipment_inventory_selector.item_selected.connect(_on_equipment_inventory_selected)
 	equip_button.pressed.connect(_equip_selected_item)
 	unequip_button.pressed.connect(_unequip_selected_item)
+	craft_template_selector.item_selected.connect(_on_crafting_selection_changed)
+	craft_quality_selector.item_selected.connect(_on_crafting_selection_changed)
+	craft_button.pressed.connect(_craft_selected_equipment)
 	for filter_name: String in ["全部弟子", "空闲", "采集工作", "修炼中", "可突破", "战斗队伍"]:
 		roster_filter.add_item(filter_name)
 	for sort_name: String in ["按姓名", "境界降序", "修为降序", "按岗位"]:
@@ -142,6 +152,12 @@ func _ready() -> void:
 	for slot: StringName in GameState.EQUIPMENT_SLOT_IDS:
 		equipment_slot_selector.add_item(str(EquipmentCatalogData.SLOTS[String(slot)]))
 		equipment_slot_selector.set_item_metadata(equipment_slot_selector.item_count - 1, String(slot))
+	for template_id: String in EquipmentCatalogData.TEMPLATES:
+		craft_template_selector.add_item(str(EquipmentCatalogData.TEMPLATES[template_id]["name"]))
+		craft_template_selector.set_item_metadata(craft_template_selector.item_count - 1, template_id)
+	for quality: StringName in GameState.EQUIPMENT_QUALITY_IDS:
+		craft_quality_selector.add_item(str(EquipmentCatalogData.QUALITIES[String(quality)]["name"]))
+		craft_quality_selector.set_item_metadata(craft_quality_selector.item_count - 1, String(quality))
 	if SaveManager.has_save():
 		SaveManager.load_game()
 	_refresh_resources()
@@ -153,6 +169,7 @@ func _ready() -> void:
 	_refresh_territory()
 	_refresh_battle_stages()
 	_refresh_battle()
+	_refresh_crafting_panel()
 	print("青云宗 V0.7 开发版：宗门经营整合启动成功")
 
 
@@ -196,6 +213,7 @@ func _refresh_resources() -> void:
 		for building_id: StringName in build_buttons:
 			var definition := BuildingCatalog.get_data(building_id)
 			build_buttons[building_id].disabled = not GameState.can_afford(definition["cost"])
+	_refresh_crafting_panel()
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
@@ -287,6 +305,10 @@ func _get_building_total_effect_text(building_type: StringName) -> String:
 		return "%d座/总等级%d · 采集效率 +%.0f%%" % [count, levels, float(levels) * float(definition["production_bonus"]) * 100.0]
 	if definition.has("training_capacity"):
 		return "%d座/总等级%d · 修炼位 %d · 速度×%.1f" % [count, levels, levels * int(definition["training_capacity"]), GameState.get_training_rate_multiplier()]
+	if definition.has("forging_level"):
+		return "%d座/总等级%d · 有效打造等级 %d" % [count, levels, GameState.get_forging_level()]
+	if definition.has("training_bonus"):
+		return "%d座/总等级%d · 演武修炼 +%.0f%%" % [count, levels, float(levels) * float(definition["training_bonus"]) * 100.0]
 	return "%d座生效" % count
 
 
@@ -566,6 +588,64 @@ func _refresh_equipment_panel() -> void:
 	var selected_item_id := int(equipment_inventory_selector.get_item_metadata(equipment_inventory_selector.selected))
 	equip_button.disabled = selected_item_id <= 0 or selected_item_id == current_id
 	unequip_button.disabled = current_id <= 0
+	_refresh_crafting_panel()
+
+
+func _get_selected_crafting_template() -> StringName:
+	if craft_template_selector.selected < 0 or craft_template_selector.selected >= craft_template_selector.item_count:
+		return &""
+	return StringName(craft_template_selector.get_item_metadata(craft_template_selector.selected))
+
+
+func _get_selected_crafting_quality() -> StringName:
+	if craft_quality_selector.selected < 0 or craft_quality_selector.selected >= craft_quality_selector.item_count:
+		return &""
+	return StringName(craft_quality_selector.get_item_metadata(craft_quality_selector.selected))
+
+
+func _refresh_crafting_panel() -> void:
+	if not is_instance_valid(crafting_status) or not is_instance_valid(craft_button):
+		return
+	var template_id := _get_selected_crafting_template()
+	var quality := _get_selected_crafting_quality()
+	var recipe := GameState.get_equipment_crafting_recipe(template_id, quality)
+	if recipe.is_empty():
+		crafting_status.text = "请选择有效的装备模板与品质"
+		craft_button.disabled = true
+		return
+	var required_level := int(recipe.get("required_forge_level", 1))
+	var forge_level := GameState.get_forging_level()
+	crafting_status.text = "炼器等级 %d/3 · 需%d级 · %s · 库存%d/%d · 已打造%d件" % [
+		forge_level, required_level, EquipmentCraftingCatalogData.get_cost_text(template_id, quality),
+		GameState.equipment_inventory.size(), GameState.MAX_EQUIPMENT_INVENTORY, GameState.equipment_crafts_completed,
+	]
+	craft_button.text = "打造%s" % EquipmentCatalogData.TEMPLATES[String(template_id)]["name"]
+	craft_button.disabled = not GameState.can_craft_equipment(template_id, quality)
+
+
+func _on_crafting_selection_changed(_index: int) -> void:
+	_refresh_crafting_panel()
+
+
+func _craft_selected_equipment() -> void:
+	var template_id := _get_selected_crafting_template()
+	var quality := _get_selected_crafting_quality()
+	var rollback := GameState.export_save_data()
+	var instance_id := GameState.craft_equipment(template_id, quality)
+	if instance_id <= 0:
+		_refresh_crafting_panel()
+		crafting_status.text = "无法打造：请检查炼器等级、资源和库存空间"
+		return
+	if not SaveManager.save_game():
+		GameState.import_save_data(rollback)
+		_refresh_crafting_panel()
+		crafting_status.text = "打造存档失败，装备与资源已恢复"
+		crafting_status.modulate = Color(0.9, 0.55, 0.42)
+		return
+	var equipment := GameState.get_equipment_instance(instance_id)
+	_refresh_equipment_panel()
+	crafting_status.text = "%s打造完成并已保存" % EquipmentCatalogData.get_display_name(equipment)
+	crafting_status.modulate = Color(0.55, 0.85, 0.62)
 
 
 func _on_equipment_slot_selected(_index: int) -> void:
@@ -748,6 +828,7 @@ func _on_load_completed(success: bool, message: String) -> void:
 		_refresh_battle_stages()
 		_refresh_battle()
 		_refresh_equipment_panel()
+		_refresh_crafting_panel()
 		_refresh_territory()
 
 
@@ -967,6 +1048,7 @@ func _refresh_buildings() -> void:
 	_refresh_assignment()
 	_refresh_recruitment()
 	_refresh_selected_building()
+	_refresh_crafting_panel()
 	var constructing := 0
 	var upgrading := 0
 	for building: Dictionary in GameState.buildings:
