@@ -1,0 +1,182 @@
+[gd_resource type="Theme" load_steps=12 format=3]
+
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.055, 0.12, 0.14, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.49, 0.62, 0.5, 0.82)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.01, 0.025, 0.03, 0.42)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="ButtonNormal"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.18, 0.36, 0.32, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.65, 0.48, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="ButtonHover"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.27, 0.5, 0.43, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.83, 0.69, 0.32, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.05, 0.12, 0.1, 0.45)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="ButtonPressed"]
+content_margin_left = 12.0
+content_margin_top = 9.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.12, 0.25, 0.23, 1)
+border_width_left = 1
+border_width_top = 2
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.61, 0.25, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="ButtonDisabled"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.12, 0.17, 0.17, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.36, 0.34, 0.65)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="ButtonFocus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.84, 0.66, 0.28, 0.95)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="ProgressBackground"]
+bg_color = Color(0.035, 0.075, 0.085, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.34, 0.45, 0.39, 0.8)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="ProgressFill"]
+bg_color = Color(0.34, 0.65, 0.55, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.72, 0.78, 0.55, 0.88)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="PopupPanel"]
+bg_color = Color(0.08, 0.15, 0.15, 0.99)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.58, 0.3, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 10
+
+[sub_resource type="StyleBoxLine" id="Separator"]
+color = Color(0.58, 0.52, 0.33, 0.55)
+thickness = 1
+
+[sub_resource type="StyleBoxFlat" id="ScrollBar"]
+bg_color = Color(0.055, 0.1, 0.11, 0.65)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="ScrollGrabber"]
+bg_color = Color(0.32, 0.53, 0.45, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[resource]
+default_font_size = 16
+Label/colors/font_color = Color(0.92, 0.89, 0.78, 1)
+Label/colors/font_shadow_color = Color(0, 0, 0, 0.5)
+Label/constants/shadow_offset_x = 1
+Label/constants/shadow_offset_y = 1
+Button/colors/font_color = Color(0.96, 0.93, 0.82, 1)
+Button/colors/font_hover_color = Color(1, 0.94, 0.7, 1)
+Button/colors/font_pressed_color = Color(0.96, 0.85, 0.54, 1)
+Button/colors/font_disabled_color = Color(0.5, 0.55, 0.52, 1)
+Button/styles/normal = SubResource("ButtonNormal")
+Button/styles/hover = SubResource("ButtonHover")
+Button/styles/pressed = SubResource("ButtonPressed")
+Button/styles/disabled = SubResource("ButtonDisabled")
+Button/styles/focus = SubResource("ButtonFocus")
+OptionButton/colors/font_color = Color(0.95, 0.91, 0.79, 1)
+OptionButton/styles/normal = SubResource("ButtonNormal")
+OptionButton/styles/hover = SubResource("ButtonHover")
+OptionButton/styles/pressed = SubResource("ButtonPressed")
+OptionButton/styles/disabled = SubResource("ButtonDisabled")
+OptionButton/styles/focus = SubResource("ButtonFocus")
+PanelContainer/styles/panel = SubResource("Panel")
+ProgressBar/styles/background = SubResource("ProgressBackground")
+ProgressBar/styles/fill = SubResource("ProgressFill")
+ProgressBar/colors/font_color = Color(0.96, 0.93, 0.82, 1)
+PopupPanel/styles/panel = SubResource("PopupPanel")
+Window/styles/embedded_border = SubResource("PopupPanel")
+HSeparator/styles/separator = SubResource("Separator")
+VScrollBar/styles/scroll = SubResource("ScrollBar")
+VScrollBar/styles/grabber = SubResource("ScrollGrabber")
+VScrollBar/styles/grabber_highlight = SubResource("ButtonHover")
+VScrollBar/styles/grabber_pressed = SubResource("ButtonPressed")

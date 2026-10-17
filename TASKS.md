@@ -4,7 +4,7 @@
 
 - 当前历史已完成版本：V0.7；负责人于2026-10-17明确确认整体验收完毕，QYS-V07-001～009均ACCEPTED。
 - 目标版本：V0.8 宗门挂机美术、UI与体验定稿，负责人于2026-10-17明确批准开始开发。
-- 当前任务：QYS-V08-001已完成视觉审计、规范与概念基线，等待负责人验收；不得提前进入V08-002或V0.9肉鸽开发。
+- 当前任务：QYS-V08-001已验收；QYS-V08-002～008已完成编码、自测和候选包验证，均处于待负责人验收状态。不得提前进入V0.9肉鸽开发。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -72,18 +72,18 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 
 | 编号 / GitHub | V0.8任务 | 优先级 | 本轮快照 |
 |---|---|---|---|
-| [QYS-V08-001](https://github.com/C-destiny/QingYunSect/issues/35) | 视觉审计、风格规范与概念基线 | P0 | TESTED，待负责人验收 |
-| [QYS-V08-002](https://github.com/C-destiny/QingYunSect/issues/36) | 全局Theme与可复用界面组件 | P0 | TODO，依赖V08-001验收 |
-| [QYS-V08-003](https://github.com/C-destiny/QingYunSect/issues/37) | 等距地形与宗门环境美术升级 | P0 | TODO |
-| [QYS-V08-004](https://github.com/C-destiny/QingYunSect/issues/38) | 七类建筑与资源视觉资产 | P0 | TODO |
-| [QYS-V08-005](https://github.com/C-destiny/QingYunSect/issues/39) | 弟子、职业、装备与锻造界面 | P1 | TODO |
-| [QYS-V08-006](https://github.com/C-destiny/QingYunSect/issues/40) | 战斗、离线收益与交互反馈 | P1 | TODO |
-| [QYS-V08-007](https://github.com/C-destiny/QingYunSect/issues/41) | 可读性、分辨率、性能与全量回归 | P0 | TODO |
-| [QYS-V08-008](https://github.com/C-destiny/QingYunSect/issues/42) | Windows候选包与版本验收 | P0 | TODO |
+| [QYS-V08-001](https://github.com/C-destiny/QingYunSect/issues/35) | 视觉审计、风格规范与概念基线 | P0 | 已验收（2026-10-17） |
+| [QYS-V08-002](https://github.com/C-destiny/QingYunSect/issues/36) | 全局Theme与可复用界面组件 | P0 | TESTED / 待验收 |
+| [QYS-V08-003](https://github.com/C-destiny/QingYunSect/issues/37) | 等距地形与宗门环境美术升级 | P0 | TESTED / 待验收 |
+| [QYS-V08-004](https://github.com/C-destiny/QingYunSect/issues/38) | 七类建筑与资源视觉资产 | P0 | TESTED / 待验收 |
+| [QYS-V08-005](https://github.com/C-destiny/QingYunSect/issues/39) | 弟子、职业、装备与锻造界面 | P1 | TESTED / 待验收 |
+| [QYS-V08-006](https://github.com/C-destiny/QingYunSect/issues/40) | 战斗、离线收益与交互反馈 | P1 | TESTED / 待验收 |
+| [QYS-V08-007](https://github.com/C-destiny/QingYunSect/issues/41) | 可读性、分辨率、性能与全量回归 | P0 | TESTED / 待验收 |
+| [QYS-V08-008](https://github.com/C-destiny/QingYunSect/issues/42) | Windows候选包与版本验收 | P0 | TESTED / 待验收 |
 
 ## 同步欠账
 
-- V0.4～V0.7全部Issues均已验收关闭；V0.8 Issues #35～#42已创建，其中#35待负责人验收。现有Issues均未关联Milestone。
+- V0.4～V0.7全部Issues均已验收关闭；V0.8 Issue #35已验收关闭，#36～#42保持open并等待负责人验收。现有Issues均未关联Milestone。
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。

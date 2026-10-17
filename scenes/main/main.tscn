@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/world/sect_map.gd" id="2_map"]
+[ext_resource type="Theme" path="res://assets/ui/themes/qingyun_theme.tres" id="3_theme"]
+[ext_resource type="Texture2D" path="res://assets/characters/cui_yunchuan_model.png" id="4_cui"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -11,6 +13,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
+theme = ExtResource("3_theme")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -63,7 +66,7 @@ text = "青云宗"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 16
-text = "V0.7 验收候选 · 宗门经营整合"
+text = "V0.8 开发中 · 美术与UI定稿"
 
 [node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
 layout_mode = 2
@@ -324,6 +327,36 @@ custom_minimum_size = Vector2(88, 42)
 layout_mode = 2
 disabled = true
 text = "招募弟子"
+
+[node name="CharacterDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+
+[node name="CoreCharacterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.68, 0.32, 1)
+theme_override_font_sizes/font_size = 20
+text = "核心人物视觉模型"
+
+[node name="CoreCharacterSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CoreCharacterPreview" type="TextureRect" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+texture = ExtResource("4_cui")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoreCharacterCaption" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.81, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "崔云川 · 剑心守道\n视觉模型预览；V0.8不新增角色玩法"
+horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="RosterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true

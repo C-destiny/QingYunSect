@@ -26,6 +26,9 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var cancel_build_button: Button = %CancelBuildButton
 @onready var recruit_button: Button = %RecruitButton
 @onready var recruitment_status: Label = %RecruitmentStatus
+@onready var core_character_selector: OptionButton = %CoreCharacterSelector
+@onready var core_character_preview: TextureRect = %CoreCharacterPreview
+@onready var core_character_caption: Label = %CoreCharacterCaption
 @onready var building_actions: HBoxContainer = %BuildingActions
 @onready var demolish_button: Button = %DemolishButton
 @onready var building_action_status: Label = %BuildingActionStatus
@@ -88,6 +91,20 @@ var build_buttons: Dictionary = {}
 var selected_building_instance: int = 0
 var selected_disciple_id: int = 0
 const DISCIPLE_JOBS := [&"idle", &"forest", &"mine", &"field", &"training", &"combat"]
+const CORE_CHARACTER_MODELS := [
+	{
+		"name": "崔云川",
+		"title": "剑心守道",
+		"summary": "青白银剑修视觉模型；玩法设想留待后续版本。",
+		"texture": preload("res://assets/characters/cui_yunchuan_model.png"),
+	},
+	{
+		"name": "周墨",
+		"title": "机巧道人",
+		"summary": "靛蓝青玉机关修士视觉模型；玩法设想留待后续版本。",
+		"texture": preload("res://assets/characters/zhou_mo_model.png"),
+	},
+]
 var roster_signature: String = ""
 
 
@@ -141,6 +158,7 @@ func _ready() -> void:
 		build_buttons[building_id].pressed.connect(_start_building_placement.bind(building_id))
 	cancel_build_button.pressed.connect(_cancel_building_placement)
 	recruit_button.pressed.connect(_start_recruitment)
+	core_character_selector.item_selected.connect(_on_core_character_selected)
 	demolish_button.pressed.connect(_demolish_selected_building)
 	upgrade_button.pressed.connect(_upgrade_selected_building)
 	disciple_selector.item_selected.connect(_on_disciple_selected)
@@ -167,6 +185,9 @@ func _ready() -> void:
 	craft_button.pressed.connect(_craft_selected_equipment)
 	for filter_name: String in ["全部弟子", "空闲", "采集工作", "修炼中", "可突破", "战斗队伍"]:
 		roster_filter.add_item(filter_name)
+	for model: Dictionary in CORE_CHARACTER_MODELS:
+		core_character_selector.add_item("%s · %s" % [model["name"], model["title"]])
+	_refresh_core_character_preview()
 	for sort_name: String in ["按姓名", "境界降序", "修为降序", "按岗位"]:
 		roster_sort.add_item(sort_name)
 	for job: StringName in DISCIPLE_JOBS:
@@ -194,7 +215,7 @@ func _ready() -> void:
 	_refresh_battle()
 	_refresh_crafting_panel()
 	_refresh_development_goal()
-	print("青云宗 V0.7 开发版：宗门经营整合启动成功")
+	print("青云宗 V0.8 开发版：美术与UI定稿启动成功")
 
 
 func _process(delta: float) -> void:
@@ -564,6 +585,21 @@ func _on_disciple_selected(index: int) -> void:
 	_refresh_battle()
 
 
+func _on_core_character_selected(_index: int) -> void:
+	_refresh_core_character_preview()
+
+
+func _refresh_core_character_preview() -> void:
+	if not is_instance_valid(core_character_selector) or CORE_CHARACTER_MODELS.is_empty():
+		return
+	var index := clampi(core_character_selector.selected, 0, CORE_CHARACTER_MODELS.size() - 1)
+	var model: Dictionary = CORE_CHARACTER_MODELS[index]
+	core_character_preview.texture = model["texture"]
+	core_character_caption.text = "%s · %s\n%s\nV0.8仅接入视觉模型，不新增角色数据" % [
+		model["name"], model["title"], model["summary"],
+	]
+
+
 func _refresh_disciple_detail() -> void:
 	var disciple := GameState.get_disciple(selected_disciple_id)
 	if disciple.is_empty():
@@ -580,7 +616,7 @@ func _refresh_disciple_detail() -> void:
 	if realm_level >= GameState.REALM_MAX_LEVEL:
 		cultivation_progress.max_value = 1.0
 		cultivation_progress.value = 1.0
-		disciple_detail.text = "%s · %s · %s\n修为 %.1f · 岗位：%s\n个人采集加成 +%.0f%%" % [
+		disciple_detail.text = "姓名：%s\n境界：%s　职业：%s\n修为：%.1f　岗位：%s\n个人采集效率：+%.0f%%" % [
 			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), ProfessionCatalogData.get_display_name(StringName(disciple.get("profession", ""))), cultivation,
 			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
 		]
@@ -589,7 +625,7 @@ func _refresh_disciple_detail() -> void:
 		var requirement := GameState.get_breakthrough_requirement(realm_level)
 		cultivation_progress.max_value = requirement
 		cultivation_progress.value = cultivation
-		disciple_detail.text = "%s · %s · %s\n修为 %.1f / %.0f · 岗位：%s\n个人采集加成 +%.0f%%" % [
+		disciple_detail.text = "姓名：%s\n境界：%s　职业：%s\n修为：%.1f / %.0f　岗位：%s\n个人采集效率：+%.0f%%" % [
 			disciple.get("name", "无名弟子"), GameState.get_realm_name(realm_level), ProfessionCatalogData.get_display_name(StringName(disciple.get("profession", ""))), cultivation, requirement,
 			GameState.get_disciple_job_text(StringName(disciple.get("job", "idle"))), gathering_bonus,
 		]
@@ -638,11 +674,11 @@ func _refresh_equipment_panel() -> void:
 	for slot: StringName in GameState.EQUIPMENT_SLOT_IDS:
 		var item := GameState.get_equipment_instance(int(equipped.get(String(slot), 0)))
 		equipment_names.append("%s：%s" % [EquipmentCatalogData.SLOTS[String(slot)], EquipmentCatalogData.get_display_name(item) if not item.is_empty() else "未装备"])
-	equipment_stats.text = "%s · 库存 %d/%d\n境界基础 %s\n职业修正后 %s\n装备加成 %s\n最终属性 生命%.0f 攻击%.0f 防御%.0f\n%s" % [
+	equipment_stats.text = "职业：%s　装备库存：%d/%d\n境界基础　%s\n职业修正后　%s\n装备加成　%s\n最终属性　生命%.0f　攻击%.0f　防御%.0f\n当前穿戴\n%s" % [
 		profession_name, GameState.equipment_inventory.size(), GameState.MAX_EQUIPMENT_INVENTORY,
 		_format_equipment_stats(stats.get("realm_stats", {})), _format_equipment_stats(stats.get("profession_stats", {})),
 		_format_equipment_stats(stats.get("equipment_bonus", {})), stats.get("hp", 0.0), stats.get("attack", 0.0), stats.get("defense", 0.0),
-		"　".join(equipment_names),
+		"\n".join(equipment_names),
 	]
 	var selected_slot := _get_selected_equipment_slot()
 	var current_id := int(equipped.get(String(selected_slot), 0))
@@ -914,18 +950,22 @@ func _handle_offline_receipt(window: Dictionary, receipt: Dictionary) -> void:
 	if reason == "too_short":
 		return
 	if reason == "missing_anchor":
+		offline_summary_dialog.title = "离线结算 · 已建立时间基线"
 		offline_summary_text.text = "这是旧版本存档，缺少可靠的离线时间起点。\n本次不追溯发放收益；已从现在开始建立时间基线。"
 		offline_summary_dialog.popup_centered()
 		SaveManager.save_game()
 		return
 	if reason == "clock_moved_back":
+		offline_summary_dialog.title = "离线结算 · 时间异常"
 		offline_summary_text.text = "检测到系统时间早于存档时间。\n为保护存档，本次不计算离线收益。"
 		offline_summary_dialog.popup_centered()
 		return
 	if not bool(receipt.get("success", false)):
+		offline_summary_dialog.title = "离线结算 · 未完成"
 		offline_summary_text.text = "离线收益结算失败，游戏状态已恢复。\n%s\n稍后可重新读取存档再试。" % str(receipt.get("message", "未知错误"))
 		offline_summary_dialog.popup_centered()
 		return
+	offline_summary_dialog.title = "离线结算 · 收益已入账"
 	offline_summary_text.text = _format_offline_receipt(window, receipt)
 	offline_summary_dialog.popup_centered()
 
@@ -937,7 +977,7 @@ func _format_offline_receipt(window: Dictionary, receipt: Dictionary) -> String:
 	var duration_text := "%d小时%d分钟" % [hours, minutes] if hours > 0 else "%d分钟" % minutes
 	if effective_seconds < 60:
 		duration_text = "%d秒" % effective_seconds
-	var lines := PackedStringArray(["离线时长：%s" % duration_text])
+	var lines := PackedStringArray(["【离线结算回执】", "离线时长：%s" % duration_text])
 	if bool(window.get("truncated", false)):
 		lines.append("已达到8小时收益上限（实际离线时间更长）")
 	var resource_delta: Dictionary = receipt.get("resources", {})
@@ -1052,11 +1092,25 @@ func _refresh_battle() -> void:
 	player_battle_hp.tooltip_text = "我方生命 %.0f / %.0f" % [GameState.battle_player_hp, GameState.battle_player_max_hp]
 	enemy_battle_hp.tooltip_text = "敌方生命 %.0f / %.0f" % [GameState.battle_enemy_hp, GameState.battle_enemy_max_hp]
 	battle_status.text = GameState.battle_message
+	var battle_phase := GameState.get_battle_phase()
+	match battle_phase:
+		&"fighting":
+			battle_status.text = "【交战中】%s" % GameState.battle_message
+			battle_status.modulate = Color("e5bd68")
+		&"repeat_wait":
+			battle_status.text = "【整备中】%s" % GameState.battle_message
+			battle_status.modulate = Color("8fc7b0")
+		_:
+			battle_status.text = "【待命】%s" % GameState.battle_message
+			battle_status.modulate = Color("b8c2b8")
 	battle_log_label.text = "当前战报\n" + ("\n".join(GameState.battle_log) if not GameState.battle_log.is_empty() else "暂无战斗事件")
 	if GameState.last_battle_result.is_empty():
 		last_battle_result_label.text = "上一场结果：暂无"
+		last_battle_result_label.modulate = Color("aab4aa")
 	else:
-		last_battle_result_label.text = "上一场结果：%s · 关卡%d · 奖励%s" % [GameState.last_battle_result.get("result", "未知"), GameState.last_battle_result.get("stage_id", 0), GameState.last_battle_result.get("reward_text", "无")]
+		var result_text := str(GameState.last_battle_result.get("result", "未知"))
+		last_battle_result_label.text = "上一场结果：%s · 关卡%d · 奖励%s" % [result_text, GameState.last_battle_result.get("stage_id", 0), GameState.last_battle_result.get("reward_text", "无")]
+		last_battle_result_label.modulate = Color("83c69c") if "胜" in result_text else Color("d98f83")
 	battle_toggle_button.text = "停止自动战斗" if GameState.auto_battle_enabled else "开始自动战斗"
 	battle_toggle_button.disabled = GameState.battle_party.is_empty()
 	battle_stage_selector.disabled = GameState.battle_running

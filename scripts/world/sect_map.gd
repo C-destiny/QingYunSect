@@ -10,10 +10,16 @@ signal region_selected(region_id: StringName)
 
 const GRID_SIZE := TerritoryCatalogData.MAP_SIZE
 const TILE_SIZE := Vector2(104.0, 52.0)
-const TILE_COLOR_A := Color(0.16, 0.28, 0.25, 1.0)
-const TILE_COLOR_B := Color(0.13, 0.24, 0.22, 1.0)
-const TILE_OUTLINE := Color(0.27, 0.43, 0.37, 0.72)
+const TILE_COLOR_A := Color(0.28, 0.39, 0.34, 1.0)
+const TILE_COLOR_B := Color(0.23, 0.34, 0.31, 1.0)
+const TILE_OUTLINE := Color(0.55, 0.64, 0.52, 0.62)
 const SELECTED_OUTLINE := Color(0.86, 0.76, 0.37, 1.0)
+const PAPER_WHITE := Color(0.9, 0.87, 0.75, 1.0)
+const INK_TEAL := Color(0.075, 0.18, 0.19, 1.0)
+const ROOF_TEAL := Color(0.08, 0.23, 0.25, 1.0)
+const WARM_WOOD := Color(0.43, 0.27, 0.16, 1.0)
+const STONE_LIGHT := Color(0.62, 0.64, 0.57, 1.0)
+const GOLD_ACCENT := Color(0.82, 0.64, 0.25, 1.0)
 
 var resource_nodes: Array[Dictionary] = [
 	{"site_id": &"forest", "resource_id": &"wood", "cell": Vector2i(1, 1), "name": "青松林", "description": "宗门西侧的成片青松，可安排普通弟子伐木。", "reserve": 600, "rate": float(ResourceCatalogData.SITES[&"forest"]["rate"]), "resource_name": "木材", "color": Color(0.24, 0.68, 0.39, 1.0)},
@@ -36,38 +42,128 @@ func _ready() -> void:
 
 func _draw() -> void:
 	var origin := _map_origin()
+	_draw_backdrop(origin)
 	for sum_index: int in range(GRID_SIZE.x + GRID_SIZE.y - 1):
 		for x: int in range(GRID_SIZE.x):
 			var y := sum_index - x
 			if y < 0 or y >= GRID_SIZE.y:
 				continue
 			var cell := Vector2i(x, y)
-			var center := _cell_to_screen(cell, origin)
-			var points := PackedVector2Array([
-				center + Vector2(0.0, -TILE_SIZE.y * 0.5),
-				center + Vector2(TILE_SIZE.x * 0.5, 0.0),
-				center + Vector2(0.0, TILE_SIZE.y * 0.5),
-				center + Vector2(-TILE_SIZE.x * 0.5, 0.0),
-			])
-			var unlocked := GameState.is_cell_unlocked(cell)
-			var fill := TILE_COLOR_A if (x + y) % 2 == 0 else TILE_COLOR_B
-			if not unlocked:
-				fill = Color(0.075, 0.095, 0.105, 1.0)
-			draw_colored_polygon(points, fill)
-			var outline := SELECTED_OUTLINE if cell == selected_cell else (TILE_OUTLINE if unlocked else Color(0.18, 0.22, 0.24, 0.65))
-			var width := 3.0 if cell == selected_cell else 1.2
-			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), outline, width, true)
-			if cell == hovered_cell and cell != selected_cell:
-				draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color(0.68, 0.82, 0.72, 0.9), 2.0, true)
-			if not unlocked:
-				draw_string(ThemeDB.fallback_font, center + Vector2(-12, 5), "锁", HORIZONTAL_ALIGNMENT_CENTER, 24, 13, Color(0.48, 0.54, 0.56, 0.75))
+			_draw_tile(cell, origin)
 
+	_draw_region_connections(origin)
+	_draw_environment_details(origin)
 	for building: Dictionary in GameState.buildings:
 		_draw_building(building, origin)
 	_draw_main_hall(origin)
 	for resource_data: Dictionary in resource_nodes:
 		_draw_resource(resource_data, origin)
 	_draw_placement_preview(origin)
+
+
+func _draw_backdrop(origin: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.055, 0.12, 0.15, 1.0), true)
+	var horizon := maxf(62.0, origin.y - 34.0)
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(0, horizon + 76), Vector2(size.x * 0.13, horizon - 28),
+		Vector2(size.x * 0.27, horizon + 34), Vector2(size.x * 0.41, horizon - 60),
+		Vector2(size.x * 0.56, horizon + 22), Vector2(size.x * 0.7, horizon - 42),
+		Vector2(size.x * 0.86, horizon + 36), Vector2(size.x, horizon - 16),
+		Vector2(size.x, horizon + 130), Vector2(0, horizon + 130),
+	]), Color(0.16, 0.29, 0.31, 0.95))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(0, horizon + 92), Vector2(size.x * 0.2, horizon + 10),
+		Vector2(size.x * 0.37, horizon + 70), Vector2(size.x * 0.58, horizon - 2),
+		Vector2(size.x * 0.8, horizon + 78), Vector2(size.x, horizon + 20),
+		Vector2(size.x, horizon + 150), Vector2(0, horizon + 150),
+	]), Color(0.22, 0.37, 0.37, 0.72))
+	for cloud_index: int in range(8):
+		var x := fmod(67.0 + float(cloud_index) * 173.0, maxf(size.x, 1.0))
+		var y := horizon + 46.0 + sin(float(cloud_index) * 1.7) * 22.0
+		_draw_cloud(Vector2(x, y), 0.7 + float(cloud_index % 3) * 0.12, Color(0.77, 0.82, 0.78, 0.13))
+
+
+func _draw_cloud(center: Vector2, scale_value: float, color: Color) -> void:
+	draw_circle(center + Vector2(-24, 2) * scale_value, 25.0 * scale_value, color)
+	draw_circle(center + Vector2(0, -8) * scale_value, 34.0 * scale_value, color)
+	draw_circle(center + Vector2(29, 4) * scale_value, 23.0 * scale_value, color)
+	draw_rect(Rect2(center + Vector2(-47, 0) * scale_value, Vector2(92, 24) * scale_value), color, true)
+
+
+func _cell_points(center: Vector2) -> PackedVector2Array:
+	return PackedVector2Array([
+		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
+		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
+		center + Vector2(0.0, TILE_SIZE.y * 0.5),
+		center + Vector2(-TILE_SIZE.x * 0.5, 0.0),
+	])
+
+
+func _draw_tile(cell: Vector2i, origin: Vector2) -> void:
+	var center := _cell_to_screen(cell, origin)
+	var points := _cell_points(center)
+	var unlocked := GameState.is_cell_unlocked(cell)
+	if unlocked:
+		var region_id := TerritoryCatalogData.get_region_for_cell(cell)
+		var base := TILE_COLOR_A if (cell.x + cell.y) % 2 == 0 else TILE_COLOR_B
+		if region_id == &"east":
+			base = base.lerp(Color(0.32, 0.36, 0.34, 1.0), 0.28)
+		elif region_id == &"south":
+			base = base.lerp(Color(0.31, 0.43, 0.32, 1.0), 0.3)
+		var cliff_depth := 17.0
+		if cell.x == GRID_SIZE.x - 1 or not GameState.is_cell_unlocked(cell + Vector2i(1, 0)):
+			draw_colored_polygon(PackedVector2Array([points[1], points[2], points[2] + Vector2(0, cliff_depth), points[1] + Vector2(0, cliff_depth)]), Color(0.2, 0.24, 0.22, 1.0))
+		if cell.y == GRID_SIZE.y - 1 or not GameState.is_cell_unlocked(cell + Vector2i(0, 1)):
+			draw_colored_polygon(PackedVector2Array([points[2], points[3], points[3] + Vector2(0, cliff_depth), points[2] + Vector2(0, cliff_depth)]), Color(0.17, 0.22, 0.2, 1.0))
+		draw_colored_polygon(points, base)
+		draw_line(points[3], points[0], base.lightened(0.16), 1.2, true)
+	else:
+		draw_colored_polygon(points, Color(0.12, 0.17, 0.18, 0.78))
+		_draw_cloud(center, 0.42, Color(0.68, 0.74, 0.72, 0.22))
+	var outline := SELECTED_OUTLINE if cell == selected_cell else (TILE_OUTLINE if unlocked else Color(0.28, 0.34, 0.34, 0.36))
+	var width := 3.0 if cell == selected_cell else 1.1
+	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), outline, width, true)
+	if cell == hovered_cell and cell != selected_cell:
+		draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color(0.72, 0.82, 0.66, 0.94), 2.2, true)
+
+
+func _draw_region_connections(origin: Vector2) -> void:
+	var path_cells := [Vector2i(1, 3), Vector2i(2, 3), Vector2i(3, 3), Vector2i(5, 3), Vector2i(6, 3), Vector2i(7, 3), Vector2i(8, 3), Vector2i(4, 4), Vector2i(4, 5), Vector2i(4, 6)]
+	for cell: Vector2i in path_cells:
+		if not GameState.is_cell_unlocked(cell):
+			continue
+		var center := _cell_to_screen(cell, origin)
+		var stone := _cell_points(center)
+		var inset := PackedVector2Array()
+		for point: Vector2 in stone:
+			inset.append(center + (point - center) * 0.48)
+		draw_colored_polygon(inset, Color(0.52, 0.53, 0.47, 0.68))
+		draw_polyline(PackedVector2Array([inset[0], inset[1], inset[2], inset[3], inset[0]]), Color(0.72, 0.7, 0.59, 0.48), 1.0, true)
+
+
+func _draw_environment_details(origin: Vector2) -> void:
+	var pine_cells := [Vector2i(0, 2), Vector2i(3, 0), Vector2i(7, 0), Vector2i(9, 2), Vector2i(10, 5), Vector2i(6, 7)]
+	for cell: Vector2i in pine_cells:
+		if GameState.is_cell_unlocked(cell) and not GameState.is_cell_occupied(cell):
+			_draw_pine(_cell_to_screen(cell, origin) + Vector2(0, -12), 0.55)
+	var rock_cells := [Vector2i(0, 4), Vector2i(8, 1), Vector2i(11, 4), Vector2i(7, 7)]
+	for cell: Vector2i in rock_cells:
+		if GameState.is_cell_unlocked(cell) and not GameState.is_cell_occupied(cell):
+			var center := _cell_to_screen(cell, origin)
+			draw_colored_polygon(PackedVector2Array([center + Vector2(-13, 4), center + Vector2(-5, -16), center + Vector2(7, -20), center + Vector2(17, 5)]), Color(0.35, 0.41, 0.39, 1.0))
+			draw_line(center + Vector2(-4, -14), center + Vector2(6, -18), Color(0.62, 0.66, 0.61, 0.8), 2.0, true)
+
+
+func _draw_pine(base: Vector2, scale_value: float) -> void:
+	draw_rect(Rect2(base + Vector2(-3, -23) * scale_value, Vector2(6, 27) * scale_value), Color(0.32, 0.22, 0.14, 1.0), true)
+	for offset: Vector2 in [Vector2(0, -50), Vector2(-9, -36), Vector2(10, -31)]:
+		var center := base + offset * scale_value
+		draw_colored_polygon(PackedVector2Array([
+			center + Vector2(0, -20) * scale_value,
+			center + Vector2(18, 15) * scale_value,
+			center + Vector2(0, 9) * scale_value,
+			center + Vector2(-18, 15) * scale_value,
+		]), Color(0.12, 0.34, 0.27, 1.0))
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -153,41 +249,155 @@ func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:
 
 func _draw_main_hall(origin: Vector2) -> void:
 	var center := _cell_to_screen(Vector2i(4, 3), origin)
-	draw_rect(Rect2(center + Vector2(-48, -58), Vector2(96, 66)), Color(0.35, 0.24, 0.18, 1.0), true)
-	draw_colored_polygon(PackedVector2Array([center + Vector2(-64, -58), center + Vector2(0, -96), center + Vector2(64, -58), center + Vector2(0, -38)]), Color(0.18, 0.43, 0.39, 1.0))
-	draw_string(ThemeDB.fallback_font, center + Vector2(-45, 34), "宗门大殿", HORIZONTAL_ALIGNMENT_CENTER, 90, 18, Color(0.88, 0.9, 0.78, 1.0))
+	draw_colored_polygon(PackedVector2Array([center + Vector2(-62, 5), center + Vector2(0, 22), center + Vector2(62, 5), center + Vector2(0, -12)]), Color(0.56, 0.57, 0.51, 1.0))
+	for step_index: int in range(3):
+		var half_width := 48.0 - float(step_index) * 7.0
+		var y := -2.0 - float(step_index) * 7.0
+		draw_rect(Rect2(center + Vector2(-half_width, y), Vector2(half_width * 2.0, 7)), STONE_LIGHT.darkened(float(step_index) * 0.05), true)
+	draw_rect(Rect2(center + Vector2(-42, -62), Vector2(84, 58)), WARM_WOOD, true)
+	for x_offset: float in [-31.0, -10.0, 10.0, 31.0]:
+		draw_rect(Rect2(center + Vector2(x_offset - 3, -64), Vector2(6, 61)), Color(0.27, 0.13, 0.09, 1.0), true)
+	_draw_roof(center + Vector2(0, -65), 70.0, 30.0, ROOF_TEAL)
+	_draw_roof(center + Vector2(0, -88), 56.0, 25.0, ROOF_TEAL.lightened(0.04))
+	draw_line(center + Vector2(-48, -88), center + Vector2(48, -88), GOLD_ACCENT, 2.2, true)
+	_draw_banner(center + Vector2(-55, -55), Color(0.18, 0.43, 0.48, 1.0))
+	_draw_banner(center + Vector2(55, -55), Color(0.18, 0.43, 0.48, 1.0))
+	draw_string(ThemeDB.fallback_font, center + Vector2(-46, 39), "宗门大殿", HORIZONTAL_ALIGNMENT_CENTER, 92, 17, PAPER_WHITE)
 
 
 func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
 	var center := _cell_to_screen(resource_data["cell"], origin) + Vector2(0, -18)
-	var color: Color = resource_data["color"]
-	draw_circle(center, 18.0, Color(color, 0.2))
-	draw_circle(center, 11.0, color)
-	draw_circle(center, 4.0, Color.WHITE)
+	var site_id := StringName(resource_data["site_id"])
+	draw_circle(center + Vector2(0, 17), 19.0, Color(0.02, 0.05, 0.05, 0.28))
+	match site_id:
+		&"forest":
+			_draw_pine(center + Vector2(-7, 10), 0.42)
+			_draw_pine(center + Vector2(9, 13), 0.34)
+		&"mine":
+			for crystal: PackedVector2Array in [
+				PackedVector2Array([center + Vector2(-15, 12), center + Vector2(-9, -17), center + Vector2(0, 10)]),
+				PackedVector2Array([center + Vector2(-4, 12), center + Vector2(4, -25), center + Vector2(13, 11)]),
+				PackedVector2Array([center + Vector2(7, 13), center + Vector2(17, -10), center + Vector2(24, 14)]),
+			]:
+				draw_colored_polygon(crystal, Color(0.31, 0.7, 0.78, 1.0))
+				draw_polyline(PackedVector2Array([crystal[0], crystal[1], crystal[2], crystal[0]]), Color(0.72, 0.94, 0.96, 0.88), 1.2, true)
+		&"field":
+			var patch := _cell_points(center + Vector2(0, 11))
+			var inset := PackedVector2Array()
+			for point: Vector2 in patch:
+				inset.append(center + Vector2(0, 11) + (point - center - Vector2(0, 11)) * 0.42)
+			draw_colored_polygon(inset, Color(0.54, 0.48, 0.2, 1.0))
+			for line_index: int in range(4):
+				var dx := -14.0 + float(line_index) * 9.0
+				draw_line(center + Vector2(dx, 2), center + Vector2(dx + 7, 19), Color(0.82, 0.71, 0.3, 0.9), 2.0, true)
 	var workers := GameState.get_assignment(resource_data["site_id"])
 	if workers > 0:
-		draw_string(ThemeDB.fallback_font, center + Vector2(-18, 39), "%d 人" % workers, HORIZONTAL_ALIGNMENT_CENTER, 36, 15, Color(0.9, 0.94, 0.86, 1.0))
+		draw_string(ThemeDB.fallback_font, center + Vector2(-22, 43), "%d 人" % workers, HORIZONTAL_ALIGNMENT_CENTER, 44, 14, PAPER_WHITE)
 
 
 func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	var definition := BuildingCatalog.get_data(StringName(building["type"]))
 	var cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
 	var center := _cell_to_screen(cell, origin)
-	var color: Color = definition["color"]
-	if not bool(building["completed"]):
-		color = color.darkened(0.35)
-	draw_rect(Rect2(center + Vector2(-34, -47), Vector2(68, 52)), color, true)
-	draw_colored_polygon(PackedVector2Array([center + Vector2(-43, -47), center + Vector2(0, -70), center + Vector2(43, -47), center + Vector2(0, -30)]), color.lightened(0.15))
+	var building_type := StringName(building["type"])
+	var level := int(building.get("level", 1))
+	var completed := bool(building["completed"])
+	draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
+	if completed:
+		_draw_completed_building(building_type, center, level)
+	else:
+		_draw_construction_site(center, Color(definition["color"]))
 	var name_text: String = definition["name"]
-	draw_string(ThemeDB.fallback_font, center + Vector2(-42, 25), name_text, HORIZONTAL_ALIGNMENT_CENTER, 84, 15, Color(0.9, 0.92, 0.85, 1.0))
-	if not bool(building["completed"]):
+	draw_string(ThemeDB.fallback_font, center + Vector2(-46, 27), "%s Lv.%d" % [name_text, level], HORIZONTAL_ALIGNMENT_CENTER, 92, 14, PAPER_WHITE)
+	if not completed:
 		var progress := 1.0 - float(building["remaining"]) / float(building["build_time"])
 		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
 		draw_rect(Rect2(center + Vector2(-35, 32), Vector2(70.0 * progress, 5)), Color(0.85, 0.67, 0.28, 1.0), true)
 	elif bool(building.get("upgrading", false)):
 		var upgrade_progress := 1.0 - float(building.get("upgrade_remaining", 0.0)) / float(building.get("upgrade_time", 1.0))
+		draw_arc(center + Vector2(0, -34), 38.0, -PI, PI * (upgrade_progress * 2.0 - 1.0), 28, Color(0.42, 0.78, 0.88, 0.82), 2.5, true)
 		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
 		draw_rect(Rect2(center + Vector2(-35, 32), Vector2(70.0 * upgrade_progress, 5)), Color(0.38, 0.72, 0.95, 1.0), true)
+
+
+func _draw_completed_building(building_type: StringName, center: Vector2, level: int) -> void:
+	match building_type:
+		&"disciple_quarters":
+			_draw_house(center, Color(0.5, 0.31, 0.2, 1.0), level)
+			draw_rect(Rect2(center + Vector2(18, -18), Vector2(13, 18)), Color(0.67, 0.49, 0.26, 1.0), true)
+		&"lumber_yard":
+			_draw_house(center + Vector2(-10, 1), Color(0.38, 0.28, 0.17, 1.0), level)
+			for log_index: int in range(3):
+				draw_rect(Rect2(center + Vector2(14, -4 - log_index * 7), Vector2(25, 5)), Color(0.55, 0.34, 0.18, 1.0), true)
+				draw_circle(center + Vector2(38, -1 - log_index * 7), 3.0, Color(0.78, 0.58, 0.32, 1.0))
+		&"spirit_mine":
+			_draw_house(center + Vector2(-13, 3), Color(0.34, 0.36, 0.35, 1.0), level)
+			for offset: Vector2 in [Vector2(14, -8), Vector2(25, -17), Vector2(33, -5)]:
+				var crystal := PackedVector2Array([center + offset + Vector2(-6, 8), center + offset + Vector2(0, -13), center + offset + Vector2(7, 8)])
+				draw_colored_polygon(crystal, Color(0.3, 0.72, 0.82, 1.0))
+		&"spirit_field":
+			var field := PackedVector2Array([center + Vector2(0, -30), center + Vector2(43, -8), center + Vector2(0, 14), center + Vector2(-43, -8)])
+			draw_colored_polygon(field, Color(0.48, 0.5, 0.2, 1.0))
+			for row: int in range(4):
+				var x := -28.0 + float(row) * 18.0
+				draw_line(center + Vector2(x, -15), center + Vector2(x + 12, 4), Color(0.83, 0.72, 0.3, 1.0), 2.2, true)
+			if level >= 2:
+				draw_line(center + Vector2(-31, -4), center + Vector2(23, -31), Color(0.4, 0.72, 0.7, 0.75), 3.0, true)
+		&"training_ground":
+			draw_colored_polygon(PackedVector2Array([center + Vector2(0, -37), center + Vector2(45, -14), center + Vector2(0, 10), center + Vector2(-45, -14)]), Color(0.5, 0.51, 0.48, 1.0))
+			draw_arc(center + Vector2(0, -14), 22.0, 0, TAU, 32, GOLD_ACCENT, 2.2, true)
+			draw_line(center + Vector2(-8, -23), center + Vector2(8, -5), Color(0.25, 0.31, 0.29, 1.0), 2.0, true)
+			draw_line(center + Vector2(8, -23), center + Vector2(-8, -5), Color(0.25, 0.31, 0.29, 1.0), 2.0, true)
+			_draw_banner(center + Vector2(-35, -28), Color(0.22, 0.46, 0.48, 1.0))
+			if level >= 2:
+				_draw_banner(center + Vector2(35, -28), Color(0.22, 0.46, 0.48, 1.0))
+		&"artifact_forge":
+			_draw_house(center + Vector2(-6, 1), Color(0.4, 0.24, 0.17, 1.0), level)
+			draw_rect(Rect2(center + Vector2(23, -52), Vector2(12, 42)), Color(0.27, 0.24, 0.22, 1.0), true)
+			draw_circle(center + Vector2(0, -15), 8.0, Color(0.95, 0.42, 0.12, 0.9))
+			draw_circle(center + Vector2(0, -17), 4.0, Color(1.0, 0.76, 0.28, 1.0))
+		&"scripture_library":
+			draw_rect(Rect2(center + Vector2(-29, -65), Vector2(58, 61)), WARM_WOOD.darkened(0.12), true)
+			_draw_roof(center + Vector2(0, -65), 43.0, 21.0, ROOF_TEAL)
+			_draw_roof(center + Vector2(0, -43), 37.0, 18.0, ROOF_TEAL.lightened(0.03))
+			for y_offset: float in [-56.0, -34.0, -14.0]:
+				draw_rect(Rect2(center + Vector2(-17, y_offset), Vector2(34, 4)), GOLD_ACCENT.darkened(0.25), true)
+	if level >= 2 and building_type not in [&"spirit_field", &"training_ground"]:
+		draw_rect(Rect2(center + Vector2(-45, -24), Vector2(12, 23)), WARM_WOOD.darkened(0.08), true)
+	if level >= 3:
+		draw_circle(center + Vector2(0, -58), 29.0, Color(0.37, 0.77, 0.72, 0.1))
+		draw_arc(center + Vector2(0, -58), 29.0, 0, TAU, 32, Color(0.52, 0.85, 0.78, 0.5), 1.2, true)
+
+
+func _draw_house(center: Vector2, wall_color: Color, level: int) -> void:
+	var half_width := 31.0 + float(level - 1) * 3.0
+	draw_rect(Rect2(center + Vector2(-half_width, -43), Vector2(half_width * 2.0, 42)), wall_color, true)
+	draw_rect(Rect2(center + Vector2(-6, -23), Vector2(12, 22)), Color(0.2, 0.12, 0.08, 1.0), true)
+	_draw_roof(center + Vector2(0, -44), half_width + 10.0, 23.0, ROOF_TEAL)
+
+
+func _draw_roof(center: Vector2, half_width: float, height: float, color: Color) -> void:
+	var roof := PackedVector2Array([
+		center + Vector2(-half_width, 0),
+		center + Vector2(0, -height),
+		center + Vector2(half_width, 0),
+		center + Vector2(0, height * 0.32),
+	])
+	draw_colored_polygon(roof, color)
+	draw_line(center + Vector2(-half_width, 0), center + Vector2(half_width, 0), color.lightened(0.22), 1.7, true)
+
+
+func _draw_banner(base: Vector2, color: Color) -> void:
+	draw_line(base, base + Vector2(0, 38), Color(0.45, 0.37, 0.24, 1.0), 2.0, true)
+	draw_colored_polygon(PackedVector2Array([base + Vector2(2, 2), base + Vector2(15, 7), base + Vector2(2, 19)]), color)
+
+
+func _draw_construction_site(center: Vector2, color: Color) -> void:
+	draw_rect(Rect2(center + Vector2(-31, -35), Vector2(62, 34)), Color(color, 0.26), true)
+	for x_offset: float in [-29.0, 0.0, 29.0]:
+		draw_line(center + Vector2(x_offset, -48), center + Vector2(x_offset, 4), Color(0.5, 0.34, 0.2, 1.0), 3.0, true)
+	draw_line(center + Vector2(-36, -39), center + Vector2(36, -39), Color(0.61, 0.43, 0.24, 1.0), 3.0, true)
+	draw_line(center + Vector2(-34, -31), center + Vector2(28, -9), Color(0.61, 0.43, 0.24, 0.9), 2.0, true)
 
 
 func _draw_placement_preview(origin: Vector2) -> void:
