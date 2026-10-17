@@ -63,7 +63,7 @@ text = "青云宗"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 16
-text = "V0.6 验收候选 · 角色养成与装备"
+text = "V0.7 验收候选 · 宗门经营整合"
 
 [node name="Resources" type="HBoxContainer" parent="Layout/Header/Margin/Row"]
 layout_mode = 2
@@ -153,6 +153,7 @@ theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
 [node name="Scroll" type="ScrollContainer" parent="Layout/Body/Sidebar/Margin"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -206,6 +207,51 @@ custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "宗门等级不足，无法扩张"
+
+[node name="NavigationRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NavManagementButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/NavigationRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "建设"
+
+[node name="NavDisciplesButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/NavigationRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "弟子"
+
+[node name="NavBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/NavigationRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "挂机"
+
+[node name="GoalStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.76, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "当前目标"
+autowrap_mode = 2
+
+[node name="GoalResourceFeedback" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.76, 0.7, 1)
+theme_override_font_sizes/font_size = 13
+text = "资源流与缺口"
+autowrap_mode = 2
+
+[node name="ClaimGoalButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+disabled = true
+text = "目标尚未完成"
 
 [node name="SelectionName" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
@@ -280,6 +326,7 @@ disabled = true
 text = "招募弟子"
 
 [node name="RosterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 18
@@ -446,6 +493,7 @@ autowrap_mode = 2
 layout_mode = 2
 
 [node name="BattleHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.7, 0.42, 1)
 theme_override_font_sizes/font_size = 21
@@ -567,6 +615,7 @@ custom_minimum_size = Vector2(0, 42)
 text = "开始自动战斗"
 
 [node name="BuildHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 21

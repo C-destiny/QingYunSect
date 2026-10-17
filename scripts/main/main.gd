@@ -5,6 +5,7 @@ const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
 const EquipmentCraftingCatalogData = preload("res://scripts/data/equipment_crafting_catalog.gd")
 const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
+const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_catalog.gd")
 
 @onready var wood_label: Label = %Wood
 @onready var spirit_stone_label: Label = %SpiritStone
@@ -52,6 +53,16 @@ const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 @onready var sect_upgrade_button: Button = %SectUpgradeButton
 @onready var territory_status: Label = %TerritoryStatus
 @onready var territory_unlock_button: Button = %TerritoryUnlockButton
+@onready var sidebar_scroll: ScrollContainer = %Scroll
+@onready var goal_status: Label = %GoalStatus
+@onready var goal_resource_feedback: Label = %GoalResourceFeedback
+@onready var claim_goal_button: Button = %ClaimGoalButton
+@onready var nav_management_button: Button = %NavManagementButton
+@onready var nav_disciples_button: Button = %NavDisciplesButton
+@onready var nav_battle_button: Button = %NavBattleButton
+@onready var management_heading: Label = %BuildHeading
+@onready var disciples_heading: Label = %RosterHeading
+@onready var battle_heading: Label = %BattleHeading
 @onready var battle_party_status: Label = %BattlePartyStatus
 @onready var join_battle_button: Button = %JoinBattleButton
 @onready var leave_battle_button: Button = %LeaveBattleButton
@@ -98,6 +109,14 @@ func _ready() -> void:
 	GameState.equipment_changed.connect(_refresh_battle)
 	GameState.territory_changed.connect(_refresh_territory)
 	GameState.resources_changed.connect(_refresh_territory)
+	GameState.resources_changed.connect(_refresh_development_goal)
+	GameState.buildings_changed.connect(_refresh_development_goal)
+	GameState.disciples_changed.connect(_refresh_development_goal)
+	GameState.sect_progress_changed.connect(_refresh_development_goal)
+	GameState.battle_changed.connect(_refresh_development_goal)
+	GameState.territory_changed.connect(_refresh_development_goal)
+	GameState.equipment_changed.connect(_refresh_development_goal)
+	GameState.development_goal_changed.connect(_refresh_development_goal)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
@@ -128,6 +147,10 @@ func _ready() -> void:
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
 	sect_upgrade_button.pressed.connect(_upgrade_sect)
 	territory_unlock_button.pressed.connect(_unlock_next_region)
+	claim_goal_button.pressed.connect(_claim_current_development_goal)
+	nav_management_button.pressed.connect(_navigate_sidebar.bind(management_heading))
+	nav_disciples_button.pressed.connect(_navigate_sidebar.bind(disciples_heading))
+	nav_battle_button.pressed.connect(_navigate_sidebar.bind(battle_heading))
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
 	roster_filter.item_selected.connect(_on_roster_view_changed)
 	roster_sort.item_selected.connect(_on_roster_view_changed)
@@ -170,6 +193,7 @@ func _ready() -> void:
 	_refresh_battle_stages()
 	_refresh_battle()
 	_refresh_crafting_panel()
+	_refresh_development_goal()
 	print("青云宗 V0.7 开发版：宗门经营整合启动成功")
 
 
@@ -415,10 +439,60 @@ func _refresh_assignment() -> void:
 
 
 func _get_food_production_per_minute() -> float:
-	for resource_data: Dictionary in sect_map.resource_nodes:
-		if StringName(resource_data["resource_id"]) == &"food":
-			return float(resource_data["rate"]) * GameState.get_site_workforce_power(resource_data["site_id"]) * GameState.get_production_multiplier(&"food") * GameState.get_sect_production_multiplier() * GameState.get_sustenance_multiplier()
-	return 0.0
+	return GameState.get_resource_income_per_minute(&"food")
+
+
+func _navigate_sidebar(target: Control) -> void:
+	if is_instance_valid(target):
+		sidebar_scroll.ensure_control_visible(target)
+
+
+func _format_resource_gaps(gaps: Dictionary) -> String:
+	var parts := PackedStringArray()
+	if int(gaps.get("wood", 0)) > 0: parts.append("木材还差%d" % int(gaps["wood"]))
+	if int(gaps.get("spirit_stone", 0)) > 0: parts.append("灵石还差%d" % int(gaps["spirit_stone"]))
+	if int(gaps.get("food", 0)) > 0: parts.append("灵谷还差%d" % int(gaps["food"]))
+	return "资源已满足" if parts.is_empty() else "、".join(parts)
+
+
+func _refresh_development_goal() -> void:
+	if not is_instance_valid(goal_status):
+		return
+	var goal_id := GameState.get_current_development_goal_id()
+	var flow_text := "资源流：木材%+.1f/分 · 灵石%+.1f/分 · 灵谷净%+.1f/分" % [
+		GameState.get_resource_net_per_minute(&"wood"),
+		GameState.get_resource_net_per_minute(&"spirit_stone"),
+		GameState.get_resource_net_per_minute(&"food"),
+	]
+	if goal_id == &"":
+		goal_status.text = "V0.7宗门发展目标已全部完成"
+		goal_resource_feedback.text = "%s\n已领取 %d/%d 项一次性奖励" % [flow_text, GameState.claimed_development_goals.size(), DevelopmentGoalCatalogData.GOAL_IDS.size()]
+		claim_goal_button.text = "全部目标已完成"
+		claim_goal_button.disabled = true
+		return
+	var goal := DevelopmentGoalCatalogData.get_data(goal_id)
+	var progress := GameState.get_development_goal_progress(goal_id)
+	goal_status.text = "当前目标：%s\n%s（%d/%d）\n奖励：%s" % [
+		goal["name"], goal["description"], int(progress.get("current", 0)), int(progress.get("target", 1)),
+		DevelopmentGoalCatalogData.get_reward_text(goal_id),
+	]
+	goal_resource_feedback.text = "%s\n%s" % [flow_text, _format_resource_gaps(progress.get("resource_gaps", {}))]
+	claim_goal_button.text = "领取目标奖励" if bool(progress.get("complete", false)) else "目标尚未完成"
+	claim_goal_button.disabled = not GameState.can_claim_development_goal(goal_id)
+
+
+func _claim_current_development_goal() -> void:
+	var goal_id := GameState.get_current_development_goal_id()
+	var rollback := GameState.export_save_data()
+	if goal_id == &"" or not GameState.claim_development_goal(goal_id):
+		_refresh_development_goal()
+		return
+	if not SaveManager.save_game():
+		GameState.import_save_data(rollback)
+		_refresh_development_goal()
+		goal_resource_feedback.text = "目标奖励保存失败，领取状态与资源已恢复"
+		return
+	_refresh_development_goal()
 
 
 func _refresh_disciple_roster() -> void:
@@ -775,6 +849,7 @@ func _unlock_next_region() -> void:
 	var rollback := GameState.export_save_data()
 	if not GameState.unlock_region(region_id):
 		_refresh_territory()
+		_refresh_development_goal()
 		return
 	if not SaveManager.save_game():
 		GameState.import_save_data(rollback)

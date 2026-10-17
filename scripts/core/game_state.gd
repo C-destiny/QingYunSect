@@ -6,6 +6,7 @@ const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd"
 const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
 const EquipmentCraftingCatalogData = preload("res://scripts/data/equipment_crafting_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
+const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_catalog.gd")
 
 signal resources_changed
 signal assignments_changed
@@ -18,6 +19,7 @@ signal sect_progress_changed
 signal battle_changed
 signal equipment_changed
 signal territory_changed
+signal development_goal_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -64,6 +66,7 @@ var equipment_inventory: Array[Dictionary] = []
 var next_equipment_instance_id: int = 1
 var unlocked_regions: Array[String] = ["core"]
 var equipment_crafts_completed: int = 0
+var claimed_development_goals: Array[String] = []
 var sect_level: int = 1
 var battle_party: Array[int] = []
 var selected_battle_stage: int = 1
@@ -133,6 +136,23 @@ func add_resource(resource_id: StringName, amount: int) -> void:
 	resources_changed.emit()
 
 
+func get_resource_income_per_minute(resource_id: StringName) -> float:
+	var total := 0.0
+	for site_id: StringName in ResourceCatalogData.SITES:
+		var site := ResourceCatalogData.get_site(site_id)
+		if StringName(site.get("resource_id", &"")) != resource_id:
+			continue
+		total += _get_site_rate_per_minute(site_id, resource_id, get_sustenance_multiplier())
+	return total
+
+
+func get_resource_net_per_minute(resource_id: StringName) -> float:
+	var result := get_resource_income_per_minute(resource_id)
+	if resource_id == &"food":
+		result -= get_food_consumption_per_minute()
+	return result
+
+
 func get_idle_disciples() -> int:
 	_ensure_disciple_records()
 	return total_disciples - assigned_disciples
@@ -191,6 +211,90 @@ func get_equipment_crafting_recipe(template_id: StringName, quality: StringName)
 	return EquipmentCraftingCatalogData.get_recipe(template_id, quality)
 
 
+func get_current_development_goal_id() -> StringName:
+	for goal_id: StringName in DevelopmentGoalCatalogData.GOAL_IDS:
+		if String(goal_id) not in claimed_development_goals:
+			return goal_id
+	return &""
+
+
+func is_development_goal_complete(goal_id: StringName) -> bool:
+	var goal := DevelopmentGoalCatalogData.get_data(goal_id)
+	if goal.is_empty():
+		return false
+	match str(goal.get("condition", "")):
+		"sect_level":
+			return sect_level >= int(goal.get("target", 1))
+		"region":
+			return str(goal.get("target", "")) in unlocked_regions
+		"building_level":
+			return get_completed_building_levels(StringName(goal.get("target", ""))) >= int(goal.get("value", 1))
+		"crafts":
+			return equipment_crafts_completed >= int(goal.get("target", 1))
+		"disciple_realm":
+			for disciple: Dictionary in disciples:
+				if int(disciple.get("realm_level", 1)) >= int(goal.get("target", 1)):
+					return true
+			return false
+		"battle_victories":
+			return battle_victories >= int(goal.get("target", 1))
+	return false
+
+
+func can_claim_development_goal(goal_id: StringName) -> bool:
+	return goal_id == get_current_development_goal_id() and String(goal_id) not in claimed_development_goals and is_development_goal_complete(goal_id)
+
+
+func claim_development_goal(goal_id: StringName) -> bool:
+	if not can_claim_development_goal(goal_id):
+		return false
+	var reward: Dictionary = DevelopmentGoalCatalogData.get_data(goal_id).get("reward", {})
+	claimed_development_goals.append(String(goal_id))
+	for resource_id: StringName in RESOURCE_IDS:
+		resources[String(resource_id)] = get_resource_amount(resource_id) + int(reward.get(String(resource_id), 0))
+	resources_changed.emit()
+	development_goal_changed.emit()
+	return true
+
+
+func get_development_goal_progress(goal_id: StringName) -> Dictionary:
+	var goal := DevelopmentGoalCatalogData.get_data(goal_id)
+	if goal.is_empty():
+		return {}
+	var current := 0
+	var target := 1
+	var resource_cost: Dictionary = {}
+	match str(goal.get("condition", "")):
+		"sect_level":
+			current = sect_level
+			target = int(goal.get("target", 1))
+		"region":
+			current = 1 if str(goal.get("target", "")) in unlocked_regions else 0
+			resource_cost = TerritoryCatalogData.get_data(StringName(goal.get("target", ""))).get("cost", {})
+		"building_level":
+			var building_type := StringName(goal.get("target", ""))
+			current = get_completed_building_levels(building_type)
+			target = int(goal.get("value", 1))
+			resource_cost = BuildingCatalog.get_data(building_type).get("cost", {})
+		"crafts":
+			current = equipment_crafts_completed
+			target = int(goal.get("target", 1))
+			resource_cost = EquipmentCraftingCatalogData.get_recipe(&"initiate_weapon", &"common").get("cost", {})
+		"disciple_realm":
+			for disciple: Dictionary in disciples:
+				current = maxi(current, int(disciple.get("realm_level", 1)))
+			target = int(goal.get("target", 1))
+		"battle_victories":
+			current = battle_victories
+			target = int(goal.get("target", 1))
+	var gaps: Dictionary = {}
+	for resource_id: StringName in RESOURCE_IDS:
+		var gap := maxi(0, int(resource_cost.get(String(resource_id), 0)) - get_resource_amount(resource_id))
+		if gap > 0:
+			gaps[String(resource_id)] = gap
+	return {"current": current, "target": target, "resource_gaps": gaps, "complete": is_development_goal_complete(goal_id)}
+
+
 func can_craft_equipment(template_id: StringName, quality: StringName) -> bool:
 	var recipe := get_equipment_crafting_recipe(template_id, quality)
 	if recipe.is_empty() or equipment_inventory.size() >= MAX_EQUIPMENT_INVENTORY:
@@ -214,6 +318,7 @@ func craft_equipment(template_id: StringName, quality: StringName) -> int:
 		resources_changed.emit()
 		return 0
 	equipment_crafts_completed += 1
+	development_goal_changed.emit()
 	return instance_id
 
 
@@ -1290,6 +1395,7 @@ func export_save_data() -> Dictionary:
 		"next_equipment_instance_id": next_equipment_instance_id,
 		"unlocked_regions": unlocked_regions.duplicate(),
 		"equipment_crafts_completed": equipment_crafts_completed,
+		"claimed_development_goals": claimed_development_goals.duplicate(),
 		"sect_level": sect_level,
 		"battle_party": battle_party.duplicate(),
 		"selected_battle_stage": selected_battle_stage,
@@ -1344,6 +1450,13 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	equipment_crafts_completed = int(data.get("equipment_crafts_completed", 0))
 	if equipment_crafts_completed < 0:
 		return false
+	var claimed_value: Variant = data.get("claimed_development_goals", [])
+	if not claimed_value is Array:
+		return false
+	var normalized_claimed := DevelopmentGoalCatalogData.normalize_claimed_goals(claimed_value)
+	if not claimed_value.is_empty() and normalized_claimed.is_empty():
+		return false
+	claimed_development_goals = normalized_claimed
 	var saved_total := maxi(0, int(data.get("total_disciples", 3)))
 	var loaded_assignments: Dictionary = data["assignments"]
 	production_progress.clear()
@@ -1538,5 +1651,6 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	territory_changed.emit()
 	sect_progress_changed.emit()
 	battle_changed.emit()
+	development_goal_changed.emit()
 	return true
 

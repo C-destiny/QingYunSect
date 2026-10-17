@@ -18,6 +18,7 @@ game_state由GameState.export_save_data导出：
 - disciples（id、name、realm_level、cultivation、job）、next_disciple_id、sect_level。
 - V0.6：弟子新增profession（sword/mage）与equipment（weapon/armor/ring对应装备实例ID）；根状态新增equipment_inventory和next_equipment_instance_id。
 - V0.7：根状态新增unlocked_regions（按core、east、south顺序的永久解锁区域ID）与equipment_crafts_completed（非负打造完成次数）。
+- V0.7发展目标：claimed_development_goals按目录顺序保存已领取目标ID；早期version 3存档缺失该字段时迁移为空列表。
 - battle_party、selected_battle_stage、highest_unlocked_stage、highest_cleared_stage、battle_victories。
 - battle_encounter_sequence、active_battle_encounter_id、last_settled_battle_encounter_id（QYS-V04-004新增；用于结算幂等）。
 - battle_running、auto_battle_enabled、battle_player_hp/max_hp、battle_enemy_hp/max_hp、battle_round_progress、battle_restart_cooldown、battle_message。
@@ -34,6 +35,7 @@ QYS-V06-001将外层存档版本提升到2，同时显式接受version=1。旧�
 QYS-V06-003起，装备实例必须匹配equipment_catalog中的固定模板、部位、品质和确定属性；库存上限60件。任意属性篡改、未知模板或超量库存都会使读档失败并回滚。
 QYS-V07-002将外层存档版本提升到3。version 1、2默认只解锁core原8×6区域，打造次数为0；所有原建筑坐标、角色装备、队伍和离线状态保持原值。version 3严格校验区域ID唯一性、core必有、east/south依赖顺序、12×8边界、建筑只能位于已解锁区，以及打造次数非负。未知/重复/缺依赖区域、锁定区建筑、越界或重叠建筑会使读档失败并回滚。
 QYS-V07-004～005在version 3既有契约内增加artifact_forge、scripture_library两种合法建筑type，并正式使用equipment_crafts_completed记录成功打造次数。装备实例仍由equipment_inventory和next_equipment_instance_id保存；保存失败时打造界面恢复完整GameState快照，不留下装备、扣款或实例ID缺口。
+QYS-V07-007在version 3内增加可选claimed_development_goals字段；只接受目录前缀顺序且不允许未知、跳序或重复ID。目标领取与保存失败时完整回滚，避免重复奖励。为兼容QYS-V07-002～005期间已生成的version 3存档，字段缺失按未领取处理。
 保存先写.tmp并重新解析、校验完整游戏状态；校验成功后保留上一份有效主档为.bak，再以同目录重命名替换主档。替换失败时尝试由备份恢复。主档不存在或损坏时可读取.bak，并明确显示“从备份读取”，不会静默覆盖主档。
 
 ## 失败与恢复语义

@@ -54,6 +54,12 @@ func _init() -> void:
 	assert(int(migrated["version"]) == 3)
 	assert(migrated["game_state"]["unlocked_regions"] == ["core"])
 	assert(int(migrated["game_state"]["equipment_crafts_completed"]) == 0)
+	assert(migrated["game_state"]["claimed_development_goals"] == [])
+	var early_v07 := migrated.duplicate(true)
+	early_v07["game_state"].erase("claimed_development_goals")
+	_write_payload(early_v07)
+	assert(manager.load_game())
+	assert(state.claimed_development_goals.is_empty())
 
 	var missing_regions := migrated.duplicate(true)
 	missing_regions["game_state"].erase("unlocked_regions")
