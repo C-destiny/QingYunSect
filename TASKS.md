@@ -2,9 +2,9 @@
 
 快照日期：2026-10-16。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
 
-- 当前历史已完成版本：V0.4；负责人于2026-10-17明确确认整体验收完毕，QYS-V04-001～010均ACCEPTED。
-- 目标版本：V0.5 离线收益与长期挂机，已批准开发。
-- 当前任务：QYS-V05-006～007已完成编码与自动验证，等待负责人试玩验收。
+- 当前历史已完成版本：V0.5；负责人于2026-10-17明确确认整体验收完毕，QYS-V05-001～007均ACCEPTED。
+- 下一目标版本：V0.6 角色与装备；进入编码前先按版本边界拆分并确认任务。
+- 当前任务：无开发中任务；V0.5归档完成，等待负责人启动V0.6规划。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -23,7 +23,7 @@
 
 ## 下一步
 
-QYS-V05-001～005已由负责人验收；QYS-V05-006～007已编码，28组快速回归及Windows候选包验证通过，等待负责人验收。
+QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，Windows候选包与验收证据见docs/V0.5_ACCEPTANCE.md。
 
 | 编号 / GitHub | V0.5任务 | 优先级 | 本轮快照 |
 |---|---|---|---|
@@ -32,12 +32,12 @@ QYS-V05-001～005已由负责人验收；QYS-V05-006～007已编码，28组快�
 | [QYS-V05-003](https://github.com/C-destiny/QingYunSect/issues/13) | 离线战斗解析模拟 | P0 | 已验收（2026-10-17） |
 | [QYS-V05-004](https://github.com/C-destiny/QingYunSect/issues/14) | 离线施工招募与修炼推进 | P1 | 已验收（2026-10-17） |
 | [QYS-V05-005](https://github.com/C-destiny/QingYunSect/issues/15) | 离线结算原子性与防重复领取 | P0 | 已验收（2026-10-17） |
-| [QYS-V05-006](https://github.com/C-destiny/QingYunSect/issues/16) | 离线收益明细界面 | P1 | 待验收 |
-| [QYS-V05-007](https://github.com/C-destiny/QingYunSect/issues/17) | V0.5回归、长时与Windows交付 | P0 | 待验收 |
+| [QYS-V05-006](https://github.com/C-destiny/QingYunSect/issues/16) | 离线收益明细界面 | P1 | 已验收（2026-10-17） |
+| [QYS-V05-007](https://github.com/C-destiny/QingYunSect/issues/17) | V0.5回归、长时与Windows交付 | P0 | 已验收（2026-10-17） |
 
 ## 同步欠账
 
-- V0.4的10个Issue已验收关闭；V0.5的7个Issue已创建并保持open，均未关联Milestone。
+- V0.4的10个Issue、V0.5的7个Issue均已验收关闭；均未关联Milestone。
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
