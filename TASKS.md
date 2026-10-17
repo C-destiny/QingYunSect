@@ -4,7 +4,7 @@
 
 - 当前历史已完成版本：V0.5；负责人于2026-10-17明确确认整体验收完毕，QYS-V05-001～007均ACCEPTED。
 - 目标版本：V0.6 角色养成与装备系统，负责人于2026-10-17明确批准开发。
-- 当前任务：QYS-V06-001，角色装备数据契约与V0.5存档迁移。
+- 当前任务：QYS-V06-001已编码并通过29组快速回归，等待负责人验收。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -41,7 +41,7 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 
 | 编号 / GitHub | V0.6任务 | 优先级 | 本轮快照 |
 |---|---|---|---|
-| [QYS-V06-001](https://github.com/C-destiny/QingYunSect/issues/18) | 角色装备数据契约与V0.5存档迁移 | P0 | 开发中 |
+| [QYS-V06-001](https://github.com/C-destiny/QingYunSect/issues/18) | 角色装备数据契约与V0.5存档迁移 | P0 | 待验收 |
 | [QYS-V06-002](https://github.com/C-destiny/QingYunSect/issues/19) | 剑修与法修职业属性 | P0 | 待办 |
 | [QYS-V06-003](https://github.com/C-destiny/QingYunSect/issues/20) | 三部位装备目录与实例库存 | P0 | 待办 |
 | [QYS-V06-004](https://github.com/C-destiny/QingYunSect/issues/21) | 穿戴卸下与战斗属性联动 | P0 | 待办 |

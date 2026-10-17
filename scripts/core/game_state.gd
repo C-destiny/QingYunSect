@@ -29,6 +29,9 @@ const SECT_PRODUCTION_BONUS_PER_LEVEL := 0.05
 const BATTLE_ROUND_TIME := BattleCatalogData.ROUND_TIME
 const BATTLE_RESTART_DELAY := BattleCatalogData.RESTART_DELAY
 const BATTLE_LOG_LIMIT := 30
+const PROFESSION_IDS := [&"sword", &"mage"]
+const EQUIPMENT_SLOT_IDS := [&"weapon", &"armor", &"ring"]
+const EQUIPMENT_QUALITY_IDS := [&"common", &"rare", &"epic"]
 
 var resources: Dictionary = {
 	"wood": 120,
@@ -48,6 +51,8 @@ var training_disciples: int = 0
 var cultivation_points: float = 0.0
 var disciples: Array[Dictionary] = []
 var next_disciple_id: int = 1
+var equipment_inventory: Array[Dictionary] = []
+var next_equipment_instance_id: int = 1
 var sect_level: int = 1
 var battle_party: Array[int] = []
 var selected_battle_stage: int = 1
@@ -130,11 +135,87 @@ func _create_disciple() -> Dictionary:
 		"realm_level": 1,
 		"cultivation": 0.0,
 		"job": "idle",
+		"profession": String(_get_default_profession(next_disciple_id)),
+		"equipment": _make_empty_equipment_slots(),
 	}
 	next_disciple_id += 1
 	disciples.append(disciple)
 	total_disciples = disciples.size()
 	return disciple
+
+
+func _get_default_profession(disciple_id: int) -> StringName:
+	return &"sword" if disciple_id % 2 == 1 else &"mage"
+
+
+func _make_empty_equipment_slots() -> Dictionary:
+	return {"weapon": 0, "armor": 0, "ring": 0}
+
+
+func get_equipment_instance(instance_id: int) -> Dictionary:
+	for equipment: Dictionary in equipment_inventory:
+		if int(equipment.get("id", 0)) == instance_id:
+			return equipment
+	return {}
+
+
+func _validate_equipment_instance(raw_equipment: Variant, used_ids: Dictionary) -> Dictionary:
+	if not raw_equipment is Dictionary:
+		return {}
+	var equipment: Dictionary = raw_equipment.duplicate(true)
+	var instance_id := int(equipment.get("id", 0))
+	var template_id := str(equipment.get("template_id", ""))
+	var slot := StringName(equipment.get("slot", ""))
+	var quality := StringName(equipment.get("quality", ""))
+	var stats_value: Variant = equipment.get("stats", {})
+	if instance_id <= 0 or used_ids.has(instance_id) or template_id.is_empty():
+		return {}
+	if slot not in EQUIPMENT_SLOT_IDS or quality not in EQUIPMENT_QUALITY_IDS or not stats_value is Dictionary:
+		return {}
+	var stats: Dictionary = stats_value
+	for stat_id: Variant in stats:
+		if StringName(stat_id) not in [&"hp", &"attack", &"defense"] or typeof(stats[stat_id]) not in [TYPE_INT, TYPE_FLOAT] or float(stats[stat_id]) < 0.0:
+			return {}
+	used_ids[instance_id] = true
+	equipment["id"] = instance_id
+	equipment["template_id"] = template_id
+	equipment["slot"] = String(slot)
+	equipment["quality"] = String(quality)
+	equipment["stats"] = stats.duplicate(true)
+	return equipment
+
+
+func _normalize_disciple_equipment(raw_equipment: Variant) -> Dictionary:
+	if not raw_equipment is Dictionary:
+		return {}
+	var equipment: Dictionary = raw_equipment
+	for raw_slot: Variant in equipment:
+		if StringName(raw_slot) not in EQUIPMENT_SLOT_IDS:
+			return {}
+	var normalized := _make_empty_equipment_slots()
+	for slot: StringName in EQUIPMENT_SLOT_IDS:
+		var instance_id := int(equipment.get(String(slot), 0))
+		if instance_id < 0:
+			return {}
+		normalized[String(slot)] = instance_id
+	return normalized
+
+
+func _validate_equipment_assignments() -> bool:
+	var equipped_ids: Dictionary = {}
+	for disciple: Dictionary in disciples:
+		var equipped: Dictionary = disciple.get("equipment", {})
+		for slot: StringName in EQUIPMENT_SLOT_IDS:
+			var instance_id := int(equipped.get(String(slot), 0))
+			if instance_id == 0:
+				continue
+			if equipped_ids.has(instance_id):
+				return false
+			var equipment := get_equipment_instance(instance_id)
+			if equipment.is_empty() or StringName(equipment.get("slot", "")) != slot:
+				return false
+			equipped_ids[instance_id] = true
+	return true
 
 
 func get_disciple(disciple_id: int) -> Dictionary:
@@ -989,6 +1070,8 @@ func export_save_data() -> Dictionary:
 		"cultivation_points": cultivation_points,
 		"disciples": disciples.duplicate(true),
 		"next_disciple_id": next_disciple_id,
+		"equipment_inventory": equipment_inventory.duplicate(true),
+		"next_equipment_instance_id": next_equipment_instance_id,
 		"sect_level": sect_level,
 		"battle_party": battle_party.duplicate(),
 		"selected_battle_stage": selected_battle_stage,
@@ -1055,6 +1138,20 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 			return false
 		buildings.append(building.duplicate(true))
 	cultivation_points = maxf(0.0, float(data.get("cultivation_points", 0.0)))
+	equipment_inventory.clear()
+	var loaded_equipment_value: Variant = data.get("equipment_inventory", [])
+	if not loaded_equipment_value is Array:
+		return false
+	var used_equipment_ids: Dictionary = {}
+	for raw_equipment: Variant in loaded_equipment_value:
+		var equipment := _validate_equipment_instance(raw_equipment, used_equipment_ids)
+		if equipment.is_empty():
+			return false
+		equipment_inventory.append(equipment)
+	var minimum_next_equipment_id := 1
+	if not used_equipment_ids.is_empty():
+		minimum_next_equipment_id = int(used_equipment_ids.keys().max()) + 1
+	next_equipment_instance_id = maxi(int(data.get("next_equipment_instance_id", minimum_next_equipment_id)), minimum_next_equipment_id)
 	disciples.clear()
 	next_disciple_id = 1
 	var loaded_disciples_value: Variant = data.get("disciples", [])
@@ -1079,6 +1176,14 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 			disciple["realm_level"] = realm_level
 			disciple["cultivation"] = maxf(0.0, float(disciple.get("cultivation", 0.0)))
 			disciple["job"] = String(job)
+			var profession := StringName(disciple.get("profession", _get_default_profession(disciple_id)))
+			if profession not in PROFESSION_IDS:
+				return false
+			disciple["profession"] = String(profession)
+			var normalized_equipment := _normalize_disciple_equipment(disciple.get("equipment", {}))
+			if normalized_equipment.is_empty():
+				return false
+			disciple["equipment"] = normalized_equipment
 			disciples.append(disciple)
 		next_disciple_id = maxi(int(data.get("next_disciple_id", 1)), int(used_ids.keys().max()) + 1)
 	else:
@@ -1107,6 +1212,8 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 				recipients.append(disciples[0])
 			for disciple: Dictionary in recipients:
 				disciple["cultivation"] = cultivation_points / float(recipients.size())
+	if not _validate_equipment_assignments():
+		return false
 	_sync_aggregate_state_from_disciples()
 	battle_party.clear()
 	if data.has("battle_party"):

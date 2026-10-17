@@ -4,7 +4,8 @@ signal save_completed(success: bool, message: String)
 signal load_completed(success: bool, message: String)
 signal offline_window_ready(window: Dictionary)
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
+const SUPPORTED_SAVE_VERSIONS := [1, SAVE_VERSION]
 const TEMP_SUFFIX := ".tmp"
 const BACKUP_SUFFIX := ".bak"
 const MAX_OFFLINE_SECONDS := 8 * 60 * 60
@@ -183,6 +184,8 @@ func _load_from_path(path: String) -> Dictionary:
 	var payload: Dictionary = result["payload"]
 	if not payload.has("game_state") or not payload["game_state"] is Dictionary:
 		return {"success": false, "message": "存档数据缺失"}
+	if not _is_payload_game_state_compatible(payload):
+		return {"success": false, "message": "存档角色装备结构无效"}
 	if not game_state.import_save_data(payload["game_state"]):
 		return {"success": false, "message": "存档数据校验失败"}
 	return {
@@ -210,7 +213,7 @@ func _read_payload(path: String) -> Dictionary:
 	if not parsed is Dictionary:
 		return {"success": false, "message": "存档格式损坏"}
 	var payload: Dictionary = parsed
-	if not payload.has("version") or typeof(payload["version"]) not in [TYPE_INT, TYPE_FLOAT] or int(payload["version"]) != SAVE_VERSION:
+	if not payload.has("version") or typeof(payload["version"]) not in [TYPE_INT, TYPE_FLOAT] or int(payload["version"]) not in SUPPORTED_SAVE_VERSIONS:
 		return {"success": false, "message": "存档版本不受支持"}
 	if payload.has("saved_at_unix") and typeof(payload["saved_at_unix"]) not in [TYPE_INT, TYPE_FLOAT]:
 		return {"success": false, "message": "存档时间字段无效"}
@@ -244,6 +247,8 @@ func _replace_save_with_temp(temp_path: String) -> Error:
 func _validate_payload_game_state(payload: Dictionary) -> bool:
 	if not payload.has("game_state") or not payload["game_state"] is Dictionary:
 		return false
+	if not _is_payload_game_state_compatible(payload):
+		return false
 	var state_script: Script = game_state.get_script()
 	if state_script == null:
 		return false
@@ -251,6 +256,29 @@ func _validate_payload_game_state(payload: Dictionary) -> bool:
 	var valid: bool = validator.import_save_data(payload["game_state"])
 	validator.free()
 	return valid
+
+
+func _is_payload_game_state_compatible(payload: Dictionary) -> bool:
+	var version := int(payload.get("version", 0))
+	if version == 1:
+		return true
+	if version != SAVE_VERSION:
+		return false
+	var state: Dictionary = payload.get("game_state", {})
+	if not state.has("equipment_inventory") or not state["equipment_inventory"] is Array:
+		return false
+	if not state.has("next_equipment_instance_id") or typeof(state["next_equipment_instance_id"]) not in [TYPE_INT, TYPE_FLOAT]:
+		return false
+	var saved_disciples: Variant = state.get("disciples", [])
+	if not saved_disciples is Array:
+		return false
+	for raw_disciple: Variant in saved_disciples:
+		if not raw_disciple is Dictionary:
+			return false
+		var disciple: Dictionary = raw_disciple
+		if not disciple.has("profession") or not disciple.has("equipment") or not disciple["equipment"] is Dictionary:
+			return false
+	return true
 
 
 func _remove_file_if_exists(path: String) -> void:
