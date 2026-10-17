@@ -3,6 +3,7 @@ extends Control
 const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
 const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
+const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 
 @onready var wood_label: Label = %Wood
 @onready var spirit_stone_label: Label = %SpiritStone
@@ -44,6 +45,8 @@ const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd"
 @onready var sect_level_status: Label = %SectLevelStatus
 @onready var sect_progress: ProgressBar = %SectProgress
 @onready var sect_upgrade_button: Button = %SectUpgradeButton
+@onready var territory_status: Label = %TerritoryStatus
+@onready var territory_unlock_button: Button = %TerritoryUnlockButton
 @onready var battle_party_status: Label = %BattlePartyStatus
 @onready var join_battle_button: Button = %JoinBattleButton
 @onready var leave_battle_button: Button = %LeaveBattleButton
@@ -88,9 +91,12 @@ func _ready() -> void:
 	GameState.battle_changed.connect(_refresh_battle)
 	GameState.equipment_changed.connect(_refresh_equipment_panel)
 	GameState.equipment_changed.connect(_refresh_battle)
+	GameState.territory_changed.connect(_refresh_territory)
+	GameState.resources_changed.connect(_refresh_territory)
 	sect_map.resource_selected.connect(_on_resource_selected)
 	sect_map.placement_requested.connect(_on_placement_requested)
 	sect_map.building_selected.connect(_on_building_selected)
+	sect_map.region_selected.connect(_on_region_selected)
 	assign_button.pressed.connect(_assign_disciple)
 	unassign_button.pressed.connect(_unassign_disciple)
 	save_button.pressed.connect(_save_game)
@@ -114,6 +120,7 @@ func _ready() -> void:
 	disciple_selector.item_selected.connect(_on_disciple_selected)
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
 	sect_upgrade_button.pressed.connect(_upgrade_sect)
+	territory_unlock_button.pressed.connect(_unlock_next_region)
 	disciple_job_selector.item_selected.connect(_on_disciple_job_selected)
 	roster_filter.item_selected.connect(_on_roster_view_changed)
 	roster_sort.item_selected.connect(_on_roster_view_changed)
@@ -143,9 +150,10 @@ func _ready() -> void:
 	_refresh_recruitment()
 	_refresh_disciple_roster()
 	_refresh_sect_progress()
+	_refresh_territory()
 	_refresh_battle_stages()
 	_refresh_battle()
-	print("青云宗 V0.6 验收候选：角色养成与装备版启动成功")
+	print("青云宗 V0.7 开发版：宗门经营整合启动成功")
 
 
 func _process(delta: float) -> void:
@@ -630,11 +638,79 @@ func _refresh_sect_progress() -> void:
 	sect_upgrade_button.disabled = not GameState.can_upgrade_sect()
 
 
+func _refresh_territory() -> void:
+	if not is_instance_valid(territory_status) or not is_instance_valid(territory_unlock_button):
+		return
+	var unlocked_cells := 0
+	var unlocked_names := PackedStringArray()
+	for region_id: StringName in TerritoryCatalogData.REGION_IDS:
+		if String(region_id) not in GameState.unlocked_regions:
+			continue
+		var region := TerritoryCatalogData.get_data(region_id)
+		var region_size: Vector2i = region["size"]
+		unlocked_cells += region_size.x * region_size.y
+		unlocked_names.append(str(region["name"]))
+	var next_region := GameState.get_next_locked_region()
+	if next_region == &"":
+		territory_status.text = "领地：%s · 已解锁全部 %d/%d 格" % ["、".join(unlocked_names), unlocked_cells, TerritoryCatalogData.MAP_SIZE.x * TerritoryCatalogData.MAP_SIZE.y]
+		territory_unlock_button.text = "领地已全部开放"
+		territory_unlock_button.disabled = true
+		return
+	var data := TerritoryCatalogData.get_data(next_region)
+	var required_level := int(data.get("required_sect_level", 1))
+	var cost_text := TerritoryCatalogData.get_cost_text(next_region)
+	territory_status.text = "领地：%s · %d/%d格\n下一处：%s · 需宗门%d级 · %s" % [
+		"、".join(unlocked_names), unlocked_cells, TerritoryCatalogData.MAP_SIZE.x * TerritoryCatalogData.MAP_SIZE.y,
+		data["name"], required_level, cost_text,
+	]
+	territory_unlock_button.text = "解锁%s（%s）" % [data["name"], cost_text]
+	territory_unlock_button.disabled = not GameState.can_unlock_region(next_region)
+
+
+func _on_region_selected(region_id: StringName) -> void:
+	var region := TerritoryCatalogData.get_data(region_id)
+	if region.is_empty():
+		return
+	selected_resource = {}
+	selected_building_instance = 0
+	building_actions.visible = false
+	assignment_status.visible = false
+	production_status.visible = false
+	assign_button.visible = false
+	unassign_button.visible = false
+	selection_name.text = "%s · 尚未解锁" % region["name"]
+	var required := StringName(region.get("requires", &""))
+	var dependency_text := ""
+	if required != &"" and String(required) not in GameState.unlocked_regions:
+		dependency_text = "\n需先解锁%s。" % TerritoryCatalogData.get_data(required)["name"]
+	selection_description.text = "需要宗门%d级，并消耗%s。%s" % [
+		int(region.get("required_sect_level", 1)), TerritoryCatalogData.get_cost_text(region_id), dependency_text,
+	]
+
+
+func _unlock_next_region() -> void:
+	var region_id := GameState.get_next_locked_region()
+	if region_id == &"":
+		return
+	var rollback := GameState.export_save_data()
+	if not GameState.unlock_region(region_id):
+		_refresh_territory()
+		return
+	if not SaveManager.save_game():
+		GameState.import_save_data(rollback)
+		territory_status.text = "领地解锁保存失败，资源与领地状态已恢复"
+		return
+	selection_name.text = "%s · 已解锁" % TerritoryCatalogData.get_data(region_id)["name"]
+	selection_description.text = "新的宗门建设区域已经开放。"
+	_refresh_territory()
+
+
 func _upgrade_sect() -> void:
 	if GameState.upgrade_sect():
 		_refresh_resources()
 		_refresh_assignment()
 		_refresh_sect_progress()
+		_refresh_territory()
 		SaveManager.save_game()
 
 
@@ -672,6 +748,7 @@ func _on_load_completed(success: bool, message: String) -> void:
 		_refresh_battle_stages()
 		_refresh_battle()
 		_refresh_equipment_panel()
+		_refresh_territory()
 
 
 func _handle_offline_receipt(window: Dictionary, receipt: Dictionary) -> void:

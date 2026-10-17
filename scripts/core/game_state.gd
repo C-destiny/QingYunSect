@@ -16,6 +16,7 @@ signal disciples_changed
 signal sect_progress_changed
 signal battle_changed
 signal equipment_changed
+signal territory_changed
 
 const RESOURCE_IDS := [&"wood", &"spirit_stone", &"food"]
 const BASE_DISCIPLE_CAPACITY := 3
@@ -973,6 +974,38 @@ func is_cell_unlocked(cell: Vector2i) -> bool:
 	return region_id != &"" and String(region_id) in unlocked_regions
 
 
+func get_next_locked_region() -> StringName:
+	for region_id: StringName in TerritoryCatalogData.REGION_IDS:
+		if String(region_id) not in unlocked_regions:
+			return region_id
+	return &""
+
+
+func can_unlock_region(region_id: StringName) -> bool:
+	var region := TerritoryCatalogData.get_data(region_id)
+	if region.is_empty() or String(region_id) in unlocked_regions or region_id == &"core":
+		return false
+	var required := StringName(region.get("requires", &""))
+	if required != &"" and String(required) not in unlocked_regions:
+		return false
+	return sect_level >= int(region.get("required_sect_level", 1)) and can_afford(region.get("cost", {}))
+
+
+func unlock_region(region_id: StringName) -> bool:
+	if not can_unlock_region(region_id):
+		return false
+	var region := TerritoryCatalogData.get_data(region_id)
+	if not spend_resources(region.get("cost", {})):
+		return false
+	unlocked_regions.append(String(region_id))
+	var normalized := TerritoryCatalogData.normalize_unlocked_regions(unlocked_regions)
+	if normalized.is_empty():
+		return false
+	unlocked_regions = normalized
+	territory_changed.emit()
+	return true
+
+
 func start_construction(building_type: StringName, cell: Vector2i) -> bool:
 	var definition := BuildingCatalog.get_data(building_type)
 	if definition.is_empty() or not is_cell_unlocked(cell) or is_cell_occupied(cell):
@@ -1465,6 +1498,7 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	training_changed.emit()
 	disciples_changed.emit()
 	equipment_changed.emit()
+	territory_changed.emit()
 	sect_progress_changed.emit()
 	battle_changed.emit()
 	return true

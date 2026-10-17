@@ -36,6 +36,18 @@ static func get_data(region_id: StringName) -> Dictionary:
 	return REGIONS.get(String(region_id), {})
 
 
+static func get_cost_text(region_id: StringName) -> String:
+	var cost: Dictionary = get_data(region_id).get("cost", {})
+	var parts := PackedStringArray()
+	if int(cost.get("wood", 0)) > 0:
+		parts.append("木材%d" % int(cost["wood"]))
+	if int(cost.get("spirit_stone", 0)) > 0:
+		parts.append("灵石%d" % int(cost["spirit_stone"]))
+	if int(cost.get("food", 0)) > 0:
+		parts.append("灵谷%d" % int(cost["food"]))
+	return "、".join(parts)
+
+
 static func get_region_for_cell(cell: Vector2i) -> StringName:
 	if cell.x < 0 or cell.y < 0 or cell.x >= MAP_SIZE.x or cell.y >= MAP_SIZE.y:
 		return &""

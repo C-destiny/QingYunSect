@@ -192,6 +192,21 @@ layout_mode = 2
 disabled = true
 text = "繁荣度不足"
 
+[node name="TerritoryStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.76, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "领地：宗门本部 48/96格"
+autowrap_mode = 2
+
+[node name="TerritoryUnlockButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+disabled = true
+text = "宗门等级不足，无法扩张"
+
 [node name="SelectionName" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 unique_name_in_owner = true
 layout_mode = 2

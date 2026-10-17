@@ -1,12 +1,14 @@
 extends Control
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
+const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 
 signal resource_selected(resource_data: Dictionary)
 signal placement_requested(building_type: StringName, cell: Vector2i)
 signal building_selected(building: Dictionary)
+signal region_selected(region_id: StringName)
 
-const GRID_SIZE := Vector2i(8, 6)
+const GRID_SIZE := TerritoryCatalogData.MAP_SIZE
 const TILE_SIZE := Vector2(104.0, 52.0)
 const TILE_COLOR_A := Color(0.16, 0.28, 0.25, 1.0)
 const TILE_COLOR_B := Color(0.13, 0.24, 0.22, 1.0)
@@ -28,6 +30,7 @@ func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	GameState.assignments_changed.connect(queue_redraw)
 	GameState.buildings_changed.connect(queue_redraw)
+	GameState.territory_changed.connect(queue_redraw)
 	queue_redraw()
 
 
@@ -46,13 +49,18 @@ func _draw() -> void:
 				center + Vector2(0.0, TILE_SIZE.y * 0.5),
 				center + Vector2(-TILE_SIZE.x * 0.5, 0.0),
 			])
+			var unlocked := GameState.is_cell_unlocked(cell)
 			var fill := TILE_COLOR_A if (x + y) % 2 == 0 else TILE_COLOR_B
+			if not unlocked:
+				fill = Color(0.075, 0.095, 0.105, 1.0)
 			draw_colored_polygon(points, fill)
-			var outline := SELECTED_OUTLINE if cell == selected_cell else TILE_OUTLINE
+			var outline := SELECTED_OUTLINE if cell == selected_cell else (TILE_OUTLINE if unlocked else Color(0.18, 0.22, 0.24, 0.65))
 			var width := 3.0 if cell == selected_cell else 1.2
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), outline, width, true)
 			if cell == hovered_cell and cell != selected_cell:
 				draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color(0.68, 0.82, 0.72, 0.9), 2.0, true)
+			if not unlocked:
+				draw_string(ThemeDB.fallback_font, center + Vector2(-12, 5), "锁", HORIZONTAL_ALIGNMENT_CENTER, 24, 13, Color(0.48, 0.54, 0.56, 0.75))
 
 	for building: Dictionary in GameState.buildings:
 		_draw_building(building, origin)
@@ -68,6 +76,12 @@ func _gui_input(event: InputEvent) -> void:
 		queue_redraw()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var clicked_cell := _screen_to_cell(event.position, _map_origin())
+		if clicked_cell != Vector2i(-1, -1) and not GameState.is_cell_unlocked(clicked_cell):
+			selected_cell = clicked_cell
+			region_selected.emit(TerritoryCatalogData.get_region_for_cell(clicked_cell))
+			queue_redraw()
+			accept_event()
+			return
 		if placement_building != &"":
 			if is_placement_valid(clicked_cell):
 				placement_requested.emit(placement_building, clicked_cell)
@@ -108,6 +122,8 @@ func clear_selection() -> void:
 
 func is_placement_valid(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.y < 0 or cell.x >= GRID_SIZE.x or cell.y >= GRID_SIZE.y:
+		return false
+	if not GameState.is_cell_unlocked(cell):
 		return false
 	if GameState.is_cell_occupied(cell):
 		return false
