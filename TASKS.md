@@ -87,4 +87,4 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
-- 2026-10-17已将 `docs/development-management` 推送至 `origin/docs/development-management`，包含V0.4候选源码、测试和文档；尚未合并main，也未上传Windows构建或创建完成标签。
+- 2026-10-17已将当前进展推送至 `origin/feature/v0.8-visual-polish`，远端头为`3649cf7`；已同步已验收版本标签`v0.1.0`～`v0.7.0`（`v0.4.0`此前已存在）。尚未合并main，也未上传Windows构建。
