@@ -4,6 +4,7 @@ const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd")
 const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
+const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 
 signal resources_changed
 signal assignments_changed
@@ -59,6 +60,8 @@ var disciples: Array[Dictionary] = []
 var next_disciple_id: int = 1
 var equipment_inventory: Array[Dictionary] = []
 var next_equipment_instance_id: int = 1
+var unlocked_regions: Array[String] = ["core"]
+var equipment_crafts_completed: int = 0
 var sect_level: int = 1
 var battle_party: Array[int] = []
 var selected_battle_stage: int = 1
@@ -965,9 +968,14 @@ func is_cell_occupied(cell: Vector2i) -> bool:
 	return false
 
 
+func is_cell_unlocked(cell: Vector2i) -> bool:
+	var region_id := TerritoryCatalogData.get_region_for_cell(cell)
+	return region_id != &"" and String(region_id) in unlocked_regions
+
+
 func start_construction(building_type: StringName, cell: Vector2i) -> bool:
 	var definition := BuildingCatalog.get_data(building_type)
-	if definition.is_empty() or is_cell_occupied(cell):
+	if definition.is_empty() or not is_cell_unlocked(cell) or is_cell_occupied(cell):
 		return false
 	if not spend_resources(definition["cost"]):
 		return false
@@ -1210,6 +1218,8 @@ func export_save_data() -> Dictionary:
 		"next_disciple_id": next_disciple_id,
 		"equipment_inventory": equipment_inventory.duplicate(true),
 		"next_equipment_instance_id": next_equipment_instance_id,
+		"unlocked_regions": unlocked_regions.duplicate(),
+		"equipment_crafts_completed": equipment_crafts_completed,
 		"sect_level": sect_level,
 		"battle_party": battle_party.duplicate(),
 		"selected_battle_stage": selected_battle_stage,
@@ -1254,6 +1264,16 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 		if not loaded_resources.has(key) or typeof(loaded_resources[key]) not in [TYPE_INT, TYPE_FLOAT]:
 			return false
 		resources[key] = maxi(0, int(loaded_resources[key]))
+	var loaded_regions_value: Variant = data.get("unlocked_regions", ["core"])
+	var normalized_regions := TerritoryCatalogData.normalize_unlocked_regions(loaded_regions_value)
+	if normalized_regions.is_empty():
+		return false
+	unlocked_regions = normalized_regions
+	if data.has("equipment_crafts_completed") and typeof(data["equipment_crafts_completed"]) not in [TYPE_INT, TYPE_FLOAT]:
+		return false
+	equipment_crafts_completed = int(data.get("equipment_crafts_completed", 0))
+	if equipment_crafts_completed < 0:
+		return false
 	var saved_total := maxi(0, int(data.get("total_disciples", 3)))
 	var loaded_assignments: Dictionary = data["assignments"]
 	production_progress.clear()
@@ -1273,6 +1293,11 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 			return false
 		var building: Dictionary = raw_building
 		if BuildingCatalog.get_data(StringName(building.get("type", ""))).is_empty():
+			return false
+		if not building.has("cell_x") or not building.has("cell_y") or typeof(building["cell_x"]) not in [TYPE_INT, TYPE_FLOAT] or typeof(building["cell_y"]) not in [TYPE_INT, TYPE_FLOAT]:
+			return false
+		var building_cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
+		if not is_cell_unlocked(building_cell) or is_cell_occupied(building_cell):
 			return false
 		buildings.append(building.duplicate(true))
 	cultivation_points = maxf(0.0, float(data.get("cultivation_points", 0.0)))

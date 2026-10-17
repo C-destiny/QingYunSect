@@ -4,8 +4,8 @@ signal save_completed(success: bool, message: String)
 signal load_completed(success: bool, message: String)
 signal offline_window_ready(window: Dictionary)
 
-const SAVE_VERSION := 2
-const SUPPORTED_SAVE_VERSIONS := [1, SAVE_VERSION]
+const SAVE_VERSION := 3
+const SUPPORTED_SAVE_VERSIONS := [1, 2, SAVE_VERSION]
 const TEMP_SUFFIX := ".tmp"
 const BACKUP_SUFFIX := ".bak"
 const MAX_OFFLINE_SECONDS := 8 * 60 * 60
@@ -262,7 +262,7 @@ func _is_payload_game_state_compatible(payload: Dictionary) -> bool:
 	var version := int(payload.get("version", 0))
 	if version == 1:
 		return true
-	if version != SAVE_VERSION:
+	if version not in [2, SAVE_VERSION]:
 		return false
 	var state: Dictionary = payload.get("game_state", {})
 	if not state.has("equipment_inventory") or not state["equipment_inventory"] is Array:
@@ -277,6 +277,11 @@ func _is_payload_game_state_compatible(payload: Dictionary) -> bool:
 			return false
 		var disciple: Dictionary = raw_disciple
 		if not disciple.has("profession") or not disciple.has("equipment") or not disciple["equipment"] is Dictionary:
+			return false
+	if version == SAVE_VERSION:
+		if not state.has("unlocked_regions") or not state["unlocked_regions"] is Array:
+			return false
+		if not state.has("equipment_crafts_completed") or typeof(state["equipment_crafts_completed"]) not in [TYPE_INT, TYPE_FLOAT]:
 			return false
 	return true
 
