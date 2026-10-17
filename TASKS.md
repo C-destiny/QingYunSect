@@ -3,8 +3,8 @@
 快照日期：2026-10-16。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
 
 - 当前历史已完成版本：V0.5；负责人于2026-10-17明确确认整体验收完毕，QYS-V05-001～007均ACCEPTED。
-- 下一目标版本：V0.6 角色与装备；进入编码前先按版本边界拆分并确认任务。
-- 当前任务：无开发中任务；V0.5归档完成，等待负责人启动V0.6规划。
+- 目标版本：V0.6 角色养成与装备系统，负责人于2026-10-17明确批准开发。
+- 当前任务：QYS-V06-001，角色装备数据契约与V0.5存档迁移。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -35,9 +35,24 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 | [QYS-V05-006](https://github.com/C-destiny/QingYunSect/issues/16) | 离线收益明细界面 | P1 | 已验收（2026-10-17） |
 | [QYS-V05-007](https://github.com/C-destiny/QingYunSect/issues/17) | V0.5回归、长时与Windows交付 | P0 | 已验收（2026-10-17） |
 
+## V0.6 已批准任务
+
+完整边界和验收标准见docs/V0.6_DEVELOPMENT_PLAN.md。编码测试通过只进入待验收，不自动关单。
+
+| 编号 / GitHub | V0.6任务 | 优先级 | 本轮快照 |
+|---|---|---|---|
+| [QYS-V06-001](https://github.com/C-destiny/QingYunSect/issues/18) | 角色装备数据契约与V0.5存档迁移 | P0 | 开发中 |
+| [QYS-V06-002](https://github.com/C-destiny/QingYunSect/issues/19) | 剑修与法修职业属性 | P0 | 待办 |
+| [QYS-V06-003](https://github.com/C-destiny/QingYunSect/issues/20) | 三部位装备目录与实例库存 | P0 | 待办 |
+| [QYS-V06-004](https://github.com/C-destiny/QingYunSect/issues/21) | 穿戴卸下与战斗属性联动 | P0 | 待办 |
+| [QYS-V06-005](https://github.com/C-destiny/QingYunSect/issues/22) | 装备掉落与统一结算 | P0 | 待办 |
+| [QYS-V06-006](https://github.com/C-destiny/QingYunSect/issues/23) | 角色与装备管理界面 | P1 | 待办 |
+| [QYS-V06-007](https://github.com/C-destiny/QingYunSect/issues/24) | 跨系统回归与存档安全 | P0 | 待办 |
+| [QYS-V06-008](https://github.com/C-destiny/QingYunSect/issues/25) | V0.6 Windows交付与版本验收 | P0 | 待办 |
+
 ## 同步欠账
 
-- V0.4的10个Issue、V0.5的7个Issue均已验收关闭；均未关联Milestone。
+- V0.4的10个Issue、V0.5的7个Issue均已验收关闭；V0.6的8个Issue已创建，其中#18开发中、其余待办；均未关联Milestone。
 - 13个Milestone及“青云宗开发计划”Project未创建：连接器无相关接口、gh命令不存在、已登录浏览器读页面连续超时。
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
