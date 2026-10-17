@@ -2,6 +2,9 @@ extends Control
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
+const MAP_BACKDROP: Texture2D = preload("res://assets/environment/sect_floating_mountain.png")
+const BUILDING_ATLAS: Texture2D = preload("res://assets/buildings/sect_buildings_atlas.png")
+const LANDMARK_ATLAS: Texture2D = preload("res://assets/environment/sect_landmarks_atlas.png")
 
 signal resource_selected(resource_data: Dictionary)
 signal placement_requested(building_type: StringName, cell: Vector2i)
@@ -10,9 +13,9 @@ signal region_selected(region_id: StringName)
 
 const GRID_SIZE := TerritoryCatalogData.MAP_SIZE
 const TILE_SIZE := Vector2(104.0, 52.0)
-const TILE_COLOR_A := Color(0.28, 0.39, 0.34, 1.0)
-const TILE_COLOR_B := Color(0.23, 0.34, 0.31, 1.0)
-const TILE_OUTLINE := Color(0.55, 0.64, 0.52, 0.62)
+const TILE_COLOR_A := Color(0.78, 0.88, 0.7, 0.17)
+const TILE_COLOR_B := Color(0.62, 0.78, 0.66, 0.12)
+const TILE_OUTLINE := Color(0.86, 0.9, 0.72, 0.48)
 const SELECTED_OUTLINE := Color(0.86, 0.76, 0.37, 1.0)
 const PAPER_WHITE := Color(0.9, 0.87, 0.75, 1.0)
 const INK_TEAL := Color(0.075, 0.18, 0.19, 1.0)
@@ -20,6 +23,22 @@ const ROOF_TEAL := Color(0.08, 0.23, 0.25, 1.0)
 const WARM_WOOD := Color(0.43, 0.27, 0.16, 1.0)
 const STONE_LIGHT := Color(0.62, 0.64, 0.57, 1.0)
 const GOLD_ACCENT := Color(0.82, 0.64, 0.25, 1.0)
+const BUILDING_ATLAS_CELLS := Vector2i(4, 2)
+const LANDMARK_ATLAS_CELLS := Vector2i(2, 2)
+const BUILDING_ATLAS_INDEX := {
+	&"disciple_quarters": Vector2i(0, 0),
+	&"lumber_yard": Vector2i(1, 0),
+	&"spirit_mine": Vector2i(2, 0),
+	&"spirit_field": Vector2i(3, 0),
+	&"training_ground": Vector2i(0, 1),
+	&"artifact_forge": Vector2i(1, 1),
+	&"scripture_library": Vector2i(2, 1),
+}
+const RESOURCE_ATLAS_INDEX := {
+	&"forest": Vector2i(1, 0),
+	&"mine": Vector2i(0, 1),
+	&"field": Vector2i(1, 1),
+}
 
 var resource_nodes: Array[Dictionary] = [
 	{"site_id": &"forest", "resource_id": &"wood", "cell": Vector2i(1, 1), "name": "青松林", "description": "宗门西侧的成片青松，可安排普通弟子伐木。", "reserve": 600, "rate": float(ResourceCatalogData.SITES[&"forest"]["rate"]), "resource_name": "木材", "color": Color(0.24, 0.68, 0.39, 1.0)},
@@ -52,7 +71,6 @@ func _draw() -> void:
 			_draw_tile(cell, origin)
 
 	_draw_region_connections(origin)
-	_draw_environment_details(origin)
 	for building: Dictionary in GameState.buildings:
 		_draw_building(building, origin)
 	_draw_main_hall(origin)
@@ -62,6 +80,10 @@ func _draw() -> void:
 
 
 func _draw_backdrop(origin: Vector2) -> void:
+	if MAP_BACKDROP != null:
+		draw_texture_rect(MAP_BACKDROP, Rect2(Vector2.ZERO, size), false)
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.5, 0.72, 0.9, 0.04), true)
+		return
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.055, 0.12, 0.15, 1.0), true)
 	var horizon := maxf(62.0, origin.y - 34.0)
 	draw_colored_polygon(PackedVector2Array([
@@ -107,19 +129,19 @@ func _draw_tile(cell: Vector2i, origin: Vector2) -> void:
 		var region_id := TerritoryCatalogData.get_region_for_cell(cell)
 		var base := TILE_COLOR_A if (cell.x + cell.y) % 2 == 0 else TILE_COLOR_B
 		if region_id == &"east":
-			base = base.lerp(Color(0.32, 0.36, 0.34, 1.0), 0.28)
+			base = base.lerp(Color(0.55, 0.76, 0.76, 0.18), 0.32)
 		elif region_id == &"south":
-			base = base.lerp(Color(0.31, 0.43, 0.32, 1.0), 0.3)
+			base = base.lerp(Color(0.72, 0.82, 0.55, 0.18), 0.32)
 		var cliff_depth := 17.0
 		if cell.x == GRID_SIZE.x - 1 or not GameState.is_cell_unlocked(cell + Vector2i(1, 0)):
-			draw_colored_polygon(PackedVector2Array([points[1], points[2], points[2] + Vector2(0, cliff_depth), points[1] + Vector2(0, cliff_depth)]), Color(0.2, 0.24, 0.22, 1.0))
+			draw_colored_polygon(PackedVector2Array([points[1], points[2], points[2] + Vector2(0, cliff_depth), points[1] + Vector2(0, cliff_depth)]), Color(0.22, 0.32, 0.34, 0.42))
 		if cell.y == GRID_SIZE.y - 1 or not GameState.is_cell_unlocked(cell + Vector2i(0, 1)):
-			draw_colored_polygon(PackedVector2Array([points[2], points[3], points[3] + Vector2(0, cliff_depth), points[2] + Vector2(0, cliff_depth)]), Color(0.17, 0.22, 0.2, 1.0))
+			draw_colored_polygon(PackedVector2Array([points[2], points[3], points[3] + Vector2(0, cliff_depth), points[2] + Vector2(0, cliff_depth)]), Color(0.18, 0.27, 0.29, 0.46))
 		draw_colored_polygon(points, base)
 		draw_line(points[3], points[0], base.lightened(0.16), 1.2, true)
 	else:
-		draw_colored_polygon(points, Color(0.12, 0.17, 0.18, 0.78))
-		_draw_cloud(center, 0.42, Color(0.68, 0.74, 0.72, 0.22))
+		draw_colored_polygon(points, Color(0.46, 0.61, 0.66, 0.28))
+		draw_line(points[3], points[0], Color(0.9, 0.96, 0.98, 0.38), 1.2, true)
 	var outline := SELECTED_OUTLINE if cell == selected_cell else (TILE_OUTLINE if unlocked else Color(0.28, 0.34, 0.34, 0.36))
 	var width := 3.0 if cell == selected_cell else 1.1
 	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), outline, width, true)
@@ -249,6 +271,10 @@ func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:
 
 func _draw_main_hall(origin: Vector2) -> void:
 	var center := _cell_to_screen(Vector2i(4, 3), origin)
+	if LANDMARK_ATLAS != null:
+		_draw_atlas_sprite(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, Vector2i(0, 0), center + Vector2(0, -64), Vector2(224, 149))
+		_draw_map_label(center + Vector2(0, 31), "宗门大殿", 104)
+		return
 	draw_colored_polygon(PackedVector2Array([center + Vector2(-62, 5), center + Vector2(0, 22), center + Vector2(62, 5), center + Vector2(0, -12)]), Color(0.56, 0.57, 0.51, 1.0))
 	for step_index: int in range(3):
 		var half_width := 48.0 - float(step_index) * 7.0
@@ -268,6 +294,14 @@ func _draw_main_hall(origin: Vector2) -> void:
 func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
 	var center := _cell_to_screen(resource_data["cell"], origin) + Vector2(0, -18)
 	var site_id := StringName(resource_data["site_id"])
+	if LANDMARK_ATLAS != null and RESOURCE_ATLAS_INDEX.has(site_id):
+		_draw_atlas_sprite(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, RESOURCE_ATLAS_INDEX[site_id], center + Vector2(0, -23), Vector2(126, 84))
+		if Vector2i(resource_data["cell"]) == selected_cell:
+			draw_arc(center + Vector2(0, 4), 44.0, 0.0, TAU, 40, SELECTED_OUTLINE, 3.0, true)
+		var atlas_workers := GameState.get_assignment(resource_data["site_id"])
+		if atlas_workers > 0:
+			_draw_map_label(center + Vector2(0, 38), "%d 人" % atlas_workers, 56, 14)
+		return
 	draw_circle(center + Vector2(0, 17), 19.0, Color(0.02, 0.05, 0.05, 0.28))
 	match site_id:
 		&"forest":
@@ -304,11 +338,19 @@ func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	var completed := bool(building["completed"])
 	draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
 	if completed:
-		_draw_completed_building(building_type, center, level)
+		if BUILDING_ATLAS != null and BUILDING_ATLAS_INDEX.has(building_type):
+			var visual_scale := 1.0 + float(level - 1) * 0.055
+			_draw_atlas_sprite(BUILDING_ATLAS, BUILDING_ATLAS_CELLS, BUILDING_ATLAS_INDEX[building_type], center + Vector2(0, -55), Vector2(136, 153) * visual_scale)
+			if level >= 3:
+				draw_arc(center + Vector2(0, -32), 48.0, 0.0, TAU, 40, Color(0.45, 0.82, 1.0, 0.62), 2.0, true)
+		else:
+			_draw_completed_building(building_type, center, level)
 	else:
 		_draw_construction_site(center, Color(definition["color"]))
 	var name_text: String = definition["name"]
-	draw_string(ThemeDB.fallback_font, center + Vector2(-46, 27), "%s Lv.%d" % [name_text, level], HORIZONTAL_ALIGNMENT_CENTER, 92, 14, PAPER_WHITE)
+	_draw_map_label(center + Vector2(0, 29), "%s Lv.%d" % [name_text, level], 102, 14)
+	if cell == selected_cell:
+		draw_arc(center + Vector2(0, 2), 46.0, 0.0, TAU, 40, SELECTED_OUTLINE, 3.0, true)
 	if not completed:
 		var progress := 1.0 - float(building["remaining"]) / float(building["build_time"])
 		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
@@ -390,6 +432,28 @@ func _draw_roof(center: Vector2, half_width: float, height: float, color: Color)
 func _draw_banner(base: Vector2, color: Color) -> void:
 	draw_line(base, base + Vector2(0, 38), Color(0.45, 0.37, 0.24, 1.0), 2.0, true)
 	draw_colored_polygon(PackedVector2Array([base + Vector2(2, 2), base + Vector2(15, 7), base + Vector2(2, 19)]), color)
+
+
+func _draw_atlas_sprite(texture: Texture2D, atlas_cells: Vector2i, atlas_cell: Vector2i, center: Vector2, draw_size: Vector2) -> void:
+	var source_cell_size := texture.get_size() / Vector2(atlas_cells)
+	var source_rect := Rect2(Vector2(atlas_cell) * source_cell_size, source_cell_size)
+	var destination := Rect2(center - draw_size * 0.5, draw_size)
+	draw_texture_rect_region(texture, destination, source_rect)
+
+
+func _draw_map_label(center: Vector2, text: String, width: float, font_size: int = 16) -> void:
+	var plaque := Rect2(center + Vector2(-width * 0.5, -font_size - 3), Vector2(width, font_size + 8))
+	draw_style_box(_map_label_style(), plaque)
+	draw_string(ThemeDB.fallback_font, center + Vector2(-width * 0.5, 1), text, HORIZONTAL_ALIGNMENT_CENTER, width, font_size, Color(0.98, 0.96, 0.86, 1.0))
+
+
+func _map_label_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.12, 0.2, 0.88)
+	style.border_color = Color(0.82, 0.66, 0.3, 0.88)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(5)
+	return style
 
 
 func _draw_construction_site(center: Vector2, color: Color) -> void:

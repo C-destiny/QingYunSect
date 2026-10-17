@@ -4,7 +4,7 @@
 
 - 当前历史已完成版本：V0.7；负责人于2026-10-17明确确认整体验收完毕，QYS-V07-001～009均ACCEPTED。
 - 目标版本：V0.8 宗门挂机美术、UI与体验定稿，负责人于2026-10-17明确批准开始开发。
-- 当前任务：QYS-V08-001已验收；QYS-V08-002～008已完成编码、自测和候选包验证，均处于待负责人验收状态。不得提前进入V0.9肉鸽开发。
+- 当前任务：负责人追加批准的云海仙宗美术覆盖已完成；V08-003/004/007/008重新达到TESTED，等待负责人运行新候选包进行视觉验收。不得提前进入V0.9肉鸽开发。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -79,7 +79,7 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 | [QYS-V08-005](https://github.com/C-destiny/QingYunSect/issues/39) | 弟子、职业、装备与锻造界面 | P1 | TESTED / 待验收 |
 | [QYS-V08-006](https://github.com/C-destiny/QingYunSect/issues/40) | 战斗、离线收益与交互反馈 | P1 | TESTED / 待验收 |
 | [QYS-V08-007](https://github.com/C-destiny/QingYunSect/issues/41) | 可读性、分辨率、性能与全量回归 | P0 | TESTED / 待验收 |
-| [QYS-V08-008](https://github.com/C-destiny/QingYunSect/issues/42) | Windows候选包与版本验收 | P0 | TESTED / 待验收 |
+| [QYS-V08-008](https://github.com/C-destiny/QingYunSect/issues/42) | Windows候选包与版本验收 | P0 | TESTED / 新包待验收 |
 
 ## 同步欠账
 

@@ -7,3 +7,6 @@
 | `docs/art/v08-main-screen-concept.png` | 概念图 | OpenAI内置图像生成工具；完整提示词见`docs/art/V08_CONCEPT_PROMPT.md` | 只保留构图与色彩参考；偏卡通细节已被正式半写实方向取代，不直接进入运行包 | 历史参考 |
 | `assets/characters/cui_yunchuan_model.png` | 人物模型立绘 | OpenAI内置图像生成工具；两张负责人提供的本人照片作为身份参考，原图不入库；哈希与提示词见`assets/characters/README.md` | 《青云宗》项目人物视觉展示 | 已生成并通过资源测试，待V08-005验收 |
 | `assets/characters/zhou_mo_model.png` | 人物模型立绘 | OpenAI内置图像生成工具；两张负责人提供的本人照片作为身份参考，原图不入库；哈希与提示词见`assets/characters/README.md` | 《青云宗》项目人物视觉展示 | 已生成并通过资源测试，待V08-005验收 |
+| `assets/environment/sect_floating_mountain.png` | 宗门地图底图 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/environment/README.md` | 《青云宗》运行时地图 | 已接入并通过资源测试，待视觉验收 |
+| `assets/environment/sect_landmarks_atlas.png` | 主殿与资源点透明图集 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/environment/README.md` | 《青云宗》运行时地图 | 已接入并通过透明通道测试，待视觉验收 |
+| `assets/buildings/sect_buildings_atlas.png` | 七建筑透明图集 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/buildings/README.md` | 《青云宗》运行时建筑 | 已接入并通过透明通道测试，待视觉验收 |

@@ -63,7 +63,16 @@ func _run() -> void:
 	total_character_bytes += FileAccess.get_file_as_bytes("res://assets/characters/zhou_mo_model.png").size()
 	assert(total_character_bytes < 6 * 1024 * 1024)
 
+	var map_backdrop := load("res://assets/environment/sect_floating_mountain.png") as Texture2D
+	var building_atlas := load("res://assets/buildings/sect_buildings_atlas.png") as Texture2D
+	var landmark_atlas := load("res://assets/environment/sect_landmarks_atlas.png") as Texture2D
+	assert(map_backdrop != null and map_backdrop.get_width() >= 1600 and map_backdrop.get_height() >= 900)
+	assert(building_atlas != null and building_atlas.get_width() >= 1600 and building_atlas.get_height() >= 900)
+	assert(landmark_atlas != null and landmark_atlas.get_width() == 1536 and landmark_atlas.get_height() == 1024)
+	assert(building_atlas.get_image().get_pixel(0, 0).a < 0.05)
+	assert(landmark_atlas.get_image().get_pixel(0, 0).a < 0.05)
+
 	main.queue_free()
 	_cleanup()
-	print("PASS: V0.8 theme, fixed sidebar, map contract, and two transparent character models")
+	print("PASS: V0.8 theme, fixed sidebar, map contract, painted environment atlases, and two transparent character models")
 	quit()
