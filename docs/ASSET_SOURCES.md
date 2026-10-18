@@ -10,3 +10,4 @@
 | `assets/environment/sect_floating_mountain.png` | 宗门地图底图 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/environment/README.md` | 《青云宗》运行时地图 | 已接入并通过资源测试，待视觉验收 |
 | `assets/environment/sect_landmarks_atlas.png` | 主殿与资源点透明图集 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/environment/README.md` | 《青云宗》运行时地图 | 已接入并通过透明通道测试，待视觉验收 |
 | `assets/buildings/sect_buildings_atlas.png` | 七建筑透明图集 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/buildings/README.md` | 《青云宗》运行时建筑 | 已接入并通过透明通道测试，待视觉验收 |
+| `assets/ui/qingyun_ui_icon_atlas.png` | 资源与功能导航透明图集 | OpenAI内置图像生成工具；负责人提供主界面截图作为风格参考；哈希与提示词见`assets/ui/README.md` | 《青云宗》运行时UI | 已接入顶部信息栏与底部导航，待视觉验收 |

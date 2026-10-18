@@ -32,6 +32,11 @@ func _run() -> void:
 	assert(not (body is HBoxContainer))
 	assert(sidebar.custom_minimum_size.x == 560.0)
 	assert(not sidebar.visible)
+	assert(main.get_node("Layout") is Control and not (main.get_node("Layout") is VBoxContainer))
+	assert(main.get_node("Layout/Header").z_index > main.get_node("Layout/Body/MapPanel").z_index)
+	for resource_name: String in ["Wood", "SpiritStone", "Food", "Disciples"]:
+		var resource_button := main.get_node("%%%s" % resource_name) as Button
+		assert(resource_button != null and resource_button.icon != null)
 	assert(main.get_node("Layout/Body/BottomNav").visible)
 	for button_name: String in [
 		"OpenSectPanelButton",
@@ -40,10 +45,22 @@ func _run() -> void:
 		"OpenGrowthPanelButton",
 		"OpenBattlePanelButton",
 	]:
-		assert(main.get_node("%%%s" % button_name) is Button)
+		var nav_button := main.get_node("%%%s" % button_name) as Button
+		assert(nav_button != null and nav_button.icon != null)
 	main._open_management_panel(main.get_node("%RosterHeading"))
+	await process_frame
+	await process_frame
 	assert(sidebar.visible)
-	main._close_management_panel()
+	var close_button := main.get_node("%CloseManagementButton") as Button
+	assert(close_button.get_parent() == body)
+	assert(close_button.z_index > sidebar.z_index)
+	close_button.pressed.emit()
+	await process_frame
+	assert(not sidebar.visible)
+	main.get_node("%OpenBuildPanelButton").pressed.emit()
+	await process_frame
+	assert(sidebar.visible)
+	main.get_node("%OpenBuildPanelButton").pressed.emit()
 	assert(not sidebar.visible)
 	assert(ProjectSettings.get_setting("display/window/size/viewport_width") == 1920)
 	assert(ProjectSettings.get_setting("display/window/size/viewport_height") == 1080)
@@ -82,11 +99,14 @@ func _run() -> void:
 	var map_backdrop := load("res://assets/environment/sect_floating_mountain.png") as Texture2D
 	var building_atlas := load("res://assets/buildings/sect_buildings_atlas.png") as Texture2D
 	var landmark_atlas := load("res://assets/environment/sect_landmarks_atlas.png") as Texture2D
+	var ui_icon_atlas := load("res://assets/ui/qingyun_ui_icon_atlas.png") as Texture2D
 	assert(map_backdrop != null and map_backdrop.get_width() >= 1600 and map_backdrop.get_height() >= 900)
 	assert(building_atlas != null and building_atlas.get_width() >= 1600 and building_atlas.get_height() >= 900)
 	assert(landmark_atlas != null and landmark_atlas.get_width() == 1536 and landmark_atlas.get_height() == 1024)
+	assert(ui_icon_atlas != null and ui_icon_atlas.get_width() == 1284 and ui_icon_atlas.get_height() == 1225)
 	assert(building_atlas.get_image().get_pixel(0, 0).a < 0.05)
 	assert(landmark_atlas.get_image().get_pixel(0, 0).a < 0.05)
+	assert(ui_icon_atlas.get_image().get_pixel(0, 0).a < 0.05)
 
 	main.queue_free()
 	_cleanup()

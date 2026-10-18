@@ -7,10 +7,10 @@ const ProfessionCatalogData = preload("res://scripts/data/profession_catalog.gd"
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_catalog.gd")
 
-@onready var wood_label: Label = %Wood
-@onready var spirit_stone_label: Label = %SpiritStone
-@onready var food_label: Label = %Food
-@onready var disciples_label: Label = %Disciples
+@onready var wood_label: Button = %Wood
+@onready var spirit_stone_label: Button = %SpiritStone
+@onready var food_label: Button = %Food
+@onready var disciples_label: Button = %Disciples
 @onready var sect_map: Control = %SectMap
 @onready var selection_name: Label = %SelectionName
 @onready var selection_description: Label = %SelectionDescription
@@ -115,6 +115,7 @@ const CORE_CHARACTER_MODELS := [
 	},
 ]
 var roster_signature: String = ""
+var current_sidebar_target: Control = null
 
 
 func _ready() -> void:
@@ -178,7 +179,7 @@ func _ready() -> void:
 	nav_management_button.pressed.connect(_navigate_sidebar.bind(management_heading))
 	nav_disciples_button.pressed.connect(_navigate_sidebar.bind(disciples_heading))
 	nav_battle_button.pressed.connect(_navigate_sidebar.bind(battle_heading))
-	close_management_button.pressed.connect(_close_management_panel)
+	close_management_button.pressed.connect(_request_close_management_panel)
 	open_sect_panel_button.pressed.connect(_navigate_sidebar.bind(sect_heading))
 	open_build_panel_button.pressed.connect(_navigate_sidebar.bind(management_heading))
 	open_disciples_panel_button.pressed.connect(_navigate_sidebar.bind(disciples_heading))
@@ -481,12 +482,17 @@ func _get_food_production_per_minute() -> float:
 
 
 func _navigate_sidebar(target: Control) -> void:
+	if management_sidebar.visible and current_sidebar_target == target:
+		_close_management_panel()
+		return
 	_open_management_panel(target)
 
 
 func _open_management_panel(target: Control = null) -> void:
 	management_sidebar.visible = true
+	close_management_button.visible = true
 	if is_instance_valid(target):
+		current_sidebar_target = target
 		call_deferred("_ensure_sidebar_target_visible", target)
 
 
@@ -498,8 +504,15 @@ func _ensure_sidebar_target_visible(target: Control) -> void:
 		sidebar_scroll.scroll_vertical = maxi(0, sidebar_scroll.scroll_vertical + int(target_offset) - 8)
 
 
+func _request_close_management_panel() -> void:
+	get_viewport().set_input_as_handled()
+	call_deferred("_close_management_panel")
+
+
 func _close_management_panel() -> void:
 	management_sidebar.visible = false
+	close_management_button.visible = false
+	current_sidebar_target = null
 	open_sect_panel_button.grab_focus()
 
 

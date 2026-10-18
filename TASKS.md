@@ -1,10 +1,10 @@
 # 当前任务摘要
 
-快照日期：2026-10-17。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
+快照日期：2026-10-18。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
 
 - 当前历史已完成版本：V0.7；负责人于2026-10-17明确确认整体验收完毕，QYS-V07-001～009均ACCEPTED。
 - 目标版本：V0.8 宗门挂机美术、UI与体验定稿，负责人于2026-10-17明确批准开始开发。
-- 当前任务：负责人追加批准的云海仙宗美术覆盖及主界面导航优化已完成；常驻右栏已改为全幅地图、底部五入口与按需覆盖抽屉。V08-002/005/007/008重新达到TESTED，等待负责人运行新候选包验收。不得提前进入V0.9肉鸽开发。
+- 当前任务：负责人追加批准的云海仙宗美术覆盖及主界面导航优化已完成；常驻右栏已改为全幅地图，顶部信息条和底部五图标入口均置于地图内部，管理内容使用按需覆盖抽屉。关闭按钮、当前入口再次点击与Esc均可关闭抽屉。V08-002/005/007/008重新达到TESTED，等待负责人运行新候选包验收。不得提前进入V0.9肉鸽开发。
 - V0.5批准范围共7项，完整流程和验收标准见docs/V0.5_DEVELOPMENT_PLAN.md；每项编码测试后仍须负责人验收。
 - V0.6、V0.7获准按版本继续推进，但进入时仍需先拆分任务；V0.8调整为宗门挂机美术、UI与体验定稿，肉鸽从V0.9开始。
 
@@ -79,7 +79,7 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 | [QYS-V08-005](https://github.com/C-destiny/QingYunSect/issues/39) | 弟子、职业、装备与锻造界面 | P1 | TESTED / 待验收 |
 | [QYS-V08-006](https://github.com/C-destiny/QingYunSect/issues/40) | 战斗、离线收益与交互反馈 | P1 | TESTED / 待验收 |
 | [QYS-V08-007](https://github.com/C-destiny/QingYunSect/issues/41) | 可读性、分辨率、性能与全量回归 | P0 | TESTED / 待验收 |
-| [QYS-V08-008](https://github.com/C-destiny/QingYunSect/issues/42) | Windows候选包与版本验收 | P0 | TESTED / 抽屉导航新包待验收 |
+| [QYS-V08-008](https://github.com/C-destiny/QingYunSect/issues/42) | Windows候选包与版本验收 | P0 | TESTED / 地图内图标界面新包待验收 |
 
 ## 同步欠账
 
@@ -88,3 +88,4 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
 - 2026-10-17已将当前进展推送至 `origin/feature/v0.8-visual-polish`，远端头为`3649cf7`；已同步已验收版本标签`v0.1.0`～`v0.7.0`（`v0.4.0`此前已存在）。尚未合并main，也未上传Windows构建。
+- 2026-10-18本地候选已更新为地图内顶部/底部图标界面并修复关闭交互；48组回归与Windows实际点击验证通过，等待本轮提交推送及负责人验收。后续顺序见`docs/NEXT_DEVELOPMENT_PLAN.md`。
