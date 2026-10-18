@@ -88,4 +88,4 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 - 完整待创建数据：docs/github/milestones.json、docs/github/project.json；人类可读路线见docs/ROADMAP.md。
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
 - 2026-10-17已将当前进展推送至 `origin/feature/v0.8-visual-polish`，远端头为`3649cf7`；已同步已验收版本标签`v0.1.0`～`v0.7.0`（`v0.4.0`此前已存在）。尚未合并main，也未上传Windows构建。
-- 2026-10-18本地候选已更新为地图内顶部/底部图标界面并修复关闭交互；48组回归与Windows实际点击验证通过，等待本轮提交推送及负责人验收。后续顺序见`docs/NEXT_DEVELOPMENT_PLAN.md`。
+- 2026-10-18地图内顶部/底部图标界面及关闭交互修复已推送至`origin/feature/v0.8-visual-polish`；48组回归与Windows实际点击验证通过，等待负责人验收。后续顺序见`docs/NEXT_DEVELOPMENT_PLAN.md`。
