@@ -11,3 +11,9 @@
 | `assets/environment/sect_landmarks_atlas.png` | 主殿与资源点透明图集 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/environment/README.md` | 《青云宗》运行时地图 | 已接入并通过透明通道测试，待视觉验收 |
 | `assets/buildings/sect_buildings_atlas.png` | 七建筑透明图集 | OpenAI内置图像生成工具；负责人提供样式图作为方向参考；哈希与提示词见`assets/buildings/README.md` | 《青云宗》运行时建筑 | 已接入并通过透明通道测试，待视觉验收 |
 | `assets/ui/qingyun_ui_icon_atlas.png` | 资源与功能导航透明图集 | OpenAI内置图像生成工具；负责人提供主界面截图作为风格参考；哈希与提示词见`assets/ui/README.md` | 《青云宗》运行时UI | 已接入顶部信息栏与底部导航，待视觉验收 |
+
+## 2026-10-19 主殿场景样板审计材料
+
+- docs/art/v08-scene-reference.png：负责人本轮提供，内部美术方向对照，SHA-256 CE90491E91F9BBF2E466BF1C46C7C0273DC869E6EB72E9111BA45DBBBABAA584；不是运行素材，不根据图中标注改变玩法、资源或地图。
+- docs/art/v08-scene-baseline-normal.png、v08-scene-baseline-construction.png：本项目Godot/RTX 2060真实渲染截图，由tests/audit_v08_scene.gd生成，1280×720；仅审计与前后对照，不进入运行包。
+- 本阶段未引入外部字体、音效或新AI位图资产。
