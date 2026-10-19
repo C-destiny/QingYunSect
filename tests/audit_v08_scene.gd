@@ -15,7 +15,7 @@ func _capture(main: Control, map: Control, window_size: Vector2i, mode: String) 
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "%s/stage3-%s-%dx%d.png" % [
+	var filename := "%s/stage4-%s-%dx%d.png" % [
 		OUTPUT_DIRECTORY, mode, window_size.x, window_size.y,
 	]
 	assert(root.get_texture().get_image().save_png(filename) == OK)
@@ -63,6 +63,26 @@ func _run() -> void:
 		map.hovered_cell = QUARTERS_CELL
 		map.queue_redraw()
 		await _capture(main, map, window_size, "neighbor-selected")
+	# 生命周期预览使用另一处合法空格，原(3,3)夹具保留，确保基线对照不移动旧建筑。
+	state.resources["wood"] = 1000
+	state.resources["spirit_stone"] = 1000
+	var sample_cell := Vector2i(5, 5)
+	assert(state.start_construction(&"disciple_quarters", sample_cell))
+	var sample_id: int = state.buildings[-1]["instance_id"]
+	map.selected_cell = sample_cell
+	map.hovered_cell = sample_cell
+	for mode: String in ["quarters-construction", "quarters-lv1", "quarters-upgrading", "quarters-lv2", "quarters-lv3", "quarters-demolished"]:
+		match mode:
+			"quarters-lv1": state.process_construction(float(BuildingCatalog.get_data(&"disciple_quarters")["build_time"]))
+			"quarters-upgrading": assert(state.start_building_upgrade(sample_id))
+			"quarters-lv2": state.process_construction(BuildingCatalog.get_upgrade_time(&"disciple_quarters", 2))
+			"quarters-lv3":
+				assert(state.start_building_upgrade(sample_id))
+				state.process_construction(BuildingCatalog.get_upgrade_time(&"disciple_quarters", 3))
+			"quarters-demolished": assert(not state.demolish_building(sample_id).is_empty())
+		map.queue_redraw()
+		for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+			await _capture(main, map, window_size, mode)
 	for asset: Texture2D in [map.MAP_BACKDROP, map.BUILDING_ATLAS, map.LANDMARK_ATLAS]:
 		print("EVIDENCE: asset=%s dimensions=%s" % [asset.resource_path, asset.get_size()])
 		var asset_image := asset.get_image()

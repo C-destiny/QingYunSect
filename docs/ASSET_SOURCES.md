@@ -23,3 +23,9 @@
 - assets/buildings/main-hall-sample.png：内置ImageGen按负责人视觉要求生成的独立透明建筑，1254×1254；项目主殿视觉用途，非背景或UI；来源、完整提示词及哈希见assets/buildings/MAIN_HALL_SAMPLE.md。
 - docs/art/v08-scene-stage3-normal.png、v08-scene-stage3-neighbor-selected.png：Godot实际运行截图，分别普通模式与旧建筑选中透显，用于参考/基线对照，不进入运行包。
 - 素材不携带可读文字、数值或存档规则；主殿仍只占(4,3)，没有将参考图布局转换为逻辑坐标。
+
+## 2026-10-20 弟子居样板运行资产
+
+- assets/buildings/disciple-quarters-sample.png：内置ImageGen文字规格生成的独立透明生活院落，1254×1254，完整提示词/哈希/用途见assets/buildings/DISCIPLE_QUARTERS_SAMPLE.md；本项目建筑视觉用途，不含文字、HUD、背景或新玩法。
+- docs/art/v08-scene-stage4-quarters-{construction,lv1,lv3}.png：Godot真实截图，仅测试与视觉对照；(5,5)额外建筑与1000测试资源只存在于隔离合成夹具。
+- 原建筑图集保留，其他六类尚未推广；样板未获负责人最终视觉验收。

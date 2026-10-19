@@ -2,6 +2,7 @@ extends Control
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
+const QUARTERS_SAMPLE: Texture2D = preload("res://assets/buildings/disciple-quarters-sample.png")
 const MAIN_HALL_SAMPLE: Texture2D = preload("res://assets/buildings/main-hall-sample.png")
 const MAP_BACKDROP: Texture2D = preload("res://assets/environment/sect_floating_mountain.png")
 const BUILDING_ATLAS: Texture2D = preload("res://assets/buildings/sect_buildings_atlas.png")
@@ -39,6 +40,7 @@ const BUILDING_ATLAS_INDEX := {
 # 脚点为图集格内的归一化地面位置；普通图集沿用原位置，主殿已按独立样板底座校准。
 # 只影响渲染，不作为占地、点击或存档数据；尺寸单位为逻辑像素。
 const MAIN_HALL_VISUAL := {"size": Vector2(330, 330), "foot": Vector2(0.5, 0.82)}
+const QUARTERS_VISUAL := {"size": Vector2(172, 172), "foot": Vector2(0.5, 0.83)}
 const BUILDING_VISUAL := {"size": Vector2(136, 153), "foot": Vector2(0.5, 0.5 + 55.0 / 153.0)}
 const RESOURCE_VISUAL := {"size": Vector2(126, 84), "foot": Vector2(0.5, 0.5 + 41.0 / 84.0)}
 
@@ -57,6 +59,8 @@ var resource_nodes: Array[Dictionary] = [
 var selected_cell := Vector2i(-1, -1)
 var hovered_cell := Vector2i(-1, -1)
 var placement_building: StringName = &""
+# 命中检测缓存解压后的图像；只在鼠标查询时采样，不在每帧重复从GPU读取。
+var hit_images: Dictionary = {}
 
 
 func _ready() -> void:
@@ -137,7 +141,13 @@ func _draw_shadow_layer(items: Array[Dictionary], origin: Vector2) -> void:
 	for item: Dictionary in items:
 		if item["kind"] == "building":
 			var center := _cell_to_screen(item["cell"], origin)
-			draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
+			if StringName(item["data"]["type"]) == &"disciple_quarters":
+				# 低矮院落使用扁平接地影；不把旧圆形影子叠成漂浮圆盘。
+				draw_set_transform(center + Vector2(7, 5), 0.0, Vector2(1.0, 0.42))
+				draw_circle(Vector2.ZERO, 48.0, Color(0.07, 0.10, 0.11, 0.12))
+				draw_set_transform(Vector2.ZERO)
+			else:
+				draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
 
 
 func _draw_world_layer(items: Array[Dictionary], origin: Vector2) -> void:
@@ -275,9 +285,22 @@ func _draw_pine(base: Vector2, scale_value: float) -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		hovered_cell = _screen_to_cell(event.position, _map_origin())
+		if placement_building == &"":
+			var visible_building := _pick_visual_building(event.position, _map_origin())
+			if not visible_building.is_empty():
+				hovered_cell = Vector2i(int(visible_building["cell_x"]), int(visible_building["cell_y"]))
 		queue_redraw()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var clicked_cell := _screen_to_cell(event.position, _map_origin())
+		# 建造预览仍只判逻辑格；普通选择先按实际可见贴图找建筑，屋顶高度不再造成点偏。
+		if placement_building == &"":
+			var visible_building := _pick_visual_building(event.position, _map_origin())
+			if not visible_building.is_empty():
+				selected_cell = Vector2i(int(visible_building["cell_x"]), int(visible_building["cell_y"]))
+				building_selected.emit(visible_building)
+				queue_redraw()
+				accept_event()
+				return
 		if clicked_cell != Vector2i(-1, -1) and not GameState.is_cell_unlocked(clicked_cell):
 			selected_cell = clicked_cell
 			region_selected.emit(TerritoryCatalogData.get_region_for_cell(clicked_cell))
@@ -304,6 +327,55 @@ func _gui_input(event: InputEvent) -> void:
 				queue_redraw()
 				accept_event()
 				return
+
+
+func _is_sprite_hit(texture: Texture2D, source_rect: Rect2, destination: Rect2, point: Vector2) -> bool:
+	if not destination.has_point(point):
+		return false
+	var texture_id := texture.get_instance_id()
+	if not hit_images.has(texture_id):
+		hit_images[texture_id] = texture.get_image()
+	var image: Image = hit_images[texture_id]
+	var uv := (point - destination.position) / destination.size
+	var pixel := Vector2i(source_rect.position + source_rect.size * uv)
+	pixel.x = clampi(pixel.x, 0, image.get_width() - 1)
+	pixel.y = clampi(pixel.y, 0, image.get_height() - 1)
+	# 排除低透明阴影与边缘光晕，避免透明画布拦截邻格操作。
+	return image.get_pixelv(pixel).a > 0.12
+
+
+func _pick_visual_building(point: Vector2, origin: Vector2) -> Dictionary:
+	var items := get_world_draw_items()
+	items.reverse()
+	# 与绘制顺序相反查询；主殿/资源点挡在前面时仍交给原地面格交互，不穿透抢选后方屋顶。
+	for item: Dictionary in items:
+		var ground := _cell_to_screen(item["cell"], origin)
+		if item["kind"] == "hall":
+			if not _is_hall_occluding_active_building(origin) and _is_sprite_hit(
+				MAIN_HALL_SAMPLE, Rect2(Vector2.ZERO, MAIN_HALL_SAMPLE.get_size()),
+				get_grounded_rect(ground, MAIN_HALL_VISUAL), point
+			):
+				return {}
+		elif item["kind"] == "resource":
+			var cell_size := LANDMARK_ATLAS.get_size() / Vector2(LANDMARK_ATLAS_CELLS)
+			var source := Rect2(Vector2(RESOURCE_ATLAS_INDEX[item["data"]["site_id"]]) * cell_size, cell_size)
+			if _is_sprite_hit(LANDMARK_ATLAS, source, get_grounded_rect(ground, RESOURCE_VISUAL), point):
+				return {}
+		elif bool(item["data"]["completed"]):
+			var building: Dictionary = item["data"]
+			var building_type := StringName(building["type"])
+			var visual_scale := 1.0 + float(int(building.get("level", 1)) - 1) * 0.055
+			if building_type == &"disciple_quarters":
+				if _is_sprite_hit(QUARTERS_SAMPLE, Rect2(Vector2.ZERO, QUARTERS_SAMPLE.get_size()),
+					get_grounded_rect(ground, QUARTERS_VISUAL, visual_scale), point):
+					return building
+			elif BUILDING_ATLAS_INDEX.has(building_type):
+				var cell_size := BUILDING_ATLAS.get_size() / Vector2(BUILDING_ATLAS_CELLS)
+				var source := Rect2(Vector2(BUILDING_ATLAS_INDEX[building_type]) * cell_size, cell_size)
+				if _is_sprite_hit(BUILDING_ATLAS, source,
+					get_grounded_rect(ground, BUILDING_VISUAL, visual_scale), point):
+					return building
+	return {}
 
 
 func start_placement(building_type: StringName) -> void:
@@ -426,7 +498,11 @@ func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	var level := int(building.get("level", 1))
 	var completed := bool(building["completed"])
 	if completed:
-		if BUILDING_ATLAS != null and BUILDING_ATLAS_INDEX.has(building_type):
+		if building_type == &"disciple_quarters":
+			# 等级仍复用原来的轻微缩放和文字标识；素材脚点不随等级漂移。
+			var visual_scale := 1.0 + float(level - 1) * 0.055
+			draw_texture_rect(QUARTERS_SAMPLE, get_grounded_rect(center, QUARTERS_VISUAL, visual_scale), false)
+		elif BUILDING_ATLAS != null and BUILDING_ATLAS_INDEX.has(building_type):
 			var visual_scale := 1.0 + float(level - 1) * 0.055
 			_draw_grounded_atlas(BUILDING_ATLAS, BUILDING_ATLAS_CELLS, BUILDING_ATLAS_INDEX[building_type], center, BUILDING_VISUAL, visual_scale)
 			if level >= 3:
