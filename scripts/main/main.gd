@@ -117,6 +117,15 @@ const CORE_CHARACTER_MODELS := [
 var roster_signature: String = ""
 var current_sidebar_target: Control = null
 
+# 分类只控制界面容器；数据刷新仍走原有GameState入口，隐藏页不会停止游戏逻辑。
+const MANAGEMENT_SECTIONS := {
+	"宗门": ["SectSection", "SelectionSection"],
+	"建设": ["BuildSection", "SelectionSection"],
+	"弟子": ["RecruitmentSection", "CharacterSection", "RosterSection", "DiscipleSelectionSection", "JobSection"],
+	"养成": ["DiscipleSelectionSection", "TrainingSection", "EquipmentSection"],
+	"挂机": ["DiscipleSelectionSection", "BattleSection"],
+}
+
 
 func _ready() -> void:
 	GameState.resources_changed.connect(_refresh_resources)
@@ -278,9 +287,9 @@ func _refresh_resources() -> void:
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
-	_open_management_panel()
 	selected_resource = resource_data
 	selected_building_instance = 0
+	_open_management_panel(sect_heading)
 	building_actions.visible = false
 	assignment_status.visible = true
 	production_status.visible = true
@@ -297,9 +306,9 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 
 
 func _on_building_selected(building: Dictionary) -> void:
-	_open_management_panel()
 	selected_resource = {}
 	selected_building_instance = int(building.get("instance_id", 0))
+	_open_management_panel(management_heading)
 	assignment_status.visible = false
 	production_status.visible = false
 	assign_button.visible = false
@@ -489,19 +498,37 @@ func _navigate_sidebar(target: Control) -> void:
 
 
 func _open_management_panel(target: Control = null) -> void:
+	var module_name := "宗门"
+	if target == management_heading:
+		module_name = "建设"
+	elif target == disciples_heading:
+		module_name = "弟子"
+	elif target == growth_heading:
+		module_name = "养成"
+	elif target == battle_heading:
+		module_name = "挂机"
+	var info := sidebar_scroll.get_node("Info")
+	for section: Control in info.get_children():
+		section.visible = String(section.name) in MANAGEMENT_SECTIONS[module_name]
+	# 地图详情只进入对应分类，避免建设页混入资源派遣或宗门页混入建筑操作。
+	info.get_node("SelectionSection").visible = (
+		(module_name == "建设" and selected_building_instance > 0)
+		or (module_name == "宗门" and not selected_resource.is_empty())
+	)
+	management_sidebar.get_node("PanelTitle").text = module_name + "管理"
 	management_sidebar.visible = true
 	close_management_button.visible = true
-	if is_instance_valid(target):
-		current_sidebar_target = target
-		call_deferred("_ensure_sidebar_target_visible", target)
+	current_sidebar_target = target if is_instance_valid(target) else sect_heading
+	sidebar_scroll.scroll_vertical = 0
+	call_deferred("_ensure_sidebar_target_visible", current_sidebar_target)
 
 
-func _ensure_sidebar_target_visible(target: Control) -> void:
+func _ensure_sidebar_target_visible(_target: Control) -> void:
+	# 容器显隐会延后更新高度；分类切换后从顶部开始，不能沿用上一页的滚动位置。
 	await get_tree().process_frame
 	await get_tree().process_frame
-	if management_sidebar.visible and is_instance_valid(target):
-		var target_offset := target.global_position.y - sidebar_scroll.global_position.y
-		sidebar_scroll.scroll_vertical = maxi(0, sidebar_scroll.scroll_vertical + int(target_offset) - 8)
+	if management_sidebar.visible:
+		sidebar_scroll.scroll_vertical = 0
 
 
 func _request_close_management_panel() -> void:
@@ -915,9 +942,10 @@ func _on_region_selected(region_id: StringName) -> void:
 	var region := TerritoryCatalogData.get_data(region_id)
 	if region.is_empty():
 		return
-	_open_management_panel()
 	selected_resource = {}
 	selected_building_instance = 0
+	_open_management_panel(sect_heading)
+	sidebar_scroll.get_node("Info/SelectionSection").show()
 	building_actions.visible = false
 	assignment_status.visible = false
 	production_status.visible = false

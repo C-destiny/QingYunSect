@@ -52,8 +52,7 @@ func _run() -> void:
 	await process_frame
 	assert(sidebar.visible)
 	var close_button := main.get_node("%CloseManagementButton") as Button
-	assert(close_button.get_parent() == body)
-	assert(close_button.z_index > sidebar.z_index)
+	assert(close_button.get_parent() == sidebar)
 	close_button.pressed.emit()
 	await process_frame
 	assert(not sidebar.visible)
@@ -62,6 +61,49 @@ func _run() -> void:
 	assert(sidebar.visible)
 	main.get_node("%OpenBuildPanelButton").pressed.emit()
 	assert(not sidebar.visible)
+	# 每个入口只能显示该分类，数据刷新不得重新暴露其他分类内容。
+	var module_cases := [
+		["OpenSectPanelButton", "SectSection", "宗门管理"],
+		["OpenBuildPanelButton", "BuildSection", "建设管理"],
+		["OpenDisciplesPanelButton", "RosterSection", "弟子管理"],
+		["OpenGrowthPanelButton", "EquipmentSection", "养成管理"],
+		["OpenBattlePanelButton", "BattleSection", "挂机管理"],
+	]
+	var info := main.get_node("Layout/Body/Sidebar/Margin/Scroll/Info")
+	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+		root.size = window_size
+		for module_case: Array in module_cases:
+			main._close_management_panel()
+			main.get_node("%" + module_case[0]).pressed.emit()
+			await process_frame
+			await process_frame
+			assert(sidebar.visible)
+			assert(sidebar.get_node("PanelTitle").text == module_case[2])
+			main._refresh_resources()
+			main._refresh_disciple_roster()
+			for other_case: Array in module_cases:
+				assert(info.get_node(other_case[1]).is_visible_in_tree() == (other_case == module_case))
+			assert(sidebar.position.y < 200.0)
+			assert(sidebar.get_global_rect().encloses(close_button.get_global_rect()))
+			assert(absf(close_button.global_position.y - sidebar.get_node("PanelTitle").global_position.y) < 10.0)
+			assert(main.sidebar_scroll.scroll_vertical == 0)
+			# 专项可选截图使用真实渲染，常规无头回归不会等待渲染帧。
+			if "--capture-preview" in OS.get_cmdline_user_args() and window_size == Vector2i(1280, 720):
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png("res://builds/module-%s.png" % module_case[1])
+			var cancel_event := InputEventAction.new()
+			cancel_event.action = "ui_cancel"
+			cancel_event.pressed = true
+			main._unhandled_input(cancel_event)
+			assert(not sidebar.visible)
+	# 地图点击也应切到相应分类，不能沿用刚才的挂机分类。
+	main._on_resource_selected(main.sect_map.resource_nodes[0])
+	assert(info.get_node("SectSection").is_visible_in_tree())
+	assert(info.get_node("SelectionSection").is_visible_in_tree())
+	assert(not info.get_node("BattleSection").is_visible_in_tree())
+	main._on_region_selected(&"east")
+	assert(info.get_node("SelectionSection").is_visible_in_tree())
+	main._close_management_panel()
 	assert(ProjectSettings.get_setting("display/window/size/viewport_width") == 1920)
 	assert(ProjectSettings.get_setting("display/window/size/viewport_height") == 1080)
 	assert(ProjectSettings.get_setting("display/window/size/window_width_override") == 1280)

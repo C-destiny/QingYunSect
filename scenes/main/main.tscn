@@ -225,6 +225,7 @@ custom_minimum_size = Vector2(560, 0)
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
+anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -576.0
@@ -249,7 +250,7 @@ theme_override_font_sizes/font_size = 21
 text = "宗门管理"
 vertical_alignment = 1
 
-[node name="CloseManagementButton" type="Button" parent="Layout/Body"]
+[node name="CloseManagementButton" type="Button" parent="Layout/Body/Sidebar"]
 unique_name_in_owner = true
 visible = false
 z_index = 40
@@ -258,10 +259,10 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -176.0
-offset_top = 144.0
-offset_right = -48.0
-offset_bottom = 182.0
+offset_left = -152.0
+offset_top = 18.0
+offset_right = -24.0
+offset_bottom = 56.0
 grow_horizontal = 0
 text = "关闭面板 ×"
 
@@ -289,37 +290,42 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 16
 
-[node name="Heading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="SectSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="Heading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 26
 text = "宗门领地"
 
-[node name="Divider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="Divider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 layout_mode = 2
 
-[node name="SectLevelStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="SectLevelStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.75, 0.43, 1)
 theme_override_font_sizes/font_size = 16
 text = "青云宗 等级1"
 
-[node name="SectProgress" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="SectProgress" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 show_percentage = false
 
-[node name="SectUpgradeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="SectUpgradeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "繁荣度不足"
 
-[node name="TerritoryStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="TerritoryStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 0.76, 0.78, 1)
@@ -327,37 +333,37 @@ theme_override_font_sizes/font_size = 14
 text = "领地：宗门本部 48/96格"
 autowrap_mode = 2
 
-[node name="TerritoryUnlockButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="TerritoryUnlockButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "宗门等级不足，无法扩张"
 
-[node name="NavigationRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="NavigationRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="NavManagementButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/NavigationRow"]
+[node name="NavManagementButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection/NavigationRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "建设"
 
-[node name="NavDisciplesButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/NavigationRow"]
+[node name="NavDisciplesButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection/NavigationRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "弟子"
 
-[node name="NavBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/NavigationRow"]
+[node name="NavBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection/NavigationRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "挂机"
 
-[node name="GoalStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="GoalStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.88, 0.76, 0.42, 1)
@@ -365,7 +371,7 @@ theme_override_font_sizes/font_size = 15
 text = "当前目标"
 autowrap_mode = 2
 
-[node name="GoalResourceFeedback" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="GoalResourceFeedback" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.76, 0.7, 1)
@@ -373,21 +379,26 @@ theme_override_font_sizes/font_size = 13
 text = "资源流与缺口"
 autowrap_mode = 2
 
-[node name="ClaimGoalButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="ClaimGoalButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SectSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "目标尚未完成"
 
-[node name="SelectionName" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="SelectionSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="SelectionName" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "请选择地图资源"
 autowrap_mode = 2
 
-[node name="SelectionDescription" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="SelectionDescription" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.68, 0.74, 0.72, 1)
@@ -395,25 +406,25 @@ theme_override_font_sizes/font_size = 17
 text = "点击发光的资源标记，查看宗门周围可利用的资源点。"
 autowrap_mode = 2
 
-[node name="AssignmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="AssignmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 1)
 theme_override_font_sizes/font_size = 18
 text = "已分配 0 人 · 空闲 3 人"
 
-[node name="ProductionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="ProductionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.86, 0.73, 0.39, 1)
 theme_override_font_sizes/font_size = 18
 text = "选择资源点后安排弟子"
 
-[node name="AssignmentButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="AssignmentButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="UnassignButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/AssignmentButtons"]
+[node name="UnassignButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection/AssignmentButtons"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
@@ -421,7 +432,7 @@ size_flags_horizontal = 3
 disabled = true
 text = "撤回一人"
 
-[node name="AssignButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/AssignmentButtons"]
+[node name="AssignButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection/AssignmentButtons"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
@@ -429,14 +440,19 @@ size_flags_horizontal = 3
 disabled = true
 text = "派遣一人"
 
-[node name="BuildDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BuildDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info/SelectionSection"]
 layout_mode = 2
 
-[node name="RecruitmentRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="RecruitmentSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="RecruitmentRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RecruitmentSection"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="RecruitmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RecruitmentRow"]
+[node name="RecruitmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RecruitmentSection/RecruitmentRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -445,27 +461,32 @@ theme_override_font_sizes/font_size = 14
 text = "弟子人数已达上限"
 autowrap_mode = 2
 
-[node name="RecruitButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RecruitmentRow"]
+[node name="RecruitButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RecruitmentSection/RecruitmentRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(88, 42)
 layout_mode = 2
 disabled = true
 text = "招募弟子"
 
-[node name="CharacterDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CharacterSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="CharacterDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CharacterSection"]
 layout_mode = 2
 
-[node name="CoreCharacterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CoreCharacterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CharacterSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.68, 0.32, 1)
 theme_override_font_sizes/font_size = 20
 text = "核心人物视觉模型"
 
-[node name="CoreCharacterSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CoreCharacterSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CharacterSection"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CoreCharacterPreview" type="TextureRect" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CoreCharacterPreview" type="TextureRect" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CharacterSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
@@ -473,7 +494,7 @@ texture = ExtResource("4_cui")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CoreCharacterCaption" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CoreCharacterCaption" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CharacterSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.76, 0.81, 0.7, 1)
@@ -482,33 +503,43 @@ text = "崔云川 · 剑心守道\n视觉模型预览；V0.8不新增角色玩�
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="RosterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="RosterSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="RosterHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 18
 text = "普通弟子名册"
 
-[node name="RosterTools" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="RosterTools" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="RosterFilter" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterTools"]
+[node name="RosterFilter" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterSection/RosterTools"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="RosterSort" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterTools"]
+[node name="RosterSort" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/RosterSection/RosterTools"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DiscipleSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="DiscipleSelectionSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="DiscipleSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/DiscipleSelectionSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 
-[node name="DiscipleDetail" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="DiscipleDetail" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/DiscipleSelectionSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.78, 0.74, 1)
@@ -516,26 +547,36 @@ theme_override_font_sizes/font_size = 14
 text = "暂无弟子"
 autowrap_mode = 2
 
-[node name="CultivationProgress" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="JobSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="TrainingSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="CultivationProgress" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info/TrainingSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 show_percentage = false
 
-[node name="DiscipleJobRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="DiscipleJobRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/JobSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="JobLabel" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/DiscipleJobRow"]
+[node name="JobLabel" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/JobSection/DiscipleJobRow"]
 layout_mode = 2
 text = "指定岗位"
 
-[node name="DiscipleJobSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/DiscipleJobRow"]
+[node name="DiscipleJobSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/JobSection/DiscipleJobRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DiscipleJobStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="DiscipleJobStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/JobSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.64, 0.75, 0.7, 1)
@@ -543,24 +584,29 @@ theme_override_font_sizes/font_size = 13
 text = "选择弟子后可以直接调整岗位"
 autowrap_mode = 2
 
-[node name="BreakthroughButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BreakthroughButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/TrainingSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "修为不足，无法突破"
 
-[node name="EquipmentDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="EquipmentDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 layout_mode = 2
 
-[node name="EquipmentHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.85, 0.95, 1)
 theme_override_font_sizes/font_size = 18
 text = "职业与装备"
 
-[node name="EquipmentStats" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentStats" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.68, 0.78, 0.82, 1)
@@ -568,43 +614,43 @@ theme_override_font_sizes/font_size = 13
 text = "请选择弟子查看职业与装备属性"
 autowrap_mode = 2
 
-[node name="EquipmentSlotRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentSlotRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="EquipmentSlotLabel" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSlotRow"]
+[node name="EquipmentSlotLabel" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection/EquipmentSlotRow"]
 layout_mode = 2
 text = "管理部位"
 
-[node name="EquipmentSlotSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSlotRow"]
+[node name="EquipmentSlotSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection/EquipmentSlotRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="EquipmentInventorySelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentInventorySelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 
-[node name="EquipmentButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="EquipButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentButtons"]
+[node name="EquipButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection/EquipmentButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "穿戴所选装备"
 
-[node name="UnequipButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentButtons"]
+[node name="UnequipButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection/EquipmentButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "卸下该部位"
 
-[node name="EquipmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EquipmentStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.64, 0.75, 0.7, 1)
@@ -612,34 +658,34 @@ theme_override_font_sizes/font_size = 13
 text = "战斗中更换参战弟子装备会安全停止自动战斗"
 autowrap_mode = 2
 
-[node name="CraftingHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CraftingHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.68, 0.4, 1)
 theme_override_font_sizes/font_size = 18
 text = "炼器打造"
 
-[node name="CraftingSelectors" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CraftingSelectors" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="CraftTemplateSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CraftingSelectors"]
+[node name="CraftTemplateSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection/CraftingSelectors"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CraftQualitySelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/CraftingSelectors"]
+[node name="CraftQualitySelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection/CraftingSelectors"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CraftButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CraftButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 disabled = true
 text = "需要已完工炼器坊"
 
-[node name="CraftingStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="CraftingStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/EquipmentSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.75, 0.68, 1)
@@ -647,46 +693,51 @@ theme_override_font_sizes/font_size = 13
 text = "选择装备模板与品质查看固定配方"
 autowrap_mode = 2
 
-[node name="BattleDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="BattleDivider" type="HSeparator" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 layout_mode = 2
 
-[node name="BattleHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.7, 0.42, 1)
 theme_override_font_sizes/font_size = 21
 text = "外山征战"
 
-[node name="BattlePartyStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattlePartyStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "战斗队伍 0/3"
 autowrap_mode = 2
 
-[node name="BattlePartyButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattlePartyButtons" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="JoinBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattlePartyButtons"]
+[node name="JoinBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection/BattlePartyButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "选中弟子入队"
 
-[node name="LeaveBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattlePartyButtons"]
+[node name="LeaveBattleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection/BattlePartyButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "选中弟子离队"
 
-[node name="BattleStageSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleStageSelector" type="OptionButton" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 38)
 
-[node name="BattleProgressSummary" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleProgressSummary" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.75, 0.43, 1)
@@ -694,7 +745,7 @@ theme_override_font_sizes/font_size = 14
 text = "选中关卡 1.山门试炼 · 当前未挑战\n已解锁 1-1 · 已通关至 0/5"
 autowrap_mode = 2
 
-[node name="BattlePartyMembers" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattlePartyMembers" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.84, 0.8, 1)
@@ -702,7 +753,7 @@ theme_override_font_sizes/font_size = 14
 text = "暂无参战弟子；请从弟子名册选择成员入队。"
 autowrap_mode = 2
 
-[node name="BattleStats" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleStats" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.82, 0.78, 1)
@@ -710,7 +761,7 @@ theme_override_font_sizes/font_size = 14
 text = "队伍属性：生命0 · 攻击0 · 防御0"
 autowrap_mode = 2
 
-[node name="EnemyBattleInfo" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EnemyBattleInfo" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.67, 0.55, 1)
@@ -718,31 +769,31 @@ theme_override_font_sizes/font_size = 14
 text = "敌方：山野狼群 · 生命120 · 攻击9 · 防御2\n胜利奖励：木材20、灵谷10"
 autowrap_mode = 2
 
-[node name="PlayerBattleHpText" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="PlayerBattleHpText" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "我方共用生命：0 / 0"
 
-[node name="PlayerBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="PlayerBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 18)
 show_percentage = false
 
-[node name="EnemyBattleHpText" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EnemyBattleHpText" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "敌方生命：0 / 0"
 
-[node name="EnemyBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="EnemyBattleHp" type="ProgressBar" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 18)
 show_percentage = false
 
-[node name="BattleStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.86, 0.73, 0.48, 1)
@@ -750,7 +801,7 @@ theme_override_font_sizes/font_size = 14
 text = "请先编成队伍并选择关卡"
 autowrap_mode = 2
 
-[node name="LastBattleResult" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="LastBattleResult" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.7, 0.42, 1)
@@ -758,7 +809,7 @@ theme_override_font_sizes/font_size = 14
 text = "上一场结果：暂无"
 autowrap_mode = 2
 
-[node name="BattleLog" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleLog" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.68, 0.74, 0.72, 1)
@@ -766,82 +817,87 @@ theme_override_font_sizes/font_size = 13
 text = "当前战报\n暂无战斗事件"
 autowrap_mode = 2
 
-[node name="BattleToggleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BattleToggleButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BattleSection"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 42)
 text = "开始自动战斗"
 
-[node name="BuildHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BuildSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="BuildHeading" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
 theme_override_font_sizes/font_size = 21
 text = "宗门建设"
 
-[node name="BuildingGrid" type="GridContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BuildingGrid" type="GridContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection"]
 layout_mode = 2
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 2
 
-[node name="DiscipleQuartersButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="DiscipleQuartersButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "弟子居 +2上限\n木材40 灵石10"
 
-[node name="LumberYardButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="LumberYardButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "伐木场 木材+25%\n木材30 灵石15"
 
-[node name="SpiritMineButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="SpiritMineButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "采灵坊 灵石+25%\n木材50 灵石25"
 
-[node name="SpiritFieldButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="SpiritFieldButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "灵田 灵谷+25%\n木材35 灵石20"
 
-[node name="TrainingGroundButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="TrainingGroundButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "演武场 2修炼位\n木材60 灵石40"
 
-[node name="ArtifactForgeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="ArtifactForgeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "炼器坊 打造等级+1\n木材120 灵石90"
 
-[node name="ScriptureLibraryButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="ScriptureLibraryButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "藏经阁 修炼+20%\n木材100 灵石120"
 
-[node name="CancelBuildButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingGrid"]
+[node name="CancelBuildButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(132, 44)
 layout_mode = 2
 disabled = true
 text = "取消放置"
 
-[node name="PlacementStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="PlacementStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.75, 0.7, 1)
@@ -849,13 +905,13 @@ theme_override_font_sizes/font_size = 15
 text = "选择建筑开始建造"
 autowrap_mode = 2
 
-[node name="BuildingActions" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+[node name="BuildingActions" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="BuildingActionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingActions"]
+[node name="BuildingActionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingActions"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -864,13 +920,13 @@ theme_override_font_sizes/font_size = 14
 text = "返还50%建造资源"
 autowrap_mode = 2
 
-[node name="UpgradeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingActions"]
+[node name="UpgradeButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(76, 40)
 layout_mode = 2
 text = "升级"
 
-[node name="DemolishButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildingActions"]
+[node name="DemolishButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/BuildSection/BuildingActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(76, 40)
 layout_mode = 2
@@ -878,10 +934,12 @@ text = "拆除建筑"
 
 [node name="Spacer" type="Control" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 custom_minimum_size = Vector2(0, 360)
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="Hint" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.57, 0.54, 1)
 theme_override_font_sizes/font_size = 15
