@@ -17,3 +17,9 @@
 - docs/art/v08-scene-reference.png：负责人本轮提供，内部美术方向对照，SHA-256 CE90491E91F9BBF2E466BF1C46C7C0273DC869E6EB72E9111BA45DBBBABAA584；不是运行素材，不根据图中标注改变玩法、资源或地图。
 - docs/art/v08-scene-baseline-normal.png、v08-scene-baseline-construction.png：本项目Godot/RTX 2060真实渲染截图，由tests/audit_v08_scene.gd生成，1280×720；仅审计与前后对照，不进入运行包。
 - 本阶段未引入外部字体、音效或新AI位图资产。
+
+## 2026-10-19 主殿样板运行资产
+
+- assets/buildings/main-hall-sample.png：内置ImageGen按负责人视觉要求生成的独立透明建筑，1254×1254；项目主殿视觉用途，非背景或UI；来源、完整提示词及哈希见assets/buildings/MAIN_HALL_SAMPLE.md。
+- docs/art/v08-scene-stage3-normal.png、v08-scene-stage3-neighbor-selected.png：Godot实际运行截图，分别普通模式与旧建筑选中透显，用于参考/基线对照，不进入运行包。
+- 素材不携带可读文字、数值或存档规则；主殿仍只占(4,3)，没有将参考图布局转换为逻辑坐标。

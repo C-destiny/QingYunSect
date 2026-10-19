@@ -13,6 +13,7 @@ func _run() -> void:
 	# 用相反的建造顺序覆盖前后关系；不经过主场景或SaveManager，不访问玩家存档。
 	assert(state.start_construction(&"disciple_quarters", Vector2i(5, 4)))
 	assert(state.start_construction(&"lumber_yard", Vector2i(0, 0)))
+	assert(state.start_construction(&"disciple_quarters", Vector2i(3, 3)))
 	var saved_before: Dictionary = state.export_save_data().duplicate(true)
 	var first_items: Array[Dictionary] = map.get_world_draw_items()
 	assert(state.export_save_data() == saved_before)
@@ -36,11 +37,14 @@ func _run() -> void:
 			var rect: Rect2 = map.get_grounded_rect(ground, profile, visual_scale)
 			# 改等级/缩放时，素材脚点必须仍落在同一个逻辑格中心。
 			assert((rect.position + rect.size * Vector2(profile["foot"])).is_equal_approx(ground))
-	assert(map.get_grounded_rect(ground, map.MAIN_HALL_VISUAL).position.is_equal_approx(
-		ground + Vector2(-112, -138.5)
-	))
+	assert(map.MAIN_HALL_SAMPLE.get_image().get_pixel(0, 0).a < 0.01)
+	assert(map.MAIN_HALL_VISUAL["size"].x > map.BUILDING_VISUAL["size"].x)
 	# 新增视觉组织不能让原本合法的空格失效，也不能改变固定资源/主殿占位。
-	assert(map.is_placement_valid(Vector2i(3, 3)))
+	assert(map.is_placement_valid(Vector2i(3, 4)))
+	map.hovered_cell = Vector2i(3, 3)
+	assert(map._is_hall_occluding_active_building(map._map_origin()))
+	map.hovered_cell = Vector2i(5, 4)
+	assert(not map._is_hall_occluding_active_building(map._map_origin()))
 	assert(not map.is_placement_valid(Vector2i(4, 3)))
 	assert(not map.is_placement_valid(Vector2i(1, 1)))
 	assert(not map.is_placement_valid(Vector2i(8, 0)))

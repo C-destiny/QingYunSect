@@ -15,7 +15,7 @@ func _capture(main: Control, map: Control, window_size: Vector2i, mode: String) 
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "%s/stage2-%s-%dx%d.png" % [
+	var filename := "%s/stage3-%s-%dx%d.png" % [
 		OUTPUT_DIRECTORY, mode, window_size.x, window_size.y,
 	]
 	assert(root.get_texture().get_image().save_png(filename) == OK)
@@ -51,11 +51,18 @@ func _run() -> void:
 	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		map.cancel_placement()
 		map.clear_selection()
+		map.hovered_cell = Vector2i(-1, -1)
+		map.queue_redraw()
 		await _capture(main, map, window_size, "normal")
 		map.start_placement(&"disciple_quarters")
 		map.hovered_cell = Vector2i(5, 4)
 		map.queue_redraw()
 		await _capture(main, map, window_size, "construction")
+		map.cancel_placement()
+		map.selected_cell = QUARTERS_CELL
+		map.hovered_cell = QUARTERS_CELL
+		map.queue_redraw()
+		await _capture(main, map, window_size, "neighbor-selected")
 	for asset: Texture2D in [map.MAP_BACKDROP, map.BUILDING_ATLAS, map.LANDMARK_ATLAS]:
 		print("EVIDENCE: asset=%s dimensions=%s" % [asset.resource_path, asset.get_size()])
 		var asset_image := asset.get_image()

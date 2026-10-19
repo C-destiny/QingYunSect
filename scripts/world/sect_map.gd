@@ -2,6 +2,7 @@ extends Control
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
+const MAIN_HALL_SAMPLE: Texture2D = preload("res://assets/buildings/main-hall-sample.png")
 const MAP_BACKDROP: Texture2D = preload("res://assets/environment/sect_floating_mountain.png")
 const BUILDING_ATLAS: Texture2D = preload("res://assets/buildings/sect_buildings_atlas.png")
 const LANDMARK_ATLAS: Texture2D = preload("res://assets/environment/sect_landmarks_atlas.png")
@@ -13,6 +14,7 @@ signal region_selected(region_id: StringName)
 
 const GRID_SIZE := TerritoryCatalogData.MAP_SIZE
 const TILE_SIZE := Vector2(104.0, 52.0)
+const MAIN_HALL_CELL := Vector2i(4, 3)
 const TILE_COLOR_A := Color(0.78, 0.88, 0.7, 0.17)
 const TILE_COLOR_B := Color(0.62, 0.78, 0.66, 0.12)
 const TILE_OUTLINE := Color(0.86, 0.9, 0.72, 0.48)
@@ -34,9 +36,9 @@ const BUILDING_ATLAS_INDEX := {
 	&"artifact_forge": Vector2i(1, 1),
 	&"scripture_library": Vector2i(2, 1),
 }
-# 脚点为图集格内的归一化地面位置；阶段2沿用原位置，后续样板按实际底座校准。
+# 脚点为图集格内的归一化地面位置；普通图集沿用原位置，主殿已按独立样板底座校准。
 # 只影响渲染，不作为占地、点击或存档数据；尺寸单位为逻辑像素。
-const MAIN_HALL_VISUAL := {"size": Vector2(224, 149), "foot": Vector2(0.5, 0.5 + 64.0 / 149.0)}
+const MAIN_HALL_VISUAL := {"size": Vector2(330, 330), "foot": Vector2(0.5, 0.82)}
 const BUILDING_VISUAL := {"size": Vector2(136, 153), "foot": Vector2(0.5, 0.5 + 55.0 / 153.0)}
 const RESOURCE_VISUAL := {"size": Vector2(126, 84), "foot": Vector2(0.5, 0.5 + 41.0 / 84.0)}
 
@@ -83,11 +85,26 @@ func _draw_ground_layer(origin: Vector2) -> void:
 			if y >= 0 and y < GRID_SIZE.y:
 				_draw_tile(Vector2i(x, y), origin)
 	_draw_region_connections(origin)
+	_draw_hall_plaza(origin)
+
+
+func _draw_hall_plaza(origin: Vector2) -> void:
+	# 广场仅是地面装饰，覆盖相邻视觉区域但不参与占用、放置判定或存档。
+	var center := _cell_to_screen(MAIN_HALL_CELL, origin) + Vector2(0, 25)
+	var plaza := PackedVector2Array([
+		center + Vector2(0, -66), center + Vector2(132, 0),
+		center + Vector2(0, 66), center + Vector2(-132, 0),
+	])
+	draw_colored_polygon(plaza, Color(0.93, 0.90, 0.79, 0.25))
+	# 低对比度石纹与既有米白台地融合，不用深色边线再造一层逻辑网格。
+	draw_set_transform(center + Vector2(0, 20), 0.0, Vector2(1.0, 0.5))
+	draw_arc(Vector2.ZERO, 38.0, 0.0, TAU, 64, Color(0.60, 0.58, 0.49, 0.3), 1.2, true)
+	draw_set_transform(Vector2.ZERO)
 
 
 # 返回新的排序数组；不排序GameState.buildings、不改实例数据，失败由原有数据校验负责。
 func get_world_draw_items() -> Array[Dictionary]:
-	var items: Array[Dictionary] = [{"kind": "hall", "cell": Vector2i(4, 3), "key": "hall"}]
+	var items: Array[Dictionary] = [{"kind": "hall", "cell": MAIN_HALL_CELL, "key": "hall"}]
 	for building: Dictionary in GameState.buildings:
 		items.append({
 			"kind": "building", "cell": Vector2i(int(building["cell_x"]), int(building["cell_y"])),
@@ -112,6 +129,11 @@ func _is_world_item_before(first: Dictionary, second: Dictionary) -> bool:
 
 func _draw_shadow_layer(items: Array[Dictionary], origin: Vector2) -> void:
 	# 所有接地影先于建筑主体，防止后绘制建筑的影子盖在前一栋墙面上。
+	var hall_center := _cell_to_screen(MAIN_HALL_CELL, origin)
+	# 与左上光源对应的右下接地影独立于位图，后续可按底座轮廓校准。
+	draw_set_transform(hall_center + Vector2(18, 12), 0.0, Vector2(1.0, 0.35))
+	draw_circle(Vector2.ZERO, 104.0, Color(0.08, 0.12, 0.13, 0.14))
+	draw_set_transform(Vector2.ZERO)
 	for item: Dictionary in items:
 		if item["kind"] == "building":
 			var center := _cell_to_screen(item["cell"], origin)
@@ -128,7 +150,7 @@ func _draw_world_layer(items: Array[Dictionary], origin: Vector2) -> void:
 
 func _draw_interaction_layer(origin: Vector2) -> void:
 	# 标签、施工状态和选中反馈最后绘制，不能被相邻高屋顶盖住。
-	_draw_map_label(_cell_to_screen(Vector2i(4, 3), origin) + Vector2(0, 31), "宗门大殿", 104)
+	_draw_map_label(_cell_to_screen(MAIN_HALL_CELL, origin) + Vector2(0, 31), "宗门大殿", 104)
 	for building: Dictionary in GameState.buildings:
 		_draw_building_status(building, origin)
 	for resource: Dictionary in resource_nodes:
@@ -332,7 +354,11 @@ func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:
 
 
 func _draw_main_hall(origin: Vector2) -> void:
-	var center := _cell_to_screen(Vector2i(4, 3), origin)
+	var center := _cell_to_screen(MAIN_HALL_CELL, origin)
+	if MAIN_HALL_SAMPLE != null:
+		var tint := Color(1, 1, 1, 0.28) if _is_hall_occluding_active_building(origin) else Color.WHITE
+		draw_texture_rect(MAIN_HALL_SAMPLE, get_grounded_rect(center, MAIN_HALL_VISUAL), false, tint)
+		return
 	if LANDMARK_ATLAS != null:
 		_draw_grounded_atlas(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, Vector2i(0, 0), center, MAIN_HALL_VISUAL)
 		return
@@ -349,6 +375,18 @@ func _draw_main_hall(origin: Vector2) -> void:
 	draw_line(center + Vector2(-48, -88), center + Vector2(48, -88), GOLD_ACCENT, 2.2, true)
 	_draw_banner(center + Vector2(-55, -55), Color(0.18, 0.43, 0.48, 1.0))
 	_draw_banner(center + Vector2(55, -55), Color(0.18, 0.43, 0.48, 1.0))
+
+
+func _is_hall_occluding_active_building(origin: Vector2) -> bool:
+	# 主殿有视觉外延但不扩占地；操作其后方旧建筑时让主殿淡出，不能靠禁建解决遮挡。
+	var hall_rect := get_grounded_rect(_cell_to_screen(MAIN_HALL_CELL, origin), MAIN_HALL_VISUAL)
+	for building: Dictionary in GameState.buildings:
+		var cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
+		if cell != selected_cell and cell != hovered_cell:
+			continue
+		if cell.x + cell.y <= MAIN_HALL_CELL.x + MAIN_HALL_CELL.y and hall_rect.has_point(_cell_to_screen(cell, origin)):
+			return true
+	return false
 
 
 func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
@@ -492,7 +530,7 @@ func _draw_banner(base: Vector2, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([base + Vector2(2, 2), base + Vector2(15, 7), base + Vector2(2, 19)]), color)
 
 
-# 输入纹理格、逻辑脚点和视觉配置，返回/绘制范围与存档占地无关；仅有绘制副作用。
+# 输入逻辑脚点、视觉配置与缩放，返回绘制矩形；无绘制或状态副作用，配置由本模块保证有效。
 func get_grounded_rect(ground: Vector2, profile: Dictionary, visual_scale: float = 1.0) -> Rect2:
 	var draw_size: Vector2 = profile["size"] * visual_scale
 	return Rect2(ground - draw_size * Vector2(profile["foot"]), draw_size)
