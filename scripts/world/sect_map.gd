@@ -34,6 +34,12 @@ const BUILDING_ATLAS_INDEX := {
 	&"artifact_forge": Vector2i(1, 1),
 	&"scripture_library": Vector2i(2, 1),
 }
+# 脚点为图集格内的归一化地面位置；阶段2沿用原位置，后续样板按实际底座校准。
+# 只影响渲染，不作为占地、点击或存档数据；尺寸单位为逻辑像素。
+const MAIN_HALL_VISUAL := {"size": Vector2(224, 149), "foot": Vector2(0.5, 0.5 + 64.0 / 149.0)}
+const BUILDING_VISUAL := {"size": Vector2(136, 153), "foot": Vector2(0.5, 0.5 + 55.0 / 153.0)}
+const RESOURCE_VISUAL := {"size": Vector2(126, 84), "foot": Vector2(0.5, 0.5 + 41.0 / 84.0)}
+
 const RESOURCE_ATLAS_INDEX := {
 	&"forest": Vector2i(1, 0),
 	&"mine": Vector2i(0, 1),
@@ -61,21 +67,77 @@ func _ready() -> void:
 
 func _draw() -> void:
 	var origin := _map_origin()
+	# 层级只在渲染端组织：远景→地面道路→接地影→深度物件→交互，HUD仍由主场景控制。
 	_draw_backdrop(origin)
+	_draw_ground_layer(origin)
+	var items := get_world_draw_items()
+	_draw_shadow_layer(items, origin)
+	_draw_world_layer(items, origin)
+	_draw_interaction_layer(origin)
+
+
+func _draw_ground_layer(origin: Vector2) -> void:
 	for sum_index: int in range(GRID_SIZE.x + GRID_SIZE.y - 1):
 		for x: int in range(GRID_SIZE.x):
 			var y := sum_index - x
-			if y < 0 or y >= GRID_SIZE.y:
-				continue
-			var cell := Vector2i(x, y)
-			_draw_tile(cell, origin)
-
+			if y >= 0 and y < GRID_SIZE.y:
+				_draw_tile(Vector2i(x, y), origin)
 	_draw_region_connections(origin)
+
+
+# 返回新的排序数组；不排序GameState.buildings、不改实例数据，失败由原有数据校验负责。
+func get_world_draw_items() -> Array[Dictionary]:
+	var items: Array[Dictionary] = [{"kind": "hall", "cell": Vector2i(4, 3), "key": "hall"}]
 	for building: Dictionary in GameState.buildings:
-		_draw_building(building, origin)
-	_draw_main_hall(origin)
-	for resource_data: Dictionary in resource_nodes:
-		_draw_resource(resource_data, origin)
+		items.append({
+			"kind": "building", "cell": Vector2i(int(building["cell_x"]), int(building["cell_y"])),
+			"key": "building:%d" % int(building["instance_id"]), "data": building,
+		})
+	for resource: Dictionary in resource_nodes:
+		items.append({"kind": "resource", "cell": resource["cell"], "key": String(resource["site_id"]), "data": resource})
+	# 等距投影脚点y与x+y成正比；同深度按x及稳定ID排序，避免读档/建造顺序改变遮挡。
+	items.sort_custom(_is_world_item_before)
+	return items
+
+
+func _is_world_item_before(first: Dictionary, second: Dictionary) -> bool:
+	var first_cell: Vector2i = first["cell"]
+	var second_cell: Vector2i = second["cell"]
+	if first_cell.x + first_cell.y != second_cell.x + second_cell.y:
+		return first_cell.x + first_cell.y < second_cell.x + second_cell.y
+	if first_cell.x != second_cell.x:
+		return first_cell.x < second_cell.x
+	return String(first["key"]) < String(second["key"])
+
+
+func _draw_shadow_layer(items: Array[Dictionary], origin: Vector2) -> void:
+	# 所有接地影先于建筑主体，防止后绘制建筑的影子盖在前一栋墙面上。
+	for item: Dictionary in items:
+		if item["kind"] == "building":
+			var center := _cell_to_screen(item["cell"], origin)
+			draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
+
+
+func _draw_world_layer(items: Array[Dictionary], origin: Vector2) -> void:
+	for item: Dictionary in items:
+		match item["kind"]:
+			"hall": _draw_main_hall(origin)
+			"building": _draw_building(item["data"], origin)
+			"resource": _draw_resource(item["data"], origin)
+
+
+func _draw_interaction_layer(origin: Vector2) -> void:
+	# 标签、施工状态和选中反馈最后绘制，不能被相邻高屋顶盖住。
+	_draw_map_label(_cell_to_screen(Vector2i(4, 3), origin) + Vector2(0, 31), "宗门大殿", 104)
+	for building: Dictionary in GameState.buildings:
+		_draw_building_status(building, origin)
+	for resource: Dictionary in resource_nodes:
+		var center := _cell_to_screen(resource["cell"], origin)
+		if Vector2i(resource["cell"]) == selected_cell:
+			draw_arc(center + Vector2(0, -14), 44.0, 0.0, TAU, 40, SELECTED_OUTLINE, 3.0, true)
+		var workers := GameState.get_assignment(resource["site_id"])
+		if workers > 0:
+			_draw_map_label(center + Vector2(0, 20), "%d 人" % workers, 56, 14)
 	_draw_placement_preview(origin)
 
 
@@ -272,8 +334,7 @@ func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:
 func _draw_main_hall(origin: Vector2) -> void:
 	var center := _cell_to_screen(Vector2i(4, 3), origin)
 	if LANDMARK_ATLAS != null:
-		_draw_atlas_sprite(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, Vector2i(0, 0), center + Vector2(0, -64), Vector2(224, 149))
-		_draw_map_label(center + Vector2(0, 31), "宗门大殿", 104)
+		_draw_grounded_atlas(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, Vector2i(0, 0), center, MAIN_HALL_VISUAL)
 		return
 	draw_colored_polygon(PackedVector2Array([center + Vector2(-62, 5), center + Vector2(0, 22), center + Vector2(62, 5), center + Vector2(0, -12)]), Color(0.56, 0.57, 0.51, 1.0))
 	for step_index: int in range(3):
@@ -288,19 +349,13 @@ func _draw_main_hall(origin: Vector2) -> void:
 	draw_line(center + Vector2(-48, -88), center + Vector2(48, -88), GOLD_ACCENT, 2.2, true)
 	_draw_banner(center + Vector2(-55, -55), Color(0.18, 0.43, 0.48, 1.0))
 	_draw_banner(center + Vector2(55, -55), Color(0.18, 0.43, 0.48, 1.0))
-	draw_string(ThemeDB.fallback_font, center + Vector2(-46, 39), "宗门大殿", HORIZONTAL_ALIGNMENT_CENTER, 92, 17, PAPER_WHITE)
 
 
 func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
 	var center := _cell_to_screen(resource_data["cell"], origin) + Vector2(0, -18)
 	var site_id := StringName(resource_data["site_id"])
 	if LANDMARK_ATLAS != null and RESOURCE_ATLAS_INDEX.has(site_id):
-		_draw_atlas_sprite(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, RESOURCE_ATLAS_INDEX[site_id], center + Vector2(0, -23), Vector2(126, 84))
-		if Vector2i(resource_data["cell"]) == selected_cell:
-			draw_arc(center + Vector2(0, 4), 44.0, 0.0, TAU, 40, SELECTED_OUTLINE, 3.0, true)
-		var atlas_workers := GameState.get_assignment(resource_data["site_id"])
-		if atlas_workers > 0:
-			_draw_map_label(center + Vector2(0, 38), "%d 人" % atlas_workers, 56, 14)
+		_draw_grounded_atlas(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, RESOURCE_ATLAS_INDEX[site_id], _cell_to_screen(resource_data["cell"], origin), RESOURCE_VISUAL)
 		return
 	draw_circle(center + Vector2(0, 17), 19.0, Color(0.02, 0.05, 0.05, 0.28))
 	match site_id:
@@ -324,10 +379,6 @@ func _draw_resource(resource_data: Dictionary, origin: Vector2) -> void:
 			for line_index: int in range(4):
 				var dx := -14.0 + float(line_index) * 9.0
 				draw_line(center + Vector2(dx, 2), center + Vector2(dx + 7, 19), Color(0.82, 0.71, 0.3, 0.9), 2.0, true)
-	var workers := GameState.get_assignment(resource_data["site_id"])
-	if workers > 0:
-		draw_string(ThemeDB.fallback_font, center + Vector2(-22, 43), "%d 人" % workers, HORIZONTAL_ALIGNMENT_CENTER, 44, 14, PAPER_WHITE)
-
 
 func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	var definition := BuildingCatalog.get_data(StringName(building["type"]))
@@ -336,17 +387,24 @@ func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	var building_type := StringName(building["type"])
 	var level := int(building.get("level", 1))
 	var completed := bool(building["completed"])
-	draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
 	if completed:
 		if BUILDING_ATLAS != null and BUILDING_ATLAS_INDEX.has(building_type):
 			var visual_scale := 1.0 + float(level - 1) * 0.055
-			_draw_atlas_sprite(BUILDING_ATLAS, BUILDING_ATLAS_CELLS, BUILDING_ATLAS_INDEX[building_type], center + Vector2(0, -55), Vector2(136, 153) * visual_scale)
+			_draw_grounded_atlas(BUILDING_ATLAS, BUILDING_ATLAS_CELLS, BUILDING_ATLAS_INDEX[building_type], center, BUILDING_VISUAL, visual_scale)
 			if level >= 3:
 				draw_arc(center + Vector2(0, -32), 48.0, 0.0, TAU, 40, Color(0.45, 0.82, 1.0, 0.62), 2.0, true)
 		else:
 			_draw_completed_building(building_type, center, level)
 	else:
 		_draw_construction_site(center, Color(definition["color"]))
+
+
+func _draw_building_status(building: Dictionary, origin: Vector2) -> void:
+	var definition := BuildingCatalog.get_data(StringName(building["type"]))
+	var cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
+	var center := _cell_to_screen(cell, origin)
+	var level := int(building.get("level", 1))
+	var completed := bool(building["completed"])
 	var name_text: String = definition["name"]
 	_draw_map_label(center + Vector2(0, 29), "%s Lv.%d" % [name_text, level], 102, 14)
 	if cell == selected_cell:
@@ -434,11 +492,17 @@ func _draw_banner(base: Vector2, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([base + Vector2(2, 2), base + Vector2(15, 7), base + Vector2(2, 19)]), color)
 
 
-func _draw_atlas_sprite(texture: Texture2D, atlas_cells: Vector2i, atlas_cell: Vector2i, center: Vector2, draw_size: Vector2) -> void:
+# 输入纹理格、逻辑脚点和视觉配置，返回/绘制范围与存档占地无关；仅有绘制副作用。
+func get_grounded_rect(ground: Vector2, profile: Dictionary, visual_scale: float = 1.0) -> Rect2:
+	var draw_size: Vector2 = profile["size"] * visual_scale
+	return Rect2(ground - draw_size * Vector2(profile["foot"]), draw_size)
+
+
+func _draw_grounded_atlas(texture: Texture2D, atlas_cells: Vector2i, atlas_cell: Vector2i,
+	ground: Vector2, profile: Dictionary, visual_scale: float = 1.0) -> void:
 	var source_cell_size := texture.get_size() / Vector2(atlas_cells)
 	var source_rect := Rect2(Vector2(atlas_cell) * source_cell_size, source_cell_size)
-	var destination := Rect2(center - draw_size * 0.5, draw_size)
-	draw_texture_rect_region(texture, destination, source_rect)
+	draw_texture_rect_region(texture, get_grounded_rect(ground, profile, visual_scale), source_rect)
 
 
 func _draw_map_label(center: Vector2, text: String, width: float, font_size: int = 16) -> void:

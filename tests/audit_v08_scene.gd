@@ -15,7 +15,7 @@ func _capture(main: Control, map: Control, window_size: Vector2i, mode: String) 
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "%s/before-%s-%dx%d.png" % [
+	var filename := "%s/stage2-%s-%dx%d.png" % [
 		OUTPUT_DIRECTORY, mode, window_size.x, window_size.y,
 	]
 	assert(root.get_texture().get_image().save_png(filename) == OK)
