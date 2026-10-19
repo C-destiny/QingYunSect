@@ -1,10 +1,10 @@
 # 会话交接
 
-日期：2026-10-18。当前任务来源为GitHub Issues；每次接手重新核对，不直接沿用此快照。
+日期：2026-10-19。当前任务来源为GitHub Issues；每次接手重新核对，不直接沿用此快照。
 
 ## 当前事实
 
-- 仓库：E:/Rgame/qingyun-sect，origin=https://github.com/C-destiny/QingYunSect.git（私有）。
+- 当前本机仓库：C:/Users/72736/Documents/GitHub/QingYunSect，origin=https://github.com/C-destiny/QingYunSect.git（私有）。
 - 游戏基线：V0.7已由负责人于2026-10-17明确验收；当前进展和已验收版本标签已推送，尚未合并main。
 - 当前开发分支：`feature/v0.8-visual-polish`，跟踪`origin/feature/v0.8-visual-polish`。
 - 当前目标：V0.8宗门挂机美术、UI与体验定稿；QYS-V08-001已验收，V08-002～008已开发、自测并生成候选包，全部等待负责人验收。
@@ -72,3 +72,15 @@
 
 读AGENTS → 主规划 → TASKS/本交接/CHANGELOG → Git仓库状态 → Issue及确认记录 → 报告当前版本/任务/验收进度 → 只继续已批准工作。
 文档审阅通过不等于其他功能验收；只有明确验收记录才能ACCEPTED、关闭Issue或宣布版本完成。
+
+## 2026-10-19 本机接手补充
+
+- 本轮仅继续#41/#42验证与交付准备，没有新增游戏编码、玩法、数值或存档字段。
+- 初始检出旧V0.4文档分支；现已安全切换至feature/v0.8-visual-polish，源码头45b35b3与git ls-remote结果一致。另一台电脑未直接检查，不把远端一致等同双机实测。
+- 保留接手前未跟踪文件docs/LOCAL_ENV_SETUP.md、tests/run_all_tests.sh，未修改、提交或覆盖它们；旧测试脚本硬编码本机路径且未以FAIL计数设置退出码，本轮未依赖其判定结果。
+- 实测引擎为C:/Tools/godot-4.7.2/Godot_v4.7.2-stable_win64_console.exe，版本4.7.2.stable.official.ed1daf0bf。
+- 使用PowerShell逐个运行48组快速test_*.gd；每项45秒超时，检查退出0、PASS:和无错误日志，48通过、0失败；30分钟真实运行未重跑。
+- 日志在被忽略的builds/local-validation/。两组8小时模拟通过；正式APPDATA未用于测试或启动候选包。
+- 首次受限导出遇到Safe save / tmpproject.binary权限错误，未作为有效交付；隔离APPDATA及TEMP/TMP并在放宽沙箱权限后重新导出成功。
+- 新本机包builds/QingYunSect-v0.8-local-rc-win64.exe，121085128字节，SHA-256为79CB2C3AA7429129BBD6B522A71B9E06477D88B70BA872877134FA22F0200A41；独立无头启动退出0。
+- 未执行本轮人工可视化、双机或联机测试。#41/#42仍待负责人验收；本轮不改Issue状态、不发送评论、不推送、不创建完成标签。

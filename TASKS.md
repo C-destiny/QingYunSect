@@ -1,6 +1,6 @@
 # 当前任务摘要
 
-快照日期：2026-10-18。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
+快照日期：2026-10-19。具体状态以[GitHub Issues](https://github.com/C-destiny/QingYunSect/issues)正文任务控制区及负责人确认记录为准。本文件不是第二份任务正文。
 
 - 当前历史已完成版本：V0.7；负责人于2026-10-17明确确认整体验收完毕，QYS-V07-001～009均ACCEPTED。
 - 目标版本：V0.8 宗门挂机美术、UI与体验定稿，负责人于2026-10-17明确批准开始开发。
@@ -89,3 +89,11 @@ QYS-V05-001～007已由负责人于2026-10-17全部验收；V0.5完成度7/7，W
 - 通道恢复后先查询已存在对象，避免重复创建；创建/复用后关联这10个Issue、回填真实URL。
 - 2026-10-17已将当前进展推送至 `origin/feature/v0.8-visual-polish`，远端头为`3649cf7`；已同步已验收版本标签`v0.1.0`～`v0.7.0`（`v0.4.0`此前已存在）。尚未合并main，也未上传Windows构建。
 - 2026-10-18地图内顶部/底部图标界面及关闭交互修复已推送至`origin/feature/v0.8-visual-polish`；48组回归与Windows实际点击验证通过，等待负责人验收。后续顺序见`docs/NEXT_DEVELOPMENT_PLAN.md`。
+
+## 2026-10-19 本机接手验证
+
+- 当前执行任务：QYS-V08-007 / #41、QYS-V08-008 / #42；已读取GitHub正文及#42评论（0条），均保持open / TESTED，未新增验收确认。
+- 从旧的docs/development-management切换到feature/v0.8-visual-polish；git ls-remote核对远端头与本地均为45b35b3b34fc514e3d7a9932be99a661f1ab08e3。
+- 本机Godot 4.7.2下48组快速回归全部通过；30分钟真实运行未重跑。Windows本机候选包已重建并隔离无头启动退出0。
+- 本机候选包：builds/QingYunSect-v0.8-local-rc-win64.exe；详细命令、哈希和未测项见docs/V0.8_ACCEPTANCE.md新增记录。
+- 下一步：负责人按验收清单试玩；未确认前不关闭#36～#42，不进入V0.9。未上传本轮文档与构建。
