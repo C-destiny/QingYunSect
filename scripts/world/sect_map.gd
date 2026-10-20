@@ -68,6 +68,17 @@ var hovered_position := Vector2.ZERO
 var placement_building: StringName = &""
 # 命中检测缓存解压后的图像；只在鼠标查询时采样，不在每帧重复从GPU读取。
 var hit_images: Dictionary = {}
+var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
+const UNIFIED_ATLAS_PATH := "res://assets/buildings/sect-buildings-unified.png"
+const UNIFIED_INDICES := {
+	&"lumber_yard": Vector2i(0, 0), &"spirit_mine": Vector2i(1, 0),
+	&"spirit_field": Vector2i(2, 0), &"training_ground": Vector2i(0, 1),
+	&"artifact_forge": Vector2i(1, 1), &"scripture_library": Vector2i(2, 1),
+}
+const BUILDING_WIDTHS := {
+	&"lumber_yard": 178.0, &"spirit_mine": 168.0, &"spirit_field": 192.0,
+	&"training_ground": 194.0, &"artifact_forge": 180.0, &"scripture_library": 166.0,
+}
 
 
 func _ready() -> void:
@@ -181,13 +192,11 @@ func _draw_shadow_layer(items: Array[Dictionary], origin: Vector2) -> void:
 	for item: Dictionary in items:
 		if item["kind"] == "building":
 			var center := _cell_to_screen(item["cell"], origin)
-			if StringName(item["data"]["type"]) == &"disciple_quarters":
-				# 低矮院落使用扁平接地影；不把旧圆形影子叠成漂浮圆盘。
-				draw_set_transform(center + Vector2(7, 5), 0.0, Vector2(1.0, 0.42))
-				draw_circle(Vector2.ZERO, 48.0, Color(0.07, 0.10, 0.11, 0.12))
-				draw_set_transform(Vector2.ZERO)
-			else:
-				draw_circle(center + Vector2(0, 4), 34.0, Color(0.01, 0.02, 0.02, 0.28))
+			var spec := get_building_visual(StringName(item["data"]["type"]))
+			var radius := float(spec["profile"]["size"].x) * 0.27
+			draw_set_transform(center + Vector2(8, 6), 0.0, Vector2(1.0, 0.38))
+			draw_circle(Vector2.ZERO, radius, Color(0.07, 0.10, 0.11, 0.13))
+			draw_set_transform(Vector2.ZERO)
 
 
 func _draw_world_layer(items: Array[Dictionary], origin: Vector2) -> void:
@@ -402,18 +411,9 @@ func _pick_visual_building(point: Vector2, origin: Vector2) -> Dictionary:
 				return {}
 		elif bool(item["data"]["completed"]):
 			var building: Dictionary = item["data"]
-			var building_type := StringName(building["type"])
-			var visual_scale := 1.0 + float(int(building.get("level", 1)) - 1) * 0.055
-			if building_type == &"disciple_quarters":
-				if _is_sprite_hit(QUARTERS_SAMPLE, Rect2(Vector2.ZERO, QUARTERS_SAMPLE.get_size()),
-					get_grounded_rect(ground, QUARTERS_VISUAL, visual_scale), point):
-					return building
-			elif BUILDING_ATLAS_INDEX.has(building_type):
-				var cell_size := BUILDING_ATLAS.get_size() / Vector2(BUILDING_ATLAS_CELLS)
-				var source := Rect2(Vector2(BUILDING_ATLAS_INDEX[building_type]) * cell_size, cell_size)
-				if _is_sprite_hit(BUILDING_ATLAS, source,
-					get_grounded_rect(ground, BUILDING_VISUAL, visual_scale), point):
-					return building
+			var spec := get_building_visual(StringName(building["type"]))
+			if _is_sprite_hit(spec["texture"], spec["source"], get_building_visual_rect(building, origin), point):
+				return building
 	return {}
 
 
@@ -539,17 +539,8 @@ func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	var level := int(building.get("level", 1))
 	var completed := bool(building["completed"])
 	if completed:
-		if building_type == &"disciple_quarters":
-			# 等级仍复用原来的轻微缩放和文字标识；素材脚点不随等级漂移。
-			var visual_scale := 1.0 + float(level - 1) * 0.055
-			draw_texture_rect(QUARTERS_SAMPLE, get_grounded_rect(center, QUARTERS_VISUAL, visual_scale), false)
-		elif BUILDING_ATLAS != null and BUILDING_ATLAS_INDEX.has(building_type):
-			var visual_scale := 1.0 + float(level - 1) * 0.055
-			_draw_grounded_atlas(BUILDING_ATLAS, BUILDING_ATLAS_CELLS, BUILDING_ATLAS_INDEX[building_type], center, BUILDING_VISUAL, visual_scale)
-			if level >= 3:
-				draw_arc(center + Vector2(0, -32), 48.0, 0.0, TAU, 40, Color(0.45, 0.82, 1.0, 0.62), 2.0, true)
-		else:
-			_draw_completed_building(building_type, center, level)
+		var spec := get_building_visual(building_type)
+		draw_texture_rect_region(spec["texture"], get_building_visual_rect(building, origin), spec["source"])
 	else:
 		_draw_construction_site(center, Color(definition["color"]))
 
@@ -702,6 +693,9 @@ func _draw_placement_preview(origin: Vector2) -> void:
 	var is_valid := bool(feedback["is_valid"])
 	var center := hovered_position if feedback["category"] == "outside" else _cell_to_screen(hovered_cell, origin)
 	if feedback["category"] != "outside":
+		var spec := get_building_visual(placement_building)
+		var tint := Color(1, 1, 1, 0.42) if is_valid else Color(1, 0.35, 0.25, 0.28)
+		draw_texture_rect_region(spec["texture"], get_grounded_rect(center, spec["profile"]), spec["source"], tint)
 		var preview_color := Color(0.35, 0.82, 0.48, 0.4) if is_valid else Color(0.89, 0.30, 0.25, 0.4)
 		var points := _cell_points(center)
 		draw_colored_polygon(points, preview_color)
@@ -720,8 +714,39 @@ func _draw_placement_preview(origin: Vector2) -> void:
 func _draw_sample_garden(origin: Vector2) -> void:
 	# 样板地景只画在建筑/网格下，不加入占地或交互集合，满图旧档仍可正常使用。
 	var hall := _cell_to_screen(MAIN_HALL_CELL, origin)
-	var pond := hall + Vector2(-195, 105)
-	draw_texture_rect(GARDEN_POND, Rect2(pond - Vector2(115, 69), Vector2(230, 138)), false)
+	# 地景向既有/新建建筑让位，不改任何合法格；没有空处就只保留既有底图园林。
+	for offset: Vector2 in [Vector2(-195, 105), Vector2(-40, 180)]:
+		var pond := hall + offset
+		var occupied_visually := false
+		for building: Dictionary in GameState.buildings:
+			var cell := Vector2i(building["cell_x"], building["cell_y"])
+			if Rect2(pond - Vector2(125, 64), Vector2(250, 128)).has_point(_cell_to_screen(cell, origin)):
+				occupied_visually = true
+				break
+		if not occupied_visually:
+			draw_texture_rect(GARDEN_POND, Rect2(pond - Vector2(115, 69), Vector2(230, 138)), false)
+			break
 	var end := hall + Vector2(50, 120)
 	draw_colored_polygon(PackedVector2Array([hall + Vector2(-23, 16), hall + Vector2(23, 16),
 		end + Vector2(23, 0), end - Vector2(23, 0)]), Color(0.94, 0.91, 0.82, 0.30))
+
+
+# 绘制、alpha命中、建造预览和小卡共用配置；等级只缩放视觉，不改占地。
+func get_building_visual(building_type: StringName) -> Dictionary:
+	if building_type == &"disciple_quarters":
+		return {"texture": QUARTERS_SAMPLE, "source": Rect2(Vector2.ZERO, QUARTERS_SAMPLE.get_size()), "profile": QUARTERS_VISUAL}
+	var texture := unified_building_atlas if unified_building_atlas != null else BUILDING_ATLAS
+	var cells := Vector2(3, 2) if unified_building_atlas != null else Vector2(BUILDING_ATLAS_CELLS)
+	var index: Vector2i = UNIFIED_INDICES[building_type] if unified_building_atlas != null else BUILDING_ATLAS_INDEX[building_type]
+	var frame := texture.get_size() / cells
+	var width := float(BUILDING_WIDTHS[building_type])
+	var foot := Vector2(0.5, 0.80) if unified_building_atlas != null else Vector2(BUILDING_VISUAL["foot"])
+	return {"texture": texture, "source": Rect2(Vector2(index) * frame, frame),
+		"profile": {"size": Vector2(width, width * frame.y / frame.x), "foot": foot}}
+
+
+func get_building_visual_rect(building: Dictionary, origin: Vector2) -> Rect2:
+	var spec := get_building_visual(StringName(building["type"]))
+	var cell := Vector2i(building["cell_x"], building["cell_y"])
+	return get_grounded_rect(_cell_to_screen(cell, origin), spec["profile"],
+		1.0 + float(int(building.get("level", 1)) - 1) * 0.055)

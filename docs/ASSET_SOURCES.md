@@ -45,3 +45,7 @@ docs/art/v08-layout-proposal-a.png：由tools/draw_layout_proposal.py自绘矢�
 ## 2026-10-20 主殿局部山石池水
 
 assets/environment/hall-garden-pond.png：内置ImageGen生成，1619×971/1473569字节，SHA-256 5C3173E7823482F74FF87CDDBE874307EDE371121D39BF90CB5376941AB898BA；完整提示词与项目使用范围见assets/environment/HALL_GARDEN_POND.md。仅作地面装饰，不占地，不是资源点。未使用外部抓取图片、不宣称独占版权。docs/art/v08-hall-sample1-normal.png与v08-hall-sample1-card.png为隔离Godot实际运行截图，底层素材沿用项目来源记录，演示建筑不进入正式存档。
+
+## 2026-10-20 全图推广建筑图集
+
+assets/buildings/sect-buildings-unified.png：内置ImageGen生成，1536×1024，3×2等分的六类既有建筑，2836839字节；SHA-256 D971A224251FCBC23C341F8336795AFB3A739B32BDCB9D0234F32111539D2CCF。完整最终提示词、失败重试与项目使用记录见assets/buildings/UNIFIED_BUILDINGS.md；按工具适用条件用于本游戏，不宣称独占版权，无外部抓取素材。旧图集保留作历史来源，弟子居继续独立已验收样板。docs/art/v08-full2-*.png是Godot隔离演示实际运行截图，不是概念图。

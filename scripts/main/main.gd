@@ -131,10 +131,11 @@ const MANAGEMENT_SECTIONS := {
 
 
 func _ready() -> void:
-	var visual_demo := "--visual-sample" in OS.get_cmdline_user_args()
+	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
+	var visual_demo := full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
 		# 必须在首次has_save/load之前切换路径；演示模式不读取或覆盖正式玩家存档。
-		SaveManager.save_path = "user://v08_hall_visual_demo.json"
+		SaveManager.save_path = "user://v08_full_visual_demo.json" if full_demo else "user://v08_hall_visual_demo.json"
 	building_card = preload("res://scripts/ui/building_card.gd").new()
 	add_child(building_card)
 	building_card.close_requested.connect(_dismiss_building_card)
@@ -244,9 +245,12 @@ func _ready() -> void:
 	if not visual_demo and SaveManager.has_save():
 		SaveManager.load_game()
 	if visual_demo:
-		for cell: Vector2i in [Vector2i(3, 3), Vector2i(1, 5)]:
-			GameState.start_construction(&"disciple_quarters", cell)
-		GameState.process_construction(20)
+		if full_demo:
+			preload("res://scripts/world/visual_demo.gd").populate_full_scene(GameState)
+		else:
+			for cell: Vector2i in [Vector2i(3, 3), Vector2i(1, 5)]:
+				GameState.start_construction(&"disciple_quarters", cell)
+			GameState.process_construction(20)
 		autosave_timer.stop()
 		save_status.text = "独立演示存档"
 		print("VISUAL_SAMPLE: isolated demo path; buildings=%d; formal save not loaded" % GameState.buildings.size())
@@ -1354,7 +1358,7 @@ func _refresh_building_card() -> void:
 			return
 		var kind := StringName(building["type"])
 		cell = Vector2i(building["cell_x"], building["cell_y"])
-		profile = sect_map.QUARTERS_VISUAL if kind == &"disciple_quarters" else sect_map.BUILDING_VISUAL
+		profile = sect_map.get_building_visual(kind)["profile"]
 		building_card.title_label.text = "%s · Lv.%d" % [BuildingCatalog.get_data(kind)["name"], int(building["level"])]
 		var status := "已完工"
 		if not bool(building["completed"]):
