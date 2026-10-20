@@ -21,6 +21,8 @@ func _run() -> void:
 	var scene := load("res://scenes/main/main.tscn") as PackedScene
 	var main := scene.instantiate()
 	root.add_child(main)
+	main.set_process(false)
+	main.autosave_timer.stop()
 	await process_frame
 
 	assert(main.theme != null)
@@ -72,6 +74,26 @@ func _run() -> void:
 	var info := main.get_node("Layout/Body/Sidebar/Margin/Scroll/Info")
 	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = window_size
+		await process_frame
+		await process_frame
+		var header: Control = main.get_node("Layout/Header")
+		var nav: Control = main.get_node("Layout/Body/BottomNav")
+		var bounds := Rect2(Vector2.ZERO, main.size)
+		assert(bounds.encloses(header.get_global_rect()))
+		assert(bounds.encloses(nav.get_global_rect()))
+		assert(header.size.y <= 82.0 and nav.size.y <= 76.0)
+		assert(is_equal_approx(nav.get_global_rect().get_center().x, main.size.x * 0.5))
+		assert(header.get_global_rect().end.y < sidebar.get_global_rect().position.y)
+		assert(sidebar.get_global_rect().end.y < nav.get_global_rect().position.y)
+		# 缩减HUD不能裁掉资源文字、图标或遮住主殿脚点。
+		for resource_name: String in ["Wood", "SpiritStone", "Food", "Disciples"]:
+			var button: Button = main.get_node("%%%s" % resource_name)
+			assert(header.get_global_rect().encloses(button.get_global_rect()))
+			var text_width := button.get_theme_font("font").get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, button.get_theme_font_size("font_size")).x
+			assert(text_width + button.get_theme_constant("icon_max_width") + 20.0 <= button.size.x)
+		var hall_anchor: Vector2 = map._cell_to_screen(Vector2i(4, 3), map._map_origin()) + map.global_position
+		assert(not header.get_global_rect().has_point(hall_anchor))
+		assert(not nav.get_global_rect().has_point(hall_anchor))
 		for module_case: Array in module_cases:
 			main._close_management_panel()
 			main.get_node("%" + module_case[0]).pressed.emit()

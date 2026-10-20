@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/world/sect_map.gd" id="2_map"]
@@ -42,6 +42,10 @@ region = Rect2(428, 816, 428, 409)
 atlas = ExtResource("5_icons")
 region = Rect2(856, 816, 428, 409)
 
+[sub_resource type="StyleBoxEmpty" id="ResourceFlat"]
+content_margin_left = 8.0
+content_margin_right = 8.0
+
 [node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -75,33 +79,35 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 20.0
+offset_top = 12.0
 offset_right = -24.0
-offset_bottom = 112.0
+offset_bottom = 84.0
 grow_horizontal = 2
 
 [node name="Margin" type="MarginContainer" parent="Layout/Header"]
 layout_mode = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 28
-theme_override_constants/margin_bottom = 14
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 8
 
 [node name="Row" type="HBoxContainer" parent="Layout/Header/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 
 [node name="Brand" type="VBoxContainer" parent="Layout/Header/Margin/Row"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
+alignment = 1
 
 [node name="Title" type="Label" parent="Layout/Header/Margin/Row/Brand"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.94, 0.83, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 text = "青云宗"
 
 [node name="Subtitle" type="Label" parent="Layout/Header/Margin/Row/Brand"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.67, 0.61, 1)
 theme_override_font_sizes/font_size = 14
@@ -111,57 +117,65 @@ text = "V0.8 开发中 · 美术与UI定稿"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
-alignment = 2
+alignment = 1
 
 [node name="Wood" type="Button" parent="Layout/Header/Margin/Row/Resources"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 58)
+custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 mouse_filter = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("ResourceFlat")
+theme_override_styles/disabled = SubResource("ResourceFlat")
 icon = SubResource("AtlasTexture_wood")
 expand_icon = true
-icon_max_width = 44
+theme_override_constants/icon_max_width = 32
 text = "木材  0"
 alignment = 0
 
 [node name="SpiritStone" type="Button" parent="Layout/Header/Margin/Row/Resources"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 58)
+custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 mouse_filter = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("ResourceFlat")
+theme_override_styles/disabled = SubResource("ResourceFlat")
 icon = SubResource("AtlasTexture_stone")
 expand_icon = true
-icon_max_width = 44
+theme_override_constants/icon_max_width = 32
 text = "灵石  0"
 alignment = 0
 
 [node name="Food" type="Button" parent="Layout/Header/Margin/Row/Resources"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 58)
+custom_minimum_size = Vector2(380, 44)
 layout_mode = 2
 mouse_filter = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("ResourceFlat")
+theme_override_styles/disabled = SubResource("ResourceFlat")
 icon = SubResource("AtlasTexture_food")
 expand_icon = true
-icon_max_width = 44
+theme_override_constants/icon_max_width = 32
 text = "灵谷  0"
 alignment = 0
 
 [node name="Disciples" type="Button" parent="Layout/Header/Margin/Row/Resources"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 58)
+custom_minimum_size = Vector2(260, 44)
 layout_mode = 2
 mouse_filter = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("ResourceFlat")
+theme_override_styles/disabled = SubResource("ResourceFlat")
 icon = SubResource("AtlasTexture_disciple")
 expand_icon = true
-icon_max_width = 44
+theme_override_constants/icon_max_width = 32
 text = "弟子  0/0"
 alignment = 0
 
@@ -229,9 +243,9 @@ anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -576.0
-offset_top = 128.0
+offset_top = 100.0
 offset_right = -24.0
-offset_bottom = -116.0
+offset_bottom = -104.0
 grow_horizontal = 0
 grow_vertical = 2
 
@@ -949,22 +963,23 @@ autowrap_mode = 2
 [node name="BottomNav" type="PanelContainer" parent="Layout/Body"]
 z_index = 20
 layout_mode = 1
-anchors_preset = 12
-anchor_right = 1.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 440.0
-offset_top = -102.0
-offset_right = -440.0
-offset_bottom = -20.0
+offset_left = -430.0
+offset_top = -88.0
+offset_right = 430.0
+offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 0
 
 [node name="Margin" type="MarginContainer" parent="Layout/Body/BottomNav"]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
+theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_bottom = 6
 
 [node name="Buttons" type="HBoxContainer" parent="Layout/Body/BottomNav/Margin"]
 layout_mode = 2
@@ -972,57 +987,57 @@ theme_override_constants/separation = 8
 
 [node name="OpenSectPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 64)
+custom_minimum_size = Vector2(150, 54)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 icon = SubResource("AtlasTexture_sect")
 expand_icon = true
-icon_max_width = 48
+theme_override_constants/icon_max_width = 36
 text = "宗门"
 
 [node name="OpenBuildPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 64)
+custom_minimum_size = Vector2(150, 54)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 icon = SubResource("AtlasTexture_build")
 expand_icon = true
-icon_max_width = 48
+theme_override_constants/icon_max_width = 36
 text = "建设"
 
 [node name="OpenDisciplesPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 64)
+custom_minimum_size = Vector2(150, 54)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 icon = SubResource("AtlasTexture_disciple")
 expand_icon = true
-icon_max_width = 48
+theme_override_constants/icon_max_width = 36
 text = "弟子"
 
 [node name="OpenGrowthPanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 64)
+custom_minimum_size = Vector2(150, 54)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 icon = SubResource("AtlasTexture_growth")
 expand_icon = true
-icon_max_width = 48
+theme_override_constants/icon_max_width = 36
 text = "养成"
 
 [node name="OpenBattlePanelButton" type="Button" parent="Layout/Body/BottomNav/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 64)
+custom_minimum_size = Vector2(150, 54)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 icon = SubResource("AtlasTexture_battle")
 expand_icon = true
-icon_max_width = 48
+theme_override_constants/icon_max_width = 36
 text = "挂机"
 
 [node name="AutosaveTimer" type="Timer" parent="."]

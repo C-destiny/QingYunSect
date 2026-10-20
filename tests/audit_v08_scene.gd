@@ -15,7 +15,7 @@ func _capture(main: Control, map: Control, window_size: Vector2i, mode: String) 
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "%s/stage5-%s-%dx%d.png" % [
+	var filename := "%s/stage6-%s-%dx%d.png" % [
 		OUTPUT_DIRECTORY, mode, window_size.x, window_size.y,
 	]
 	assert(root.get_texture().get_image().save_png(filename) == OK)
@@ -68,6 +68,12 @@ func _run() -> void:
 		map.hovered_cell = QUARTERS_CELL
 		map.queue_redraw()
 		await _capture(main, map, window_size, "neighbor-selected")
+	map.cancel_placement()
+	for module_case: Array in [["sect", main.sect_heading], ["build", main.management_heading], ["disciples", main.disciples_heading], ["growth", main.growth_heading], ["battle", main.battle_heading]]:
+		main._open_management_panel(module_case[1])
+		for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+			await _capture(main, map, window_size, "panel-" + module_case[0])
+	main._close_management_panel()
 	# 生命周期预览使用另一处合法空格，原(3,3)夹具保留，确保基线对照不移动旧建筑。
 	state.resources["wood"] = 1000
 	state.resources["spirit_stone"] = 1000

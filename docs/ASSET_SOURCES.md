@@ -33,3 +33,7 @@
 ## 2026-10-20 阶段5实际渲染记录
 
 docs/art/v08-scene-stage5-normal.png、v08-scene-stage5-occupied.png由本项目Godot隔离图形夹具生成，用于内部开发前后对照，底层素材授权沿用本文件原记录；不是新生成概念图。其他24张运行截图位于忽略的builds/v08-scene-audit。
+
+## 2026-10-20 阶段6运行截图
+
+docs/art/v08-scene-stage6-normal.png、v08-scene-stage6-panel-build.png由本项目Godot隔离图形夹具生成，用于内部开发对照。底层素材沿用既有来源记录，本轮没有新素材或AI生成图。
