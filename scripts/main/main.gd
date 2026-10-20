@@ -131,6 +131,7 @@ const MANAGEMENT_SECTIONS := {
 
 
 func _ready() -> void:
+	preload("res://scripts/ui/hud_styling.gd").apply(self)
 	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
 	var visual_demo := full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
@@ -550,6 +551,10 @@ func _open_management_panel(target: Control = null) -> void:
 	)
 	management_sidebar.get_node("PanelTitle").text = module_name + "管理"
 	management_sidebar.visible = true
+	for button: Button in [open_sect_panel_button, open_build_panel_button, open_disciples_panel_button, open_growth_panel_button, open_battle_panel_button]:
+		button.active = button.caption == module_name
+		if button.active:
+			button.grab_focus()
 	close_management_button.visible = true
 	current_sidebar_target = target if is_instance_valid(target) else sect_heading
 	sidebar_scroll.scroll_vertical = 0
@@ -571,6 +576,8 @@ func _request_close_management_panel() -> void:
 
 func _close_management_panel() -> void:
 	management_sidebar.visible = false
+	for button: Button in [open_sect_panel_button, open_build_panel_button, open_disciples_panel_button, open_growth_panel_button, open_battle_panel_button]:
+		button.active = false
 	close_management_button.visible = false
 	current_sidebar_target = null
 	open_sect_panel_button.grab_focus()
@@ -1373,4 +1380,5 @@ func _refresh_building_card() -> void:
 	var map_offset: Vector2 = sect_map.global_position - global_position
 	var ground: Vector2 = sect_map._cell_to_screen(cell, sect_map._map_origin()) + map_offset
 	var visual_rect: Rect2 = sect_map.get_grounded_rect(ground, profile) if card_is_hall else Rect2(building_visual_rect.position + map_offset, building_visual_rect.size)
-	building_card.place_near(visual_rect, Rect2(Vector2(24, 104), size - Vector2(48, 214)))
+	var nav_top: float = $Layout/Body/BottomNav.global_position.y - global_position.y
+	building_card.place_near(visual_rect, Rect2(Vector2(24, 104), Vector2(size.x - 48, nav_top - 120)))

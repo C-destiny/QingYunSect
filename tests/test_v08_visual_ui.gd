@@ -48,7 +48,7 @@ func _run() -> void:
 		"OpenBattlePanelButton",
 	]:
 		var nav_button := main.get_node("%%%s" % button_name) as Button
-		assert(nav_button != null and nav_button.icon != null)
+		assert(nav_button != null and nav_button.symbol != null and not nav_button.caption.is_empty())
 	main._open_management_panel(main.get_node("%RosterHeading"))
 	await process_frame
 	await process_frame
@@ -61,8 +61,11 @@ func _run() -> void:
 	main.get_node("%OpenBuildPanelButton").pressed.emit()
 	await process_frame
 	assert(sidebar.visible)
+	assert(main.get_node("%OpenBuildPanelButton").active)
+	assert(not main.get_node("%OpenBattlePanelButton").active)
 	main.get_node("%OpenBuildPanelButton").pressed.emit()
 	assert(not sidebar.visible)
+	assert(not main.get_node("%OpenBuildPanelButton").active)
 	# 每个入口只能显示该分类，数据刷新不得重新暴露其他分类内容。
 	var module_cases := [
 		["OpenSectPanelButton", "SectSection", "宗门管理"],
@@ -81,7 +84,7 @@ func _run() -> void:
 		var bounds := Rect2(Vector2.ZERO, main.size)
 		assert(bounds.encloses(header.get_global_rect()))
 		assert(bounds.encloses(nav.get_global_rect()))
-		assert(header.size.y <= 82.0 and nav.size.y <= 76.0)
+		assert(header.size.y <= 82.0 and nav.size.y <= 156.0)
 		assert(is_equal_approx(nav.get_global_rect().get_center().x, main.size.x * 0.5))
 		assert(header.get_global_rect().end.y < sidebar.get_global_rect().position.y)
 		assert(sidebar.get_global_rect().end.y < nav.get_global_rect().position.y)

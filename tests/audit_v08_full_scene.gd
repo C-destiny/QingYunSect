@@ -7,7 +7,7 @@ func _capture(main: Control, mode: String) -> void:
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var path := "res://builds/v08-scene-audit/full4-%s-%dx%d.png" % [mode, root.size.x, root.size.y]
+	var path := "res://builds/v08-scene-audit/hud5-%s-%dx%d.png" % [mode, root.size.x, root.size.y]
 	assert(root.get_texture().get_image().save_png(path) == OK)
 
 func _run() -> void:
@@ -38,6 +38,9 @@ func _run() -> void:
 			main._on_building_selected(building)
 			await _capture(main, "card-" + String(building["type"]))
 			main._dismiss_building_card()
+		main._navigate_sidebar(main.management_heading)
+		await _capture(main, "drawer-build")
+		main._close_management_panel()
 	main.queue_free()
 	await process_frame
 	print("PASS: full-map isolated seven-building scene, previews and cards captured; visual acceptance remains with owner")

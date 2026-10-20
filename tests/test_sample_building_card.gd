@@ -57,6 +57,7 @@ func _run() -> void:
 			assert(main.building_card.visible and not main.management_sidebar.visible)
 			var card_rect: Rect2 = main.building_card.get_global_rect()
 			assert(Rect2(Vector2.ZERO, main.size).encloses(card_rect))
+			assert(not card_rect.intersects(main.get_node("Layout/Body/BottomNav").get_global_rect()))
 			var cell := Vector2i(building["cell_x"], building["cell_y"])
 			var visual_rect: Rect2 = map.get_grounded_rect(map._cell_to_screen(cell, map._map_origin()) + map.global_position, map.QUARTERS_VISUAL)
 			assert(not card_rect.intersects(visual_rect))
