@@ -1,21 +1,27 @@
 extends Control
 
+const SectProjectionData = preload("res://scripts/world/sect_projection.gd")
+
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
+const GARDEN_POND: Texture2D = preload("res://assets/environment/hall-garden-pond.png")
 const QUARTERS_SAMPLE: Texture2D = preload("res://assets/buildings/disciple-quarters-sample.png")
 const MAIN_HALL_SAMPLE: Texture2D = preload("res://assets/buildings/main-hall-sample.png")
 const MAP_BACKDROP: Texture2D = preload("res://assets/environment/sect_floating_mountain.png")
 const BUILDING_ATLAS: Texture2D = preload("res://assets/buildings/sect_buildings_atlas.png")
 const LANDMARK_ATLAS: Texture2D = preload("res://assets/environment/sect_landmarks_atlas.png")
 
+signal hall_selected
 signal resource_selected(resource_data: Dictionary)
 signal placement_requested(building_type: StringName, cell: Vector2i)
 signal building_selected(building: Dictionary)
 signal region_selected(region_id: StringName)
 
-const GRID_SIZE := TerritoryCatalogData.MAP_SIZE
-const TILE_SIZE := Vector2(104.0, 52.0)
-const MAIN_HALL_CELL := Vector2i(4, 3)
+var GRID_SIZE: Vector2i:
+	get:
+		return TerritoryCatalogData.MAP_SIZE
+const TILE_SIZE := SectProjectionData.TILE_SIZE
+const MAIN_HALL_CELL := SectProjectionData.MAIN_HALL_CELL
 const TILE_COLOR_A := Color(0.78, 0.88, 0.7, 0.17)
 const TILE_COLOR_B := Color(0.62, 0.78, 0.66, 0.12)
 const TILE_OUTLINE := Color(0.86, 0.9, 0.72, 0.48)
@@ -84,6 +90,7 @@ func _draw() -> void:
 
 
 func _draw_ground_layer(origin: Vector2) -> void:
+	_draw_sample_garden(origin)
 	if not is_grid_visible():
 		_draw_locked_regions(origin)
 		_draw_hall_plaza(origin)
@@ -350,6 +357,16 @@ func _gui_input(event: InputEvent) -> void:
 				accept_event()
 				return
 
+		if placement_building == &"" and (clicked_cell == MAIN_HALL_CELL or not _is_hall_occluding_active_building(_map_origin())):
+			var hall_rect := get_grounded_rect(_cell_to_screen(MAIN_HALL_CELL, _map_origin()), MAIN_HALL_VISUAL)
+			if clicked_cell == MAIN_HALL_CELL or _is_sprite_hit(MAIN_HALL_SAMPLE,
+				Rect2(Vector2.ZERO, MAIN_HALL_SAMPLE.get_size()), hall_rect, event.position):
+				selected_cell = MAIN_HALL_CELL
+				hall_selected.emit()
+				queue_redraw()
+				accept_event()
+				return
+
 
 func _is_sprite_hit(texture: Texture2D, source_rect: Rect2, destination: Rect2, point: Vector2) -> bool:
 	if not destination.has_point(point):
@@ -442,17 +459,11 @@ func _map_origin() -> Vector2:
 
 
 func _cell_to_screen(cell: Vector2i, origin: Vector2) -> Vector2:
-	return origin + Vector2(float(cell.x - cell.y) * TILE_SIZE.x * 0.5, float(cell.x + cell.y) * TILE_SIZE.y * 0.5)
+	return SectProjectionData.project(cell, origin)
 
 
 func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:
-	var local := screen_position - origin
-	var grid_x := local.x / TILE_SIZE.x + local.y / TILE_SIZE.y
-	var grid_y := local.y / TILE_SIZE.y - local.x / TILE_SIZE.x
-	var cell := Vector2i(floori(grid_x + 0.5), floori(grid_y + 0.5))
-	if cell.x < 0 or cell.y < 0 or cell.x >= GRID_SIZE.x or cell.y >= GRID_SIZE.y:
-		return Vector2i(-1, -1)
-	return cell
+	return SectProjectionData.unproject(screen_position, origin, TerritoryCatalogData.get_map_bounds())
 
 
 func _draw_main_hall(origin: Vector2) -> void:
@@ -550,6 +561,11 @@ func _draw_building_status(building: Dictionary, origin: Vector2) -> void:
 	var level := int(building.get("level", 1))
 	var completed := bool(building["completed"])
 	var name_text: String = definition["name"]
+	# 完工且被主殿遮住的旧建筑平时不隔着屋顶显示标签；悬停/选中仍透显并保留信息。
+	var hall_rect := get_grounded_rect(_cell_to_screen(MAIN_HALL_CELL, origin), MAIN_HALL_VISUAL)
+	if completed and cell.x + cell.y <= MAIN_HALL_CELL.x + MAIN_HALL_CELL.y and hall_rect.has_point(center):
+		if cell != selected_cell and cell != hovered_cell:
+			return
 	_draw_map_label(center + Vector2(0, 29), "%s Lv.%d" % [name_text, level], 102, 14)
 	if cell == selected_cell:
 		draw_arc(center + Vector2(0, 2), 46.0, 0.0, TAU, 40, SELECTED_OUTLINE, 3.0, true)
@@ -699,3 +715,13 @@ func _draw_placement_preview(origin: Vector2) -> void:
 	# 提示始终位于地图安全范围，越界时跟随鼠标位置，不用无效格坐标投影。
 	var label_center := Vector2(clampf(center.x, 158.0, size.x - 158.0), clampf(center.y - 42.0, 150.0, size.y - 130.0))
 	_draw_map_label(label_center, status, 304, 18)
+
+
+func _draw_sample_garden(origin: Vector2) -> void:
+	# 样板地景只画在建筑/网格下，不加入占地或交互集合，满图旧档仍可正常使用。
+	var hall := _cell_to_screen(MAIN_HALL_CELL, origin)
+	var pond := hall + Vector2(-195, 105)
+	draw_texture_rect(GARDEN_POND, Rect2(pond - Vector2(115, 69), Vector2(230, 138)), false)
+	var end := hall + Vector2(50, 120)
+	draw_colored_polygon(PackedVector2Array([hall + Vector2(-23, 16), hall + Vector2(23, 16),
+		end + Vector2(23, 0), end - Vector2(23, 0)]), Color(0.94, 0.91, 0.82, 0.30))

@@ -1,7 +1,6 @@
 class_name TerritoryCatalog
 extends RefCounted
 
-const MAP_SIZE := Vector2i(12, 8)
 const REGION_IDS := [&"core", &"east", &"south"]
 
 const REGIONS := {
@@ -30,6 +29,10 @@ const REGIONS := {
 		"requires": &"east",
 	},
 }
+
+
+# 范围由区域配置生成；新增区域时不再另改地图宽高。
+static var MAP_SIZE: Vector2i = get_map_bounds().size
 
 
 static func get_data(region_id: StringName) -> Dictionary:
@@ -82,3 +85,14 @@ static func normalize_unlocked_regions(raw_regions: Variant) -> Array[String]:
 			return []
 		normalized.append(String(region_id))
 	return normalized
+
+
+# 区域数据是未来扩图入口；边界由区域并集推导，不让投影自行硬编码12/8。
+# 本版本配置保持core/east/south及12×8，扩区仍需审批、配图和旧档验证。
+static func get_map_bounds() -> Rect2i:
+	var bounds := Rect2i(Vector2i.ZERO, Vector2i.ZERO)
+	for region_id: StringName in REGION_IDS:
+		var region := get_data(region_id)
+		var region_rect := Rect2i(region["origin"], region["size"])
+		bounds = region_rect if not bounds.has_area() else bounds.merge(region_rect)
+	return bounds

@@ -15,7 +15,7 @@ func _capture(main: Control, map: Control, window_size: Vector2i, mode: String) 
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "%s/stage6-%s-%dx%d.png" % [
+	var filename := "%s/sample1-%s-%dx%d.png" % [
 		OUTPUT_DIRECTORY, mode, window_size.x, window_size.y,
 	]
 	assert(root.get_texture().get_image().save_png(filename) == OK)
@@ -40,6 +40,9 @@ func _run() -> void:
 	assert(state.start_construction(&"disciple_quarters", QUARTERS_CELL))
 	state.process_construction(float(BuildingCatalog.get_data(&"disciple_quarters")["build_time"]))
 	assert(bool(state.buildings[0]["completed"]))
+	# 独立侧翼仅为隔离演示夹具，新增实例不写入正式玩家存档。
+	assert(state.start_construction(&"disciple_quarters", Vector2i(1, 5)))
+	state.process_construction(float(BuildingCatalog.get_data(&"disciple_quarters")["build_time"]))
 	assert(map.GRID_SIZE == Vector2i(12, 8))
 	assert(map.TILE_SIZE == Vector2(104, 52))
 	assert(state.is_cell_occupied(Vector2i(4, 3)))
@@ -74,6 +77,15 @@ func _run() -> void:
 		for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 			await _capture(main, map, window_size, "panel-" + module_case[0])
 	main._close_management_panel()
+	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+		map.cancel_placement()
+		main._on_building_selected(state.buildings[0])
+		await _capture(main, map, window_size, "building-card")
+		main._dismiss_building_card()
+		map.hovered_cell = Vector2i(-1, -1)
+		main._on_hall_selected()
+		await _capture(main, map, window_size, "hall-card")
+		main._dismiss_building_card()
 	# 生命周期预览使用另一处合法空格，原(3,3)夹具保留，确保基线对照不移动旧建筑。
 	state.resources["wood"] = 1000
 	state.resources["spirit_stone"] = 1000

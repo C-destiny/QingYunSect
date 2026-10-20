@@ -41,3 +41,7 @@ docs/art/v08-scene-stage6-normal.png、v08-scene-stage6-panel-build.png由本项
 ## 2026-10-20 布局提案A示意图
 
 docs/art/v08-layout-proposal-a.png：由tools/draw_layout_proposal.py自绘矢量地形/道路/界面并编排既有主殿、弟子居与七建筑图集，Edge本地渲染，用于布局讨论。既有建筑素材来源及使用条件沿用上文记录；本轮无新外部素材，无新AI图（ImageGen连接失败）。图并非运行截图，不是可直接切割接入的环境资产；地图尺寸与示例内容未接入游戏。
+
+## 2026-10-20 主殿局部山石池水
+
+assets/environment/hall-garden-pond.png：内置ImageGen生成，1619×971/1473569字节，SHA-256 5C3173E7823482F74FF87CDDBE874307EDE371121D39BF90CB5376941AB898BA；完整提示词与项目使用范围见assets/environment/HALL_GARDEN_POND.md。仅作地面装饰，不占地，不是资源点。未使用外部抓取图片、不宣称独占版权。docs/art/v08-hall-sample1-normal.png与v08-hall-sample1-card.png为隔离Godot实际运行截图，底层素材沿用项目来源记录，演示建筑不进入正式存档。

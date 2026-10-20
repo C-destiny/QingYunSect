@@ -94,6 +94,9 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var offline_summary_dialog: AcceptDialog = %OfflineSummaryDialog
 @onready var offline_summary_text: Label = %OfflineSummaryText
 
+var building_card: Control
+var card_is_hall := false
+
 var selected_resource: Dictionary = {}
 var selected_building: StringName = &""
 var build_buttons: Dictionary = {}
@@ -128,6 +131,17 @@ const MANAGEMENT_SECTIONS := {
 
 
 func _ready() -> void:
+	var visual_demo := "--visual-sample" in OS.get_cmdline_user_args()
+	if visual_demo:
+		# 必须在首次has_save/load之前切换路径；演示模式不读取或覆盖正式玩家存档。
+		SaveManager.save_path = "user://v08_hall_visual_demo.json"
+	building_card = preload("res://scripts/ui/building_card.gd").new()
+	add_child(building_card)
+	building_card.close_requested.connect(_dismiss_building_card)
+	building_card.manage_requested.connect(_manage_card_selection)
+	building_card.upgrade_requested.connect(_upgrade_card_selection)
+	resized.connect(_refresh_building_card)
+	sect_map.hall_selected.connect(_on_hall_selected)
 	GameState.resources_changed.connect(_refresh_resources)
 	GameState.assignments_changed.connect(_refresh_assignment)
 	GameState.buildings_changed.connect(_refresh_buildings)
@@ -227,8 +241,15 @@ func _ready() -> void:
 	for quality: StringName in GameState.EQUIPMENT_QUALITY_IDS:
 		craft_quality_selector.add_item(str(EquipmentCatalogData.QUALITIES[String(quality)]["name"]))
 		craft_quality_selector.set_item_metadata(craft_quality_selector.item_count - 1, String(quality))
-	if SaveManager.has_save():
+	if not visual_demo and SaveManager.has_save():
 		SaveManager.load_game()
+	if visual_demo:
+		for cell: Vector2i in [Vector2i(3, 3), Vector2i(1, 5)]:
+			GameState.start_construction(&"disciple_quarters", cell)
+		GameState.process_construction(20)
+		autosave_timer.stop()
+		save_status.text = "独立演示存档"
+		print("VISUAL_SAMPLE: isolated demo path; buildings=%d; formal save not loaded" % GameState.buildings.size())
 	_refresh_resources()
 	_refresh_assignment()
 	_refresh_buildings()
@@ -244,6 +265,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_refresh_building_card()
 	for resource_data: Dictionary in sect_map.resource_nodes:
 		GameState.process_production(
 			resource_data["site_id"],
@@ -287,6 +309,7 @@ func _refresh_resources() -> void:
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
+	building_card.hide()
 	selected_resource = resource_data
 	selected_building_instance = 0
 	_open_management_panel(sect_heading)
@@ -308,13 +331,18 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 func _on_building_selected(building: Dictionary) -> void:
 	selected_resource = {}
 	selected_building_instance = int(building.get("instance_id", 0))
-	_open_management_panel(management_heading)
+	sect_map.selected_cell = Vector2i(building["cell_x"], building["cell_y"])
+	sect_map.queue_redraw()
+	card_is_hall = false
+	_close_management_panel()
 	assignment_status.visible = false
 	production_status.visible = false
 	assign_button.visible = false
 	unassign_button.visible = false
 	building_actions.visible = true
 	_refresh_selected_building()
+	building_card.show()
+	_refresh_building_card()
 
 
 func _refresh_selected_building() -> void:
@@ -498,6 +526,7 @@ func _navigate_sidebar(target: Control) -> void:
 
 
 func _open_management_panel(target: Control = null) -> void:
+	building_card.hide()
 	var module_name := "宗门"
 	if target == management_heading:
 		module_name = "建设"
@@ -544,6 +573,10 @@ func _close_management_panel() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and building_card.visible:
+		_dismiss_building_card()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel") and management_sidebar.visible:
 		_close_management_panel()
 		get_viewport().set_input_as_handled()
@@ -1226,6 +1259,8 @@ func _refresh_recruitment() -> void:
 
 
 func _start_building_placement(building_id: StringName) -> void:
+	building_card.hide()
+	_close_management_panel()
 	var definition := BuildingCatalog.get_data(building_id)
 	if not GameState.can_afford(definition["cost"]):
 		placement_status.text = "资源不足：%s" % BuildingCatalog.get_cost_text(building_id)
@@ -1273,3 +1308,62 @@ func _refresh_buildings() -> void:
 	elif upgrading > 0 and selected_building == &"":
 		placement_status.text = "升级中：%d 座建筑" % upgrading
 
+
+
+func _on_hall_selected() -> void:
+	sect_map.selected_cell = sect_map.MAIN_HALL_CELL
+	sect_map.queue_redraw()
+	_close_management_panel()
+	card_is_hall = true
+	selected_building_instance = 0
+	building_card.show()
+	_refresh_building_card()
+
+
+func _dismiss_building_card() -> void:
+	building_card.hide()
+	sect_map.clear_selection()
+
+
+func _manage_card_selection() -> void:
+	_open_management_panel(sect_heading if card_is_hall else management_heading)
+
+
+func _upgrade_card_selection() -> void:
+	if card_is_hall:
+		_upgrade_sect()
+	else:
+		_upgrade_selected_building()
+	_refresh_building_card()
+
+
+func _refresh_building_card() -> void:
+	if not is_instance_valid(building_card) or not building_card.visible:
+		return
+	var cell: Vector2i = sect_map.MAIN_HALL_CELL
+	var profile: Dictionary = sect_map.MAIN_HALL_VISUAL
+	if card_is_hall:
+		building_card.title_label.text = "宗门主殿 · Lv.%d" % GameState.sect_level
+		building_card.status_label.text = sect_level_status.text + "\n固定主殿 · 宗门事务请进入详细管理"
+		building_card.upgrade_button.text = "晋升宗门"
+		building_card.upgrade_button.disabled = not GameState.can_upgrade_sect()
+	else:
+		var building: Dictionary = GameState.get_building(selected_building_instance)
+		if building.is_empty():
+			_dismiss_building_card()
+			return
+		var kind := StringName(building["type"])
+		cell = Vector2i(building["cell_x"], building["cell_y"])
+		profile = sect_map.QUARTERS_VISUAL if kind == &"disciple_quarters" else sect_map.BUILDING_VISUAL
+		building_card.title_label.text = "%s · Lv.%d" % [BuildingCatalog.get_data(kind)["name"], int(building["level"])]
+		var status := "已完工"
+		if not bool(building["completed"]):
+			status = "施工中 · %.1f秒" % float(building["remaining"])
+		elif bool(building.get("upgrading", false)):
+			status = "升级中 · %.1f秒" % float(building["upgrade_remaining"])
+		building_card.status_label.text = status + "\n" + _get_building_total_effect_text(kind)
+		building_card.upgrade_button.text = upgrade_button.text
+		building_card.upgrade_button.disabled = not GameState.can_upgrade_building(selected_building_instance)
+	var ground: Vector2 = sect_map._cell_to_screen(cell, sect_map._map_origin()) + sect_map.position + $Layout/Body/MapPanel.position
+	var visual_rect: Rect2 = sect_map.get_grounded_rect(ground, profile)
+	building_card.place_near(visual_rect, Rect2(Vector2(24, 104), size - Vector2(48, 214)))

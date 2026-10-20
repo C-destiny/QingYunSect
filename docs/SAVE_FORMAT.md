@@ -47,3 +47,7 @@ QYS-V07-007在version 3内增加可选claimed_development_goals字段；只接�
 - V0.3战斗中、胜利等待、停止状态分别迁移；结算ID缺失时按BATTLE_REWARD_SETTLEMENT.md生成默认值。
 
 专项测试使用res://tests下的合成存档，覆盖往返、V0.3三类战斗状态、较早聚合弟子数据、损坏JSON、错误容器、无效队伍、矛盾战斗状态、重复读取、临时文件清理与备份恢复，不覆盖user://savegame.json。
+
+## V0.8视觉整改局部样板
+
+投影/边界推导/建筑卡/池水均不增加存档字段，version 3及旧建筑身份/位置保持。仅显式--visual-sample参数会在首次has_save前切换到user://v08_hall_visual_demo.json，预置2栋演示建筑且不读正式savegame.json；普通启动不添加示例。后续真正扩区仍须对区域ID、解锁默认值与旧档校验另作兼容验证，本轮没有放宽未知区域拒绝规则。
