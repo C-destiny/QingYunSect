@@ -54,6 +54,8 @@ QYS-V07-007在version 3内增加可选claimed_development_goals字段；只接�
 
 ## V0.8视觉整改局部样板
 
+2026-10-21地基整改候选8：--courtyard-demo沿用独立user://v08_courtyard_visual_demo.json，仅该入口启用新连续地形；地面/外缘/装饰开关为运行时状态，不增加version3字段、不改变旧档身份/坐标/等级/资源。test_courtyard_fusion.gd检查渲染前后状态不变与隔离存档往返；普通和全图入口未推广新地形。
+
 投影/边界推导/建筑卡/池水均不增加存档字段，version 3及旧建筑身份/位置保持。仅显式--visual-sample参数会在首次has_save前切换到user://v08_hall_visual_demo.json，预置2栋演示建筑且不读正式savegame.json；普通启动不添加示例。后续真正扩区仍须对区域ID、解锁默认值与旧档校验另作兼容验证，本轮没有放宽未知区域拒绝规则。
 
 V0.8全图推广：--full-scene-demo使用独立user://v08_full_visual_demo.json，七类建筑预置只用于演示；普通启动不调用visual_demo.populate_full_scene。贴图/脚点/影子/预览/景观让位均为渲染状态，不进入version 3字段；七类完整状态往返与原身份/坐标由test_full_scene_visuals.gd验证。

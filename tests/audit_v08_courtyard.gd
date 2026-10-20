@@ -7,7 +7,7 @@ func _capture(mode: String) -> void:
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	assert(root.get_texture().get_image().save_png("res://builds/v08-scene-audit/fusion7-%s-%dx%d.png" % [mode, root.size.x, root.size.y]) == OK)
+	assert(root.get_texture().get_image().save_png("res://builds/v08-scene-audit/terrain8-%s-%dx%d.png" % [mode, root.size.x, root.size.y]) == OK)
 
 func _run() -> void:
 	root.get_node("SaveManager").save_path = "res://tests/.test_courtyard_audit.json"
@@ -15,6 +15,7 @@ func _run() -> void:
 	root.add_child(main)
 	main.set_process(false)
 	main.autosave_timer.stop()
+	main.sect_map.structured_terrain = true
 	var state := root.get_node("GameState")
 	assert(preload("res://scripts/world/courtyard_demo.gd").populate(state))
 	main._refresh_resources()

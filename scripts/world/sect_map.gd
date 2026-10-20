@@ -2,7 +2,10 @@ extends Control
 
 const SectProjectionData = preload("res://scripts/world/sect_projection.gd")
 const SceneLayout = preload("res://scripts/world/sect_scene_layout.gd")
-const CourtyardFusion = preload("res://scripts/world/courtyard_fusion.gd")
+const TerrainSurface = preload("res://scripts/world/sect_terrain_surface.gd")
+const DISTANT_CLOUDS: Texture2D = preload("res://assets/environment/sect_cloud_distance.png")
+const TERRAIN_PAVING: Texture2D = preload("res://assets/environment/sect_limestone_paving.png")
+const TERRAIN_CLIFF: Texture2D = preload("res://assets/environment/sect_cliff_material.png")
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
@@ -72,6 +75,7 @@ var placement_building: StringName = &""
 var hit_images: Dictionary = {}
 var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
 var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
+var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
 # 生成图并非均匀四格，按实际透明边界取样，避免把相邻素材带进运行图。
 const COURTYARD_SOURCES := {
 	"hall": Rect2(0, 64, 940, 510), "wing": Rect2(955, 182, 581, 378),
@@ -129,6 +133,8 @@ func _draw_ground_layer(origin: Vector2) -> void:
 
 
 func _draw_building_approaches(origin: Vector2) -> void:
+	if structured_terrain:
+		return # 建筑自带入口直接落在共享地面上，不重复补台阶或小平台。
 	# 短石径随建筑脚点落地，只做地表衔接；不连接成长道路、不加入占地。
 	var wing := get_courtyard_wing(origin) if courtyard_atlas != null else {}
 	for building: Dictionary in GameState.buildings:
@@ -168,61 +174,33 @@ func get_courtyard_wing(origin: Vector2) -> Dictionary:
 
 func get_courtyard_plan(origin: Vector2) -> Dictionary:
 	var wing := get_courtyard_wing(origin)
-	var wing_foot := Vector2.ZERO if wing.is_empty() else _cell_to_screen(Vector2i(wing["cell_x"], wing["cell_y"]), origin)
-	var plan := CourtyardFusion.make_plan(_cell_to_screen(MAIN_HALL_CELL, origin), wing_foot, not wing.is_empty())
+	var plan := TerrainSurface.make_plan(origin)
 	plan["wing_id"] = int(wing.get("instance_id", 0))
 	return plan
 
 
 func _draw_courtyard_ground(origin: Vector2) -> void:
-	if courtyard_atlas == null:
-		return
-	var plan := get_courtyard_plan(origin)
-	var road: PackedVector2Array = plan["road"]
-	for index: int in range(road.size() - 1):
-		# 中段使用背景里连续的石路与主阶，只补两端接缝，避免重复铺装压过园林。
-		if index != 0 and index != road.size() - 2:
-			continue
-		var start := road[index]
-		var finish := road[index + 1]
-		if index == 0:
-			finish = start.move_toward(finish, 64)
-		else:
-			start = finish.move_toward(start, 54)
-		var steps := maxi(1, ceili(start.distance_to(finish) / 24.0))
-		var across := (finish - start).normalized().orthogonal() * 20
-		var uvs := PackedVector2Array([Vector2(220, 278), Vector2(304, 278), Vector2(304, 320), Vector2(220, 320)])
-		for uv_index: int in range(uvs.size()):
-			uvs[uv_index] /= courtyard_atlas.get_size()
-		for step: int in range(steps):
-			var tile_start := start.lerp(finish, float(step) / steps)
-			var tile_end := start.lerp(finish, float(step + 1) / steps)
-			draw_polygon(CourtyardFusion.segment_quad(tile_start, tile_end, 42), PackedColorArray([Color(1, 1, 1, 0.46)]), uvs, courtyard_atlas)
-			draw_line(tile_start - across, tile_start + across, Color(0.44, 0.45, 0.38, 0.10), 1, true)
-	if Rect2(plan["stairs"]).has_area():
-		draw_texture_rect_region(courtyard_atlas, plan["stairs"], COURTYARD_SOURCES["stairs"])
-	draw_texture_rect_region(courtyard_atlas, plan["hall_pad"], COURTYARD_SOURCES["hall"])
-	if Rect2(plan["wing_pad"]).has_area():
-		draw_texture_rect_region(courtyard_atlas, plan["wing_pad"], COURTYARD_SOURCES["wing"])
+	if structured_terrain:
+		TerrainSurface.draw_surface(self, origin, TERRAIN_PAVING, TERRAIN_CLIFF)
 
 
 func get_courtyard_foreground(origin: Vector2) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
+	if not structured_terrain:
+		return result
 	var plan := get_courtyard_plan(origin)
 	for entry: Dictionary in plan["foreground"]:
 		var foot: Vector2 = entry["foot"]
 		var width := float(entry["width"])
 		var blocked := false
-		# 只允许遮住所属建筑的低矮台基；别的旧建筑/新建施工进入时装饰退让。
+		# 外缘纯视觉栏杆：任何旧建筑或新施工进入落点时均退让。
 		for building: Dictionary in GameState.buildings:
-			if entry["target"] == "wing" and int(building["instance_id"]) == int(plan["wing_id"]):
-				continue
 			var ground := _cell_to_screen(Vector2i(building["cell_x"], building["cell_y"]), origin)
 			if Rect2(foot - Vector2(width * 0.5, 26), Vector2(width, 52)).has_point(ground):
 				blocked = true
 				break
 		if not blocked:
-			result.append({"kind": "decor", "key": "courtyard:" + String(entry["target"]), "cell": _screen_to_cell(foot, origin),
+			result.append({"kind": "decor", "key": entry["key"], "cell": _screen_to_cell(foot, origin),
 				"depth": (foot.y - origin.y) / (TILE_SIZE.y * 0.5 * SceneLayout.GROUND_SPACING),
 				"rect": Rect2(foot - Vector2(width * 0.5, width * 380.0 / 640.0 * 0.65), Vector2(width, width * 380.0 / 640.0))})
 	return result
@@ -349,6 +327,9 @@ func _draw_interaction_layer(origin: Vector2) -> void:
 
 
 func _draw_backdrop(origin: Vector2) -> void:
+	if structured_terrain:
+		draw_texture_rect(DISTANT_CLOUDS, Rect2(Vector2.ZERO, size), false)
+		return
 	if MAP_BACKDROP != null:
 		draw_texture_rect(MAP_BACKDROP, Rect2(Vector2.ZERO, size), false)
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.5, 0.72, 0.9, 0.04), true)
@@ -587,7 +568,7 @@ func _map_origin() -> Vector2:
 
 
 func _cell_to_screen(cell: Vector2i, origin: Vector2) -> Vector2:
-	return SceneLayout.to_scene(SectProjectionData.project(cell, origin), origin)
+	return SceneLayout.project_continuous(Vector2(cell), origin)
 
 
 func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:

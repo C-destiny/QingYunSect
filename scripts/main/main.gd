@@ -134,6 +134,7 @@ func _ready() -> void:
 	preload("res://scripts/ui/hud_styling.gd").apply(self)
 	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
 	var courtyard_demo := "--courtyard-demo" in OS.get_cmdline_user_args()
+	sect_map.structured_terrain = courtyard_demo
 	var visual_demo := courtyard_demo or full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
 		# 必须在首次has_save/load之前切换路径；演示模式不读取或覆盖正式玩家存档。
