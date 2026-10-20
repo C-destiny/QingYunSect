@@ -2,10 +2,10 @@ extends RefCounted
 
 # 只允许显式演示/隔离测试调用；普通读档不运行、不迁移或补送建筑。
 const PLACEMENTS := {
-	&"disciple_quarters": Vector2i(1, 5), &"lumber_yard": Vector2i(0, 6),
-	&"spirit_mine": Vector2i(8, 4), &"spirit_field": Vector2i(4, 7),
-	&"training_ground": Vector2i(8, 1), &"artifact_forge": Vector2i(10, 5),
-	&"scripture_library": Vector2i(0, 3),
+	&"disciple_quarters": Vector2i(8, 6), &"lumber_yard": Vector2i(2, 7),
+	&"spirit_mine": Vector2i(11, 5), &"spirit_field": Vector2i(6, 7),
+	&"training_ground": Vector2i(10, 2), &"artifact_forge": Vector2i(4, 7),
+	&"scripture_library": Vector2i(0, 7),
 }
 
 static func populate_full_scene(state: Node) -> bool:

@@ -1,13 +1,14 @@
 extends Control
 
 const SectProjectionData = preload("res://scripts/world/sect_projection.gd")
+const SceneLayout = preload("res://scripts/world/sect_scene_layout.gd")
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
 const GARDEN_POND: Texture2D = preload("res://assets/environment/hall-garden-pond.png")
 const QUARTERS_SAMPLE: Texture2D = preload("res://assets/buildings/disciple-quarters-sample.png")
 const MAIN_HALL_SAMPLE: Texture2D = preload("res://assets/buildings/main-hall-sample.png")
-const MAP_BACKDROP: Texture2D = preload("res://assets/environment/sect_floating_mountain.png")
+const MAP_BACKDROP: Texture2D = preload("res://assets/environment/sect_open_terraces.png")
 const BUILDING_ATLAS: Texture2D = preload("res://assets/buildings/sect_buildings_atlas.png")
 const LANDMARK_ATLAS: Texture2D = preload("res://assets/environment/sect_landmarks_atlas.png")
 
@@ -45,7 +46,7 @@ const BUILDING_ATLAS_INDEX := {
 }
 # 脚点为图集格内的归一化地面位置；普通图集沿用原位置，主殿已按独立样板底座校准。
 # 只影响渲染，不作为占地、点击或存档数据；尺寸单位为逻辑像素。
-const MAIN_HALL_VISUAL := {"size": Vector2(330, 330), "foot": Vector2(0.5, 0.82)}
+const MAIN_HALL_VISUAL := {"size": Vector2(390, 390), "foot": Vector2(0.5, 0.82)}
 const QUARTERS_VISUAL := {"size": Vector2(172, 172), "foot": Vector2(0.5, 0.83)}
 const BUILDING_VISUAL := {"size": Vector2(136, 153), "foot": Vector2(0.5, 0.5 + 55.0 / 153.0)}
 const RESOURCE_VISUAL := {"size": Vector2(126, 84), "foot": Vector2(0.5, 0.5 + 41.0 / 84.0)}
@@ -150,10 +151,10 @@ func _draw_locked_regions(origin: Vector2) -> void:
 		var first: Vector2i = region["origin"]
 		var extent: Vector2i = region["size"]
 		var points := PackedVector2Array([
-			_cell_to_screen(first, origin) + Vector2(0, -TILE_SIZE.y * 0.5),
-			_cell_to_screen(first + Vector2i(extent.x - 1, 0), origin) + Vector2(TILE_SIZE.x * 0.5, 0),
-			_cell_to_screen(first + extent - Vector2i.ONE, origin) + Vector2(0, TILE_SIZE.y * 0.5),
-			_cell_to_screen(first + Vector2i(0, extent.y - 1), origin) - Vector2(TILE_SIZE.x * 0.5, 0),
+			_cell_to_screen(first, origin) + Vector2(0, -TILE_SIZE.y * 0.5) * SceneLayout.GROUND_SPACING,
+			_cell_to_screen(first + Vector2i(extent.x - 1, 0), origin) + Vector2(TILE_SIZE.x * 0.5, 0) * SceneLayout.GROUND_SPACING,
+			_cell_to_screen(first + extent - Vector2i.ONE, origin) + Vector2(0, TILE_SIZE.y * 0.5) * SceneLayout.GROUND_SPACING,
+			_cell_to_screen(first + Vector2i(0, extent.y - 1), origin) - Vector2(TILE_SIZE.x * 0.5, 0) * SceneLayout.GROUND_SPACING,
 		])
 		draw_colored_polygon(points, Color(0.72, 0.80, 0.79, 0.12))
 		draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]),
@@ -276,10 +277,10 @@ func _draw_cloud(center: Vector2, scale_value: float, color: Color) -> void:
 
 func _cell_points(center: Vector2) -> PackedVector2Array:
 	return PackedVector2Array([
-		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
-		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
-		center + Vector2(0.0, TILE_SIZE.y * 0.5),
-		center + Vector2(-TILE_SIZE.x * 0.5, 0.0),
+		center + Vector2(0.0, -TILE_SIZE.y * 0.5) * SceneLayout.GROUND_SPACING,
+		center + Vector2(TILE_SIZE.x * 0.5, 0.0) * SceneLayout.GROUND_SPACING,
+		center + Vector2(0.0, TILE_SIZE.y * 0.5) * SceneLayout.GROUND_SPACING,
+		center + Vector2(-TILE_SIZE.x * 0.5, 0.0) * SceneLayout.GROUND_SPACING,
 	])
 
 
@@ -474,15 +475,15 @@ func get_placement_feedback(cell: Vector2i) -> Dictionary:
 
 
 func _map_origin() -> Vector2:
-	return Vector2(size.x * 0.5, maxf(90.0, size.y * 0.18))
+	return SceneLayout.origin(size)
 
 
 func _cell_to_screen(cell: Vector2i, origin: Vector2) -> Vector2:
-	return SectProjectionData.project(cell, origin)
+	return SceneLayout.to_scene(SectProjectionData.project(cell, origin), origin)
 
 
 func _screen_to_cell(screen_position: Vector2, origin: Vector2) -> Vector2i:
-	return SectProjectionData.unproject(screen_position, origin, TerritoryCatalogData.get_map_bounds())
+	return SectProjectionData.unproject(SceneLayout.to_projection(screen_position, origin), origin, TerritoryCatalogData.get_map_bounds())
 
 
 func _draw_main_hall(origin: Vector2) -> void:

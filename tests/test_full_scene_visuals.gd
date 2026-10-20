@@ -57,7 +57,7 @@ func _run() -> void:
 	assert(alternative != first_pond)
 	assert(alternative.has_area())
 	assert(state.export_save_data() == before_garden)
-	assert(state.start_construction(&"disciple_quarters", Vector2i(7, 6)))
+	assert(state.start_construction(&"disciple_quarters", Vector2i(6, 5)))
 	assert(not map.get_garden_rect(map._map_origin()).has_area())
 	state.buildings.clear()
 	# 将全部七类建筑作为有效version 3状态往返，身份/坐标与其余字段必须保持。

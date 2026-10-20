@@ -48,6 +48,8 @@ assets/environment/hall-garden-pond.png：内置ImageGen生成，1619×971/14735
 
 ## 2026-10-20 全图推广建筑图集
 
+开阔台地候选6另使用assets/environment/sect_open_terraces.png，内置ImageGen依据用户最新参考生成环境，不含功能建筑/UI，1672×941/3674565字节，SHA256 797D17B99EA8A1AA5B827BCC6EC4700CAF22685E4A1BF09F6533B3388D5107EA。完整提示词/来源/使用范围见assets/environment/OPEN_TERRACES.md，未宣称独占版权。docs/art/v08-open6-normal.png、v08-open6-preview.png为Godot隔离游戏实际截图，不是生成效果图。
+
 另：HUD候选5使用scripts/ui/hud_symbols.gd内本项目自绘SVG路径，hud_emblem_button.gd/hud_plate.gd绘制底座、金边和阴影；未使用外部素材/字体、未截取用户参考图。图标在运行时栅格化，不写存档。docs/art/v08-hud5-normal.png、v08-hud5-build.png为Godot隔离演示实际截图，其他底层素材沿用既有来源。详见docs/V0.8_HUD5_REVIEW.md。
 
 assets/buildings/sect-buildings-unified.png：内置ImageGen生成，1536×1024，3×2等分的六类既有建筑，2836839字节；SHA-256 D971A224251FCBC23C341F8336795AFB3A739B32BDCB9D0234F32111539D2CCF。完整最终提示词、失败重试与项目使用记录见assets/buildings/UNIFIED_BUILDINGS.md；按工具适用条件用于本游戏，不宣称独占版权，无外部抓取素材。旧图集保留作历史来源，弟子居继续独立已验收样板。docs/art/v08-full2-*.png是Godot隔离演示实际运行截图，不是概念图。
