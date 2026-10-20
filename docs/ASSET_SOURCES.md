@@ -29,3 +29,7 @@
 - assets/buildings/disciple-quarters-sample.png：内置ImageGen文字规格生成的独立透明生活院落，1254×1254，完整提示词/哈希/用途见assets/buildings/DISCIPLE_QUARTERS_SAMPLE.md；本项目建筑视觉用途，不含文字、HUD、背景或新玩法。
 - docs/art/v08-scene-stage4-quarters-{construction,lv1,lv3}.png：Godot真实截图，仅测试与视觉对照；(5,5)额外建筑与1000测试资源只存在于隔离合成夹具。
 - 原建筑图集保留，其他六类尚未推广；样板未获负责人最终视觉验收。
+
+## 2026-10-20 阶段5实际渲染记录
+
+docs/art/v08-scene-stage5-normal.png、v08-scene-stage5-occupied.png由本项目Godot隔离图形夹具生成，用于内部开发前后对照，底层素材授权沿用本文件原记录；不是新生成概念图。其他24张运行截图位于忽略的builds/v08-scene-audit。

@@ -58,6 +58,7 @@ var resource_nodes: Array[Dictionary] = [
 
 var selected_cell := Vector2i(-1, -1)
 var hovered_cell := Vector2i(-1, -1)
+var hovered_position := Vector2.ZERO
 var placement_building: StringName = &""
 # 命中检测缓存解压后的图像；只在鼠标查询时采样，不在每帧重复从GPU读取。
 var hit_images: Dictionary = {}
@@ -83,13 +84,45 @@ func _draw() -> void:
 
 
 func _draw_ground_layer(origin: Vector2) -> void:
+	if not is_grid_visible():
+		_draw_locked_regions(origin)
+		_draw_hall_plaza(origin)
+		return
 	for sum_index: int in range(GRID_SIZE.x + GRID_SIZE.y - 1):
 		for x: int in range(GRID_SIZE.x):
 			var y := sum_index - x
 			if y >= 0 and y < GRID_SIZE.y:
 				_draw_tile(Vector2i(x, y), origin)
-	_draw_region_connections(origin)
+	# 正式底图已有道路，不再叠一套独立菱形石板；无底图时才使用程序道路。
+	if MAP_BACKDROP == null:
+		_draw_region_connections(origin)
 	_draw_hall_plaza(origin)
+
+
+# 无入参，返回是否显示完整建造网格；只读，不改变地图、资源或存档。
+func is_grid_visible() -> bool:
+	return placement_building != &""
+
+
+func _draw_locked_regions(origin: Vector2) -> void:
+	# 常态仅绘制整片锁区的轻雾与边界，不能用96条格线把经营场景变成编辑器。
+	for region_id: StringName in TerritoryCatalogData.REGION_IDS:
+		if String(region_id) in GameState.unlocked_regions:
+			continue
+		var region := TerritoryCatalogData.get_data(region_id)
+		var first: Vector2i = region["origin"]
+		var extent: Vector2i = region["size"]
+		var points := PackedVector2Array([
+			_cell_to_screen(first, origin) + Vector2(0, -TILE_SIZE.y * 0.5),
+			_cell_to_screen(first + Vector2i(extent.x - 1, 0), origin) + Vector2(TILE_SIZE.x * 0.5, 0),
+			_cell_to_screen(first + extent - Vector2i.ONE, origin) + Vector2(0, TILE_SIZE.y * 0.5),
+			_cell_to_screen(first + Vector2i(0, extent.y - 1), origin) - Vector2(TILE_SIZE.x * 0.5, 0),
+		])
+		draw_colored_polygon(points, Color(0.72, 0.80, 0.79, 0.12))
+		draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]),
+			Color(0.78, 0.83, 0.73, 0.3), 1.2, true)
+		var center := (points[0] + points[2]) * 0.5
+		_draw_map_label(center + Vector2(0, 26), "%s · 未解锁" % region["name"], 212, 16)
 
 
 func _draw_hall_plaza(origin: Vector2) -> void:
@@ -218,29 +251,17 @@ func _cell_points(center: Vector2) -> PackedVector2Array:
 func _draw_tile(cell: Vector2i, origin: Vector2) -> void:
 	var center := _cell_to_screen(cell, origin)
 	var points := _cell_points(center)
-	var unlocked := GameState.is_cell_unlocked(cell)
-	if unlocked:
-		var region_id := TerritoryCatalogData.get_region_for_cell(cell)
-		var base := TILE_COLOR_A if (cell.x + cell.y) % 2 == 0 else TILE_COLOR_B
-		if region_id == &"east":
-			base = base.lerp(Color(0.55, 0.76, 0.76, 0.18), 0.32)
-		elif region_id == &"south":
-			base = base.lerp(Color(0.72, 0.82, 0.55, 0.18), 0.32)
-		var cliff_depth := 17.0
-		if cell.x == GRID_SIZE.x - 1 or not GameState.is_cell_unlocked(cell + Vector2i(1, 0)):
-			draw_colored_polygon(PackedVector2Array([points[1], points[2], points[2] + Vector2(0, cliff_depth), points[1] + Vector2(0, cliff_depth)]), Color(0.22, 0.32, 0.34, 0.42))
-		if cell.y == GRID_SIZE.y - 1 or not GameState.is_cell_unlocked(cell + Vector2i(0, 1)):
-			draw_colored_polygon(PackedVector2Array([points[2], points[3], points[3] + Vector2(0, cliff_depth), points[2] + Vector2(0, cliff_depth)]), Color(0.18, 0.27, 0.29, 0.46))
-		draw_colored_polygon(points, base)
-		draw_line(points[3], points[0], base.lightened(0.16), 1.2, true)
-	else:
-		draw_colored_polygon(points, Color(0.46, 0.61, 0.66, 0.28))
-		draw_line(points[3], points[0], Color(0.9, 0.96, 0.98, 0.38), 1.2, true)
-	var outline := SELECTED_OUTLINE if cell == selected_cell else (TILE_OUTLINE if unlocked else Color(0.28, 0.34, 0.34, 0.36))
-	var width := 3.0 if cell == selected_cell else 1.1
-	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), outline, width, true)
-	if cell == hovered_cell and cell != selected_cell:
-		draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color(0.72, 0.82, 0.66, 0.94), 2.2, true)
+	var feedback := get_placement_feedback(cell)
+	var fill := Color(0.43, 0.68, 0.53, 0.08)
+	var outline := Color(0.57, 0.74, 0.60, 0.38)
+	if feedback["category"] == "locked":
+		fill = Color(0.65, 0.56, 0.32, 0.12)
+		outline = Color(0.79, 0.70, 0.45, 0.45)
+	elif not feedback["is_valid"]:
+		fill = Color(0.27, 0.49, 0.66, 0.14)
+		outline = Color(0.38, 0.63, 0.79, 0.55)
+	draw_colored_polygon(points, fill)
+	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), outline, 1.0, true)
 
 
 func _draw_region_connections(origin: Vector2) -> void:
@@ -284,6 +305,7 @@ func _draw_pine(base: Vector2, scale_value: float) -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
+		hovered_position = event.position
 		hovered_cell = _screen_to_cell(event.position, _map_origin())
 		if placement_building == &"":
 			var visible_building := _pick_visual_building(event.position, _map_origin())
@@ -394,17 +416,25 @@ func clear_selection() -> void:
 	queue_redraw()
 
 
+# 输入逻辑格，返回原有空间合法性；委托同一只读反馈入口，避免显示与放置规则分叉。
 func is_placement_valid(cell: Vector2i) -> bool:
+	return bool(get_placement_feedback(cell)["is_valid"])
+
+
+# 输入逻辑格，返回is_valid、category、reason；只读，不检查价格或增加软分区限制。
+func get_placement_feedback(cell: Vector2i) -> Dictionary:
 	if cell.x < 0 or cell.y < 0 or cell.x >= GRID_SIZE.x or cell.y >= GRID_SIZE.y:
-		return false
+		return {"is_valid": false, "category": "outside", "reason": "超出地图边界"}
 	if not GameState.is_cell_unlocked(cell):
-		return false
+		var region := TerritoryCatalogData.get_data(TerritoryCatalogData.get_region_for_cell(cell))
+		return {"is_valid": false, "category": "locked", "reason": "%s尚未解锁" % region["name"]}
 	if GameState.is_cell_occupied(cell):
-		return false
-	for resource_data: Dictionary in resource_nodes:
-		if resource_data["cell"] == cell:
-			return false
-	return true
+		var reason := "宗门主殿固定占地" if cell == MAIN_HALL_CELL else "已有建筑占用"
+		return {"is_valid": false, "category": "occupied", "reason": reason}
+	for resource: Dictionary in resource_nodes:
+		if resource["cell"] == cell:
+			return {"is_valid": false, "category": "resource", "reason": "%s资源点占用" % resource["name"]}
+	return {"is_valid": true, "category": "available", "reason": "可建造"}
 
 
 func _map_origin() -> Vector2:
@@ -643,17 +673,29 @@ func _draw_construction_site(center: Vector2, color: Color) -> void:
 
 
 func _draw_placement_preview(origin: Vector2) -> void:
-	if placement_building == &"" or hovered_cell == Vector2i(-1, -1):
+	if placement_building == &"":
+		# 普通模式只保留当前选中格的轮廓，不显示整张逻辑网格。
+		if selected_cell != Vector2i(-1, -1):
+			var points := _cell_points(_cell_to_screen(selected_cell, origin))
+			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]),
+				SELECTED_OUTLINE, 2.0, true)
 		return
-	var center := _cell_to_screen(hovered_cell, origin)
-	var valid := is_placement_valid(hovered_cell)
-	var preview_color := Color(0.35, 0.9, 0.52, 0.5) if valid else Color(0.95, 0.28, 0.25, 0.5)
-	var points := PackedVector2Array([
-		center + Vector2(0.0, -TILE_SIZE.y * 0.5),
-		center + Vector2(TILE_SIZE.x * 0.5, 0.0),
-		center + Vector2(0.0, TILE_SIZE.y * 0.5),
-		center + Vector2(-TILE_SIZE.x * 0.5, 0.0),
-	])
-	draw_colored_polygon(points, preview_color)
-	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), preview_color.lightened(0.3), 3.0, true)
-
+	if hovered_cell == Vector2i(-1, -1) and hovered_position == Vector2.ZERO:
+		return
+	var feedback := get_placement_feedback(hovered_cell)
+	var is_valid := bool(feedback["is_valid"])
+	var center := hovered_position if feedback["category"] == "outside" else _cell_to_screen(hovered_cell, origin)
+	if feedback["category"] != "outside":
+		var preview_color := Color(0.35, 0.82, 0.48, 0.4) if is_valid else Color(0.89, 0.30, 0.25, 0.4)
+		var points := _cell_points(center)
+		draw_colored_polygon(points, preview_color)
+		draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]),
+			preview_color.lightened(0.3), 3.0, true)
+		if not is_valid:
+			# 红色配叉形和原因文字，不能仅靠颜色区分占用与可建。
+			draw_line(center + Vector2(-9, -7), center + Vector2(9, 7), PAPER_WHITE, 2.0, true)
+			draw_line(center + Vector2(9, -7), center + Vector2(-9, 7), PAPER_WHITE, 2.0, true)
+	var status := "可建造：%s" % BuildingCatalog.get_data(placement_building)["name"] if is_valid else "不可建造：%s" % feedback["reason"]
+	# 提示始终位于地图安全范围，越界时跟随鼠标位置，不用无效格坐标投影。
+	var label_center := Vector2(clampf(center.x, 158.0, size.x - 158.0), clampf(center.y - 42.0, 150.0, size.y - 130.0))
+	_draw_map_label(label_center, status, 304, 18)

@@ -15,7 +15,7 @@ func _capture(main: Control, map: Control, window_size: Vector2i, mode: String) 
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "%s/stage4-%s-%dx%d.png" % [
+	var filename := "%s/stage5-%s-%dx%d.png" % [
 		OUTPUT_DIRECTORY, mode, window_size.x, window_size.y,
 	]
 	assert(root.get_texture().get_image().save_png(filename) == OK)
@@ -58,6 +58,11 @@ func _run() -> void:
 		map.hovered_cell = Vector2i(5, 4)
 		map.queue_redraw()
 		await _capture(main, map, window_size, "construction")
+		for feedback_case: Array in [["occupied", Vector2i(3, 3)], ["locked", Vector2i(8, 0)], ["outside", Vector2i(-1, -1)]]:
+			map.hovered_cell = feedback_case[1]
+			map.hovered_position = Vector2(500, 400)
+			map.queue_redraw()
+			await _capture(main, map, window_size, "construction-" + feedback_case[0])
 		map.cancel_placement()
 		map.selected_cell = QUARTERS_CELL
 		map.hovered_cell = QUARTERS_CELL
