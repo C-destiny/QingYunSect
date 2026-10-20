@@ -4,6 +4,8 @@
 
 ## 当前事实
 
+- 2026-10-20最新追加：负责人授权“开始进行相应开发”。候选3完成卡片按实际等级尺寸四向避让、建筑入口短石径；53项快速回归、双尺寸30图与Windows最终导出/隔离启动通过，尚无真人/联机/长稳。最新包full-scene3，哈希与首次导出扫描临时测试文件失败后串行修复记录见docs/V0.8_FULL_SCENE_ROLLOUT.md。#37/#38已追加证据，保持open待验收；当前源码未推送，原两份未跟踪文件保留。阶段1接受不等于整个全图接受。
+
 - 当前本机仓库：C:/Users/72736/Documents/GitHub/QingYunSect，origin=https://github.com/C-destiny/QingYunSect.git（私有）。
 - 游戏基线：V0.7已由负责人于2026-10-17明确验收；当前进展和已验收版本标签已推送，尚未合并main。
 - 当前开发分支：`feature/v0.8-visual-polish`，跟踪`origin/feature/v0.8-visual-polish`。

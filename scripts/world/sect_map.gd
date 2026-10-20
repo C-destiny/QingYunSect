@@ -102,6 +102,7 @@ func _draw() -> void:
 
 func _draw_ground_layer(origin: Vector2) -> void:
 	_draw_sample_garden(origin)
+	_draw_building_approaches(origin)
 	if not is_grid_visible():
 		_draw_locked_regions(origin)
 		_draw_hall_plaza(origin)
@@ -115,6 +116,24 @@ func _draw_ground_layer(origin: Vector2) -> void:
 	if MAP_BACKDROP == null:
 		_draw_region_connections(origin)
 	_draw_hall_plaza(origin)
+
+
+func _draw_building_approaches(origin: Vector2) -> void:
+	# 短石径随建筑脚点落地，只做地表衔接；不连接成长道路、不加入占地。
+	for building: Dictionary in GameState.buildings:
+		if not bool(building["completed"]):
+			continue
+		var kind := StringName(building["type"])
+		if kind in [&"spirit_field", &"training_ground"]:
+			continue
+		var cell := Vector2i(building["cell_x"], building["cell_y"])
+		var foot := _cell_to_screen(cell, origin)
+		for step: int in range(3):
+			var center := foot + Vector2(0, 9 + step * 9)
+			var slab := PackedVector2Array([center + Vector2(0, -7), center + Vector2(21, 0),
+				center + Vector2(0, 7), center + Vector2(-21, 0)])
+			draw_colored_polygon(slab, Color(0.88, 0.85, 0.75, 0.50))
+			draw_line(center + Vector2(-21, 0), center + Vector2(0, 7), Color(0.41, 0.43, 0.37, 0.22), 1.0, true)
 
 
 # 无入参，返回是否显示完整建造网格；只读，不改变地图、资源或存档。

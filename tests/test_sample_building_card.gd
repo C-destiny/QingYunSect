@@ -34,6 +34,22 @@ func _run() -> void:
 	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = window_size
 		await process_frame
+		# 两侧都放不下时，上方仍有空位；旧的仅左右夹取会盖住建筑。
+		var safe := Rect2(24, 104, 700, 650)
+		var wide_building := Rect2(270, 440, 210, 180)
+		main.building_card.place_near(wide_building, safe)
+		assert(safe.encloses(main.building_card.get_rect()))
+		assert(not main.building_card.get_rect().intersects(wide_building))
+		for kind: StringName in BuildingCatalog.BUILDINGS:
+			for level: int in range(1, 4):
+				for cell: Vector2i in [Vector2i(0, 0), Vector2i(11, 0), Vector2i(0, 7), Vector2i(11, 7), Vector2i(5, 4)]:
+					var fixture := {"type": kind, "cell_x": cell.x, "cell_y": cell.y, "level": level}
+					var visual: Rect2 = map.get_building_visual_rect(fixture, map._map_origin())
+					visual.position += map.global_position - main.global_position
+					var viewport_safe := Rect2(Vector2(24, 104), main.size - Vector2(48, 214))
+					main.building_card.place_near(visual, viewport_safe)
+					assert(viewport_safe.encloses(main.building_card.get_rect()))
+					assert(not main.building_card.get_rect().intersects(visual))
 		for building: Dictionary in state.buildings:
 			main._on_building_selected(building)
 			await process_frame

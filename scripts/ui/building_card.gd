@@ -67,10 +67,21 @@ func _ready() -> void:
 	hide()
 
 func place_near(visual_rect: Rect2, safe_rect: Rect2) -> void:
-	# 优先贴在建筑侧面；屏幕边缘向另一侧翻转，所有值都使用同一画布坐标。
+	# 四向候选先限制在安全区，再按遮挡面积选位；同分保留靠近建筑的侧面。
 	size = get_combined_minimum_size()
-	var candidate := Vector2(visual_rect.end.x + 20, visual_rect.position.y + 30)
-	if candidate.x + size.x > safe_rect.end.x:
-		candidate.x = visual_rect.position.x - size.x - 20
-	position = Vector2(clampf(candidate.x, safe_rect.position.x, maxf(safe_rect.position.x, safe_rect.end.x - size.x)),
-		clampf(candidate.y, safe_rect.position.y, maxf(safe_rect.position.y, safe_rect.end.y - size.y)))
+	var candidates: Array[Vector2] = [
+		Vector2(visual_rect.end.x + 20, visual_rect.position.y + 30),
+		Vector2(visual_rect.position.x - size.x - 20, visual_rect.position.y + 30),
+		Vector2(visual_rect.get_center().x - size.x * 0.5, visual_rect.end.y + 20),
+		Vector2(visual_rect.get_center().x - size.x * 0.5, visual_rect.position.y - size.y - 20),
+	]
+	var least_overlap := INF
+	for candidate: Vector2 in candidates:
+		candidate = Vector2(clampf(candidate.x, safe_rect.position.x, maxf(safe_rect.position.x, safe_rect.end.x - size.x)),
+			clampf(candidate.y, safe_rect.position.y, maxf(safe_rect.position.y, safe_rect.end.y - size.y)))
+		var overlap := Rect2(candidate, size).intersection(visual_rect.grow(12)).get_area()
+		if overlap < least_overlap:
+			least_overlap = overlap
+			position = candidate
+		if is_zero_approx(overlap):
+			break
