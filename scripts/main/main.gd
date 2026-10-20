@@ -133,10 +133,13 @@ const MANAGEMENT_SECTIONS := {
 func _ready() -> void:
 	preload("res://scripts/ui/hud_styling.gd").apply(self)
 	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
-	var visual_demo := full_demo or "--visual-sample" in OS.get_cmdline_user_args()
+	var courtyard_demo := "--courtyard-demo" in OS.get_cmdline_user_args()
+	var visual_demo := courtyard_demo or full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
 		# 必须在首次has_save/load之前切换路径；演示模式不读取或覆盖正式玩家存档。
 		SaveManager.save_path = "user://v08_full_visual_demo.json" if full_demo else "user://v08_hall_visual_demo.json"
+		if courtyard_demo:
+			SaveManager.save_path = "user://v08_courtyard_visual_demo.json"
 	building_card = preload("res://scripts/ui/building_card.gd").new()
 	add_child(building_card)
 	building_card.close_requested.connect(_dismiss_building_card)
@@ -246,7 +249,9 @@ func _ready() -> void:
 	if not visual_demo and SaveManager.has_save():
 		SaveManager.load_game()
 	if visual_demo:
-		if full_demo:
+		if courtyard_demo:
+			preload("res://scripts/world/courtyard_demo.gd").populate(GameState)
+		elif full_demo:
 			preload("res://scripts/world/visual_demo.gd").populate_full_scene(GameState)
 		else:
 			for cell: Vector2i in [Vector2i(3, 3), Vector2i(1, 5)]:

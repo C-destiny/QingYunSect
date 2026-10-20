@@ -2,6 +2,7 @@ extends Control
 
 const SectProjectionData = preload("res://scripts/world/sect_projection.gd")
 const SceneLayout = preload("res://scripts/world/sect_scene_layout.gd")
+const CourtyardFusion = preload("res://scripts/world/courtyard_fusion.gd")
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
@@ -70,6 +71,12 @@ var placement_building: StringName = &""
 # 命中检测缓存解压后的图像；只在鼠标查询时采样，不在每帧重复从GPU读取。
 var hit_images: Dictionary = {}
 var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
+var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
+# 生成图并非均匀四格，按实际透明边界取样，避免把相邻素材带进运行图。
+const COURTYARD_SOURCES := {
+	"hall": Rect2(0, 64, 940, 510), "wing": Rect2(955, 182, 581, 378),
+	"stairs": Rect2(80, 575, 730, 410), "rail": Rect2(820, 615, 640, 380),
+}
 const UNIFIED_ATLAS_PATH := "res://assets/buildings/sect-buildings-unified.png"
 const UNIFIED_INDICES := {
 	&"lumber_yard": Vector2i(0, 0), &"spirit_mine": Vector2i(1, 0),
@@ -102,7 +109,9 @@ func _draw() -> void:
 
 
 func _draw_ground_layer(origin: Vector2) -> void:
-	_draw_sample_garden(origin)
+	if courtyard_atlas == null:
+		_draw_sample_garden(origin)
+	_draw_courtyard_ground(origin)
 	_draw_building_approaches(origin)
 	if not is_grid_visible():
 		_draw_locked_regions(origin)
@@ -121,7 +130,10 @@ func _draw_ground_layer(origin: Vector2) -> void:
 
 func _draw_building_approaches(origin: Vector2) -> void:
 	# 短石径随建筑脚点落地，只做地表衔接；不连接成长道路、不加入占地。
+	var wing := get_courtyard_wing(origin) if courtyard_atlas != null else {}
 	for building: Dictionary in GameState.buildings:
+		if not wing.is_empty() and int(building["instance_id"]) == int(wing["instance_id"]):
+			continue
 		if not bool(building["completed"]):
 			continue
 		var kind := StringName(building["type"])
@@ -135,6 +147,90 @@ func _draw_building_approaches(origin: Vector2) -> void:
 				center + Vector2(0, 7), center + Vector2(-21, 0)])
 			draw_colored_polygon(slab, Color(0.88, 0.85, 0.75, 0.50))
 			draw_line(center + Vector2(-21, 0), center + Vector2(0, 7), Color(0.41, 0.43, 0.37, 0.22), 1.0, true)
+
+
+func get_courtyard_wing(origin: Vector2) -> Dictionary:
+	var hall := _cell_to_screen(MAIN_HALL_CELL, origin)
+	var best: Dictionary = {}
+	var best_distance := 520.0 * 520.0
+	for building: Dictionary in GameState.buildings:
+		if not bool(building["completed"]) or StringName(building["type"]) not in [&"disciple_quarters", &"scripture_library"]:
+			continue
+		var foot := _cell_to_screen(Vector2i(building["cell_x"], building["cell_y"]), origin)
+		if foot.x > hall.x - 160.0:
+			continue
+		var distance := foot.distance_squared_to(hall)
+		if distance < best_distance or (is_equal_approx(distance, best_distance) and not best.is_empty() and int(building["instance_id"]) < int(best["instance_id"])):
+			best = building
+			best_distance = distance
+	return best
+
+
+func get_courtyard_plan(origin: Vector2) -> Dictionary:
+	var wing := get_courtyard_wing(origin)
+	var wing_foot := Vector2.ZERO if wing.is_empty() else _cell_to_screen(Vector2i(wing["cell_x"], wing["cell_y"]), origin)
+	var plan := CourtyardFusion.make_plan(_cell_to_screen(MAIN_HALL_CELL, origin), wing_foot, not wing.is_empty())
+	plan["wing_id"] = int(wing.get("instance_id", 0))
+	return plan
+
+
+func _draw_courtyard_ground(origin: Vector2) -> void:
+	if courtyard_atlas == null:
+		return
+	var plan := get_courtyard_plan(origin)
+	var road: PackedVector2Array = plan["road"]
+	for index: int in range(road.size() - 1):
+		# 中段使用背景里连续的石路与主阶，只补两端接缝，避免重复铺装压过园林。
+		if index != 0 and index != road.size() - 2:
+			continue
+		var start := road[index]
+		var finish := road[index + 1]
+		if index == 0:
+			finish = start.move_toward(finish, 64)
+		else:
+			start = finish.move_toward(start, 54)
+		var steps := maxi(1, ceili(start.distance_to(finish) / 24.0))
+		var across := (finish - start).normalized().orthogonal() * 20
+		var uvs := PackedVector2Array([Vector2(220, 278), Vector2(304, 278), Vector2(304, 320), Vector2(220, 320)])
+		for uv_index: int in range(uvs.size()):
+			uvs[uv_index] /= courtyard_atlas.get_size()
+		for step: int in range(steps):
+			var tile_start := start.lerp(finish, float(step) / steps)
+			var tile_end := start.lerp(finish, float(step + 1) / steps)
+			draw_polygon(CourtyardFusion.segment_quad(tile_start, tile_end, 42), PackedColorArray([Color(1, 1, 1, 0.46)]), uvs, courtyard_atlas)
+			draw_line(tile_start - across, tile_start + across, Color(0.44, 0.45, 0.38, 0.10), 1, true)
+	if Rect2(plan["stairs"]).has_area():
+		draw_texture_rect_region(courtyard_atlas, plan["stairs"], COURTYARD_SOURCES["stairs"])
+	draw_texture_rect_region(courtyard_atlas, plan["hall_pad"], COURTYARD_SOURCES["hall"])
+	if Rect2(plan["wing_pad"]).has_area():
+		draw_texture_rect_region(courtyard_atlas, plan["wing_pad"], COURTYARD_SOURCES["wing"])
+
+
+func get_courtyard_foreground(origin: Vector2) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var plan := get_courtyard_plan(origin)
+	for entry: Dictionary in plan["foreground"]:
+		var foot: Vector2 = entry["foot"]
+		var width := float(entry["width"])
+		var blocked := false
+		# 只允许遮住所属建筑的低矮台基；别的旧建筑/新建施工进入时装饰退让。
+		for building: Dictionary in GameState.buildings:
+			if entry["target"] == "wing" and int(building["instance_id"]) == int(plan["wing_id"]):
+				continue
+			var ground := _cell_to_screen(Vector2i(building["cell_x"], building["cell_y"]), origin)
+			if Rect2(foot - Vector2(width * 0.5, 26), Vector2(width, 52)).has_point(ground):
+				blocked = true
+				break
+		if not blocked:
+			result.append({"kind": "decor", "key": "courtyard:" + String(entry["target"]), "cell": _screen_to_cell(foot, origin),
+				"depth": (foot.y - origin.y) / (TILE_SIZE.y * 0.5 * SceneLayout.GROUND_SPACING),
+				"rect": Rect2(foot - Vector2(width * 0.5, width * 380.0 / 640.0 * 0.65), Vector2(width, width * 380.0 / 640.0))})
+	return result
+
+
+func _draw_courtyard_foreground(item: Dictionary) -> void:
+	var tint := Color(1, 1, 1, 0.32) if is_grid_visible() else Color.WHITE
+	draw_texture_rect_region(courtyard_atlas, item["rect"], COURTYARD_SOURCES["rail"], tint)
 
 
 # 无入参，返回是否显示完整建造网格；只读，不改变地图、资源或存档。
@@ -164,6 +260,8 @@ func _draw_locked_regions(origin: Vector2) -> void:
 
 
 func _draw_hall_plaza(origin: Vector2) -> void:
+	if courtyard_atlas != null:
+		return
 	# 广场仅是地面装饰，覆盖相邻视觉区域但不参与占用、放置判定或存档。
 	var center := _cell_to_screen(MAIN_HALL_CELL, origin) + Vector2(0, 25)
 	var plaza := PackedVector2Array([
@@ -187,6 +285,9 @@ func get_world_draw_items() -> Array[Dictionary]:
 		})
 	for resource: Dictionary in resource_nodes:
 		items.append({"kind": "resource", "cell": resource["cell"], "key": String(resource["site_id"]), "data": resource})
+	if courtyard_atlas != null:
+		for decor: Dictionary in get_courtyard_foreground(_map_origin()):
+			items.append(decor)
 	# 等距投影脚点y与x+y成正比；同深度按x及稳定ID排序，避免读档/建造顺序改变遮挡。
 	items.sort_custom(_is_world_item_before)
 	return items
@@ -195,8 +296,10 @@ func get_world_draw_items() -> Array[Dictionary]:
 func _is_world_item_before(first: Dictionary, second: Dictionary) -> bool:
 	var first_cell: Vector2i = first["cell"]
 	var second_cell: Vector2i = second["cell"]
-	if first_cell.x + first_cell.y != second_cell.x + second_cell.y:
-		return first_cell.x + first_cell.y < second_cell.x + second_cell.y
+	var first_depth := float(first.get("depth", first_cell.x + first_cell.y))
+	var second_depth := float(second.get("depth", second_cell.x + second_cell.y))
+	if first_depth != second_depth:
+		return first_depth < second_depth
 	if first_cell.x != second_cell.x:
 		return first_cell.x < second_cell.x
 	return String(first["key"]) < String(second["key"])
@@ -206,8 +309,10 @@ func _draw_shadow_layer(items: Array[Dictionary], origin: Vector2) -> void:
 	# 所有接地影先于建筑主体，防止后绘制建筑的影子盖在前一栋墙面上。
 	var hall_center := _cell_to_screen(MAIN_HALL_CELL, origin)
 	# 与左上光源对应的右下接地影独立于位图，后续可按底座轮廓校准。
-	draw_set_transform(hall_center + Vector2(18, 12), 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, 104.0, Color(0.08, 0.12, 0.13, 0.14))
+	draw_set_transform(hall_center + Vector2(12, 17), 0.0, Vector2(1.0, 0.27))
+	draw_circle(Vector2.ZERO, 145.0, Color(0.08, 0.12, 0.13, 0.12))
+	draw_set_transform(hall_center + Vector2(0, 10), 0.0, Vector2(1.0, 0.17))
+	draw_circle(Vector2.ZERO, 130.0, Color(0.06, 0.09, 0.10, 0.08))
 	draw_set_transform(Vector2.ZERO)
 	for item: Dictionary in items:
 		if item["kind"] == "building":
@@ -225,6 +330,7 @@ func _draw_world_layer(items: Array[Dictionary], origin: Vector2) -> void:
 			"hall": _draw_main_hall(origin)
 			"building": _draw_building(item["data"], origin)
 			"resource": _draw_resource(item["data"], origin)
+			"decor": _draw_courtyard_foreground(item)
 
 
 func _draw_interaction_layer(origin: Vector2) -> void:
@@ -417,6 +523,8 @@ func _pick_visual_building(point: Vector2, origin: Vector2) -> Dictionary:
 	items.reverse()
 	# 与绘制顺序相反查询；主殿/资源点挡在前面时仍交给原地面格交互，不穿透抢选后方屋顶。
 	for item: Dictionary in items:
+		if item["kind"] == "decor":
+			continue # 前景纯视觉，不拦截屋顶/原地面格选择。
 		var ground := _cell_to_screen(item["cell"], origin)
 		if item["kind"] == "hall":
 			if not _is_hall_occluding_active_building(origin) and _is_sprite_hit(
