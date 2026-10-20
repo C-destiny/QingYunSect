@@ -733,21 +733,32 @@ func _draw_placement_preview(origin: Vector2) -> void:
 func _draw_sample_garden(origin: Vector2) -> void:
 	# 样板地景只画在建筑/网格下，不加入占地或交互集合，满图旧档仍可正常使用。
 	var hall := _cell_to_screen(MAIN_HALL_CELL, origin)
-	# 地景向既有/新建建筑让位，不改任何合法格；没有空处就只保留既有底图园林。
-	for offset: Vector2 in [Vector2(-195, 105), Vector2(-40, 180)]:
-		var pond := hall + offset
-		var occupied_visually := false
-		for building: Dictionary in GameState.buildings:
-			var cell := Vector2i(building["cell_x"], building["cell_y"])
-			if Rect2(pond - Vector2(125, 64), Vector2(250, 128)).has_point(_cell_to_screen(cell, origin)):
-				occupied_visually = true
-				break
-		if not occupied_visually:
-			draw_texture_rect(GARDEN_POND, Rect2(pond - Vector2(115, 69), Vector2(230, 138)), false)
-			break
+	var pond_rect := get_garden_rect(origin)
+	if pond_rect.has_area():
+		draw_texture_rect(GARDEN_POND, pond_rect, false)
 	var end := hall + Vector2(50, 120)
 	draw_colored_polygon(PackedVector2Array([hall + Vector2(-23, 16), hall + Vector2(23, 16),
 		end + Vector2(23, 0), end - Vector2(23, 0)]), Color(0.94, 0.91, 0.82, 0.30))
+
+
+func get_garden_rect(origin: Vector2) -> Rect2:
+	var hall := _cell_to_screen(MAIN_HALL_CELL, origin)
+	# 地景向既有/新建建筑让位，不改任何合法格；没有空处就只保留既有底图园林。
+	for offset: Vector2 in [Vector2(-195, 105), Vector2(-40, 180)]:
+		var pond := hall + offset
+		var pond_rect := Rect2(pond - Vector2(115, 69), Vector2(230, 138))
+		var occupied_visually := false
+		for building: Dictionary in GameState.buildings:
+			# 检查台基所在的下半部而非整片屋顶；保留正常的前后遮挡，避免池水穿入墙脚。
+			var visual := get_building_visual_rect(building, origin)
+			var base := Rect2(visual.position + Vector2(visual.size.x * 0.12, visual.size.y * 0.58),
+				Vector2(visual.size.x * 0.76, visual.size.y * 0.34))
+			if pond_rect.grow(8).intersects(base):
+				occupied_visually = true
+				break
+		if not occupied_visually:
+			return pond_rect
+	return Rect2()
 
 
 # 绘制、alpha命中、建造预览和小卡共用配置；等级只缩放视觉，不改占地。

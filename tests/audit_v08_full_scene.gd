@@ -7,7 +7,7 @@ func _capture(main: Control, mode: String) -> void:
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var path := "res://builds/v08-scene-audit/full2-%s-%dx%d.png" % [mode, root.size.x, root.size.y]
+	var path := "res://builds/v08-scene-audit/full4-%s-%dx%d.png" % [mode, root.size.x, root.size.y]
 	assert(root.get_texture().get_image().save_png(path) == OK)
 
 func _run() -> void:

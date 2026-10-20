@@ -4,6 +4,8 @@
 
 ## 当前事实
 
+- 2026-10-20候选4：池水从脚点检测改为实际等级台基范围检测，备选或隐藏；3项相关回归、双尺寸30图、Windows导出和普通/演示启动PASS。本轮未重跑53项全量、人工/联机/长稳。最新包full-scene4，入口同Run-Full-Scene-Demo.cmd；阶段2五类任务及遗留差距见docs/V0.8_FULL_SCENE_ROLLOUT.md。#37已追加，未推送源码、未整阶段验收。
+
 - 2026-10-20最新追加：负责人授权“开始进行相应开发”。候选3完成卡片按实际等级尺寸四向避让、建筑入口短石径；53项快速回归、双尺寸30图与Windows最终导出/隔离启动通过，尚无真人/联机/长稳。最新包full-scene3，哈希与首次导出扫描临时测试文件失败后串行修复记录见docs/V0.8_FULL_SCENE_ROLLOUT.md。#37/#38已追加证据，保持open待验收；当前源码未推送，原两份未跟踪文件保留。阶段1接受不等于整个全图接受。
 
 - 当前本机仓库：C:/Users/72736/Documents/GitHub/QingYunSect，origin=https://github.com/C-destiny/QingYunSect.git（私有）。

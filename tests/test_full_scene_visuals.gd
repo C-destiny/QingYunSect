@@ -48,6 +48,18 @@ func _run() -> void:
 				var expected := cell not in [Vector2i(4, 3), Vector2i(1, 1), Vector2i(6, 1), Vector2i(2, 4)]
 				assert(map.is_placement_valid(cell) == expected)
 	assert(state.export_save_data() == snapshot)
+	# 宽台基脚点在池水外，也须让位；该纯渲染查询不能污染状态或禁止建造。
+	var first_pond: Rect2 = map.get_garden_rect(map._map_origin())
+	assert(first_pond.has_area())
+	assert(state.start_construction(&"scripture_library", Vector2i(3, 5)))
+	var before_garden: Dictionary = state.export_save_data().duplicate(true)
+	var alternative: Rect2 = map.get_garden_rect(map._map_origin())
+	assert(alternative != first_pond)
+	assert(alternative.has_area())
+	assert(state.export_save_data() == before_garden)
+	assert(state.start_construction(&"disciple_quarters", Vector2i(7, 6)))
+	assert(not map.get_garden_rect(map._map_origin()).has_area())
+	state.buildings.clear()
 	# 将全部七类建筑作为有效version 3状态往返，身份/坐标与其余字段必须保持。
 	assert(preload("res://scripts/world/visual_demo.gd").populate_full_scene(state))
 	var manager := root.get_node("SaveManager")
