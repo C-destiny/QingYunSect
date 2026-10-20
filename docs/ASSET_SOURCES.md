@@ -37,3 +37,7 @@ docs/art/v08-scene-stage5-normal.png、v08-scene-stage5-occupied.png由本项目
 ## 2026-10-20 阶段6运行截图
 
 docs/art/v08-scene-stage6-normal.png、v08-scene-stage6-panel-build.png由本项目Godot隔离图形夹具生成，用于内部开发对照。底层素材沿用既有来源记录，本轮没有新素材或AI生成图。
+
+## 2026-10-20 布局提案A示意图
+
+docs/art/v08-layout-proposal-a.png：由tools/draw_layout_proposal.py自绘矢量地形/道路/界面并编排既有主殿、弟子居与七建筑图集，Edge本地渲染，用于布局讨论。既有建筑素材来源及使用条件沿用上文记录；本轮无新外部素材，无新AI图（ImageGen连接失败）。图并非运行截图，不是可直接切割接入的环境资产；地图尺寸与示例内容未接入游戏。
