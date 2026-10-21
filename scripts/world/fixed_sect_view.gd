@@ -2,6 +2,7 @@ extends RefCounted
 
 const Layout = preload("res://scripts/world/fixed_sect_layout.gd")
 const Garden = preload("res://scripts/world/fixed_courtyard_details.gd")
+const Outline = preload("res://scripts/world/building_selection_outline.gd")
 
 static func site_frame(map: Control, kind: StringName) -> Dictionary:
 	var profile: Dictionary = map.MAIN_HALL_VISUAL if kind == &"hall" else map.get_building_visual(kind)["profile"]
@@ -30,6 +31,8 @@ static func draw(map: Control, state: Node) -> void:
 		var buildings := Layout.members(state, kind)
 		if kind == &"hall":
 			map.draw_texture_rect(map.MAIN_HALL_SAMPLE, frame["rect"], false)
+			if map.fixed_selected_kind == kind:
+				Outline.draw(map, map.MAIN_HALL_SAMPLE, Rect2(Vector2.ZERO, map.MAIN_HALL_SAMPLE.get_size()), frame["rect"])
 		elif not buildings.is_empty():
 			var completed := false
 			for building: Dictionary in buildings:
@@ -37,16 +40,12 @@ static func draw(map: Control, state: Node) -> void:
 			if completed:
 				var spec: Dictionary = map.get_building_visual(kind)
 				map.draw_texture_rect_region(spec["texture"], frame["rect"], spec["source"])
+				if map.fixed_selected_kind == kind:
+					Outline.draw(map, spec["texture"], spec["source"], frame["rect"])
 			else:
 				map._draw_construction_site(foot, Color("b7a67d"))
-		else:
-			map.draw_set_transform(foot, 0, Vector2(1, 0.5))
-			map.draw_arc(Vector2.ZERO, 43.0 * frame["scale"], 0, TAU, 40, Color(0.79, 0.67, 0.37, 0.6), 1.8, true)
-			map.draw_set_transform(Vector2.ZERO)
-		if map.fixed_selected_kind == kind:
-			map.draw_set_transform(foot, 0, Vector2(1, 0.5))
-			map.draw_arc(Vector2.ZERO, 55.0 * frame["scale"], 0, TAU, 48, Color("e6c877"), 3, true)
-			map.draw_set_transform(Vector2.ZERO)
+				if map.fixed_selected_kind == kind:
+					Outline.draw_scaffold(map, foot)
 	while decor_index < decorations.size():
 		Garden.draw_item(map, decorations[decor_index])
 		decor_index += 1
@@ -58,6 +57,8 @@ static func draw(map: Control, state: Node) -> void:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color("f4ead0")
 		style.border_color = Color("9d8758")
+		if map.fixed_selected_kind == kind:
+			style.border_color = Color("e6bd56")
 		style.set_border_width_all(2)
 		style.set_corner_radius_all(5)
 		style.shadow_size = 4

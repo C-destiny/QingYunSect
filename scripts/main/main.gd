@@ -156,6 +156,7 @@ func _ready() -> void:
 	add_child(fixed_site_card)
 	fixed_site_card.construct_requested.connect(_construct_fixed_site)
 	fixed_site_card.instance_requested.connect(_select_fixed_instance)
+	fixed_site_card.close_requested.connect(sect_map.clear_selection)
 	sect_map.fixed_site_selected.connect(_open_fixed_site)
 	resized.connect(func() -> void:
 		if is_instance_valid(fixed_site_card) and fixed_site_card.visible:
@@ -350,6 +351,7 @@ func _refresh_resources() -> void:
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
+	sect_map.clear_selection()
 	if is_instance_valid(fixed_site_card):
 		fixed_site_card.hide()
 	building_card.hide()
@@ -372,6 +374,8 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 
 
 func _on_building_selected(building: Dictionary) -> void:
+	if sect_map.fixed_layout:
+		sect_map.fixed_selected_kind = StringName(building["type"])
 	if is_instance_valid(fixed_site_card):
 		fixed_site_card.hide()
 	selected_resource = {}
@@ -628,6 +632,7 @@ func _close_management_panel() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and is_instance_valid(fixed_site_card) and fixed_site_card.visible:
 		fixed_site_card.hide()
+		sect_map.clear_selection()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel") and building_card.visible:
@@ -1415,6 +1420,8 @@ func _refresh_buildings() -> void:
 
 
 func _on_hall_selected() -> void:
+	if sect_map.fixed_layout:
+		sect_map.fixed_selected_kind = &"hall"
 	if is_instance_valid(fixed_site_card):
 		fixed_site_card.hide()
 	sect_map.selected_cell = sect_map.MAIN_HALL_CELL

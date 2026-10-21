@@ -650,6 +650,8 @@ func _draw_main_hall(origin: Vector2) -> void:
 	if MAIN_HALL_SAMPLE != null:
 		var tint := Color(1, 1, 1, 0.28) if _is_hall_occluding_active_building(origin) else Color.WHITE
 		draw_texture_rect(MAIN_HALL_SAMPLE, get_hall_ground_frame(origin)["rect"], false, tint)
+		if selected_cell == MAIN_HALL_CELL:
+			preload("res://scripts/world/building_selection_outline.gd").draw(self, MAIN_HALL_SAMPLE, Rect2(Vector2.ZERO, MAIN_HALL_SAMPLE.get_size()), get_hall_ground_frame(origin)["rect"])
 		return
 	if LANDMARK_ATLAS != null:
 		_draw_grounded_atlas(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, Vector2i(0, 0), center, MAIN_HALL_VISUAL)
@@ -720,8 +722,12 @@ func _draw_building(building: Dictionary, origin: Vector2) -> void:
 	if completed:
 		var spec := get_building_visual(building_type)
 		draw_texture_rect_region(spec["texture"], get_building_visual_rect(building, origin), spec["source"])
+		if cell == selected_cell:
+			preload("res://scripts/world/building_selection_outline.gd").draw(self, spec["texture"], spec["source"], get_building_visual_rect(building, origin))
 	else:
 		_draw_construction_site(center, Color(definition["color"]))
+		if cell == selected_cell:
+			preload("res://scripts/world/building_selection_outline.gd").draw_scaffold(self, center)
 
 
 func _draw_building_status(building: Dictionary, origin: Vector2) -> void:
@@ -737,8 +743,6 @@ func _draw_building_status(building: Dictionary, origin: Vector2) -> void:
 		if cell != selected_cell and cell != hovered_cell:
 			return
 	_draw_map_label(center + Vector2(0, 29), "%s Lv.%d" % [name_text, level], 102, 14)
-	if cell == selected_cell:
-		draw_arc(center + Vector2(0, 2), 46.0, 0.0, TAU, 40, SELECTED_OUTLINE, 3.0, true)
 	if not completed:
 		var progress := 1.0 - float(building["remaining"]) / float(building["build_time"])
 		draw_rect(Rect2(center + Vector2(-36, 31), Vector2(72, 7)), Color(0.08, 0.1, 0.1, 0.9), true)
@@ -861,7 +865,7 @@ func _draw_construction_site(center: Vector2, color: Color) -> void:
 func _draw_placement_preview(origin: Vector2) -> void:
 	if placement_building == &"":
 		# 普通模式只保留当前选中格的轮廓，不显示整张逻辑网格。
-		if selected_cell != Vector2i(-1, -1):
+		if selected_cell != Vector2i(-1, -1) and selected_cell != MAIN_HALL_CELL and not GameState.is_cell_occupied(selected_cell):
 			var points := _cell_points(_cell_to_screen(selected_cell, origin))
 			draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]),
 				SELECTED_OUTLINE, 2.0, true)
