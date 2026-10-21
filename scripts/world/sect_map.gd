@@ -6,6 +6,8 @@ const TerrainSurface = preload("res://scripts/world/sect_terrain_surface.gd")
 const DISTANT_CLOUDS: Texture2D = preload("res://assets/environment/sect_cloud_distance.png")
 const TERRAIN_PAVING: Texture2D = preload("res://assets/environment/sect_limestone_paving.png")
 const TERRAIN_CLIFF: Texture2D = preload("res://assets/environment/sect_cliff_material.png")
+const TERRAIN_MOSS: Texture2D = preload("res://assets/environment/sect_moss_ground.png")
+const GARDEN_PINE: Texture2D = preload("res://assets/environment/sect_pine_rock.png")
 
 const ResourceCatalogData = preload("res://scripts/data/resource_catalog.gd")
 const TerritoryCatalogData = preload("res://scripts/data/territory_catalog.gd")
@@ -76,7 +78,7 @@ var hit_images: Dictionary = {}
 var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
 var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
-var terrain_detail_stage := 3 # 审图：0地基、1入口和外沿阶、2栏杆、3园林。
+var terrain_detail_stage := 4 # 审图：0自然边缘、1道路和阶、2栏杆、3池岸、4松石。
 var visual_plane_lift := 0.0 # 仅验证共面视觉标高，默认0；不写建筑或存档。
 # 生成图并非均匀四格，按实际透明边界取样，避免把相邻素材带进运行图。
 const COURTYARD_SOURCES := {
@@ -183,10 +185,20 @@ func get_courtyard_plan(origin: Vector2) -> Dictionary:
 
 func _draw_courtyard_ground(origin: Vector2) -> void:
 	if structured_terrain:
-		TerrainSurface.draw_surface(self, origin, TERRAIN_PAVING, TERRAIN_CLIFF)
+		TerrainSurface.draw_surface(self, origin, TERRAIN_PAVING, TERRAIN_CLIFF, TERRAIN_MOSS)
+		TerrainSurface.draw_paved_patch(self, origin, Vector2(MAIN_HALL_CELL) + Vector2(0, 0.3), Vector2(2.5, 2.0), TERRAIN_PAVING)
+		var wing := get_courtyard_wing(origin)
+		if not wing.is_empty():
+			TerrainSurface.draw_paved_patch(self, origin, Vector2(wing["cell_x"], wing["cell_y"]), Vector2(1, 1), TERRAIN_PAVING)
+		if terrain_detail_stage >= 3:
+			var garden := get_structured_garden_rect(origin)
+			if garden.has_area():
+				TerrainSurface.draw_meadow(self, garden.get_center() + Vector2(0, 18), Vector2(170, 72), TERRAIN_MOSS)
 		if terrain_detail_stage >= 1:
 			for approach: Dictionary in get_terrain_approaches(origin):
-				TerrainSurface.draw_approach(self, approach["start"], approach["end"], approach["width"])
+				TerrainSurface.draw_approach(self, approach["start"], approach["end"], approach["width"], TERRAIN_PAVING)
+			for route: Dictionary in get_courtyard_routes(origin):
+				TerrainSurface.draw_approach(self, route["start"], route["end"], route["width"], TERRAIN_PAVING)
 			TerrainSurface.draw_edge_stairs(self, origin, TERRAIN_PAVING, TERRAIN_CLIFF)
 
 
@@ -215,6 +227,17 @@ func get_courtyard_foreground(origin: Vector2) -> Array[Dictionary]:
 			var foot := garden.position + garden.size * Vector2(0.5, 0.8)
 			result.append({"kind": "decor", "key": "courtyard:garden", "cell": _screen_to_cell(foot, origin),
 				"depth": (foot.y - origin.y) / (TILE_SIZE.y * 0.5 * SceneLayout.GROUND_SPACING), "rect": garden})
+			if terrain_detail_stage >= 4:
+				var pine_foot := garden.position + Vector2(22, 65)
+				var pine_size := Vector2(134, 134.0 * GARDEN_PINE.get_height() / GARDEN_PINE.get_width())
+				var pine := Rect2(pine_foot - pine_size * Vector2(0.57, 0.86), pine_size)
+				var blocked := false
+				for obstacle: Dictionary in _terrain_obstacles(origin):
+					if pine.intersects(obstacle["rect"].grow(6)):
+						blocked = true
+				if not blocked:
+					result.append({"kind": "decor", "key": "courtyard:pine", "cell": _screen_to_cell(pine_foot, origin),
+						"depth": (pine_foot.y - origin.y) / (TILE_SIZE.y * 0.5 * SceneLayout.GROUND_SPACING), "rect": pine})
 	return result
 
 
@@ -222,6 +245,8 @@ func _draw_courtyard_foreground(item: Dictionary) -> void:
 	var tint := Color(1, 1, 1, 0.32) if is_grid_visible() else Color.WHITE
 	if item["key"] == "courtyard:garden":
 		draw_texture_rect(GARDEN_POND, item["rect"], false, tint)
+	elif item["key"] == "courtyard:pine":
+		draw_texture_rect(GARDEN_PINE, item["rect"], false, tint)
 	else:
 		draw_texture_rect_region(courtyard_atlas, item["rect"], COURTYARD_SOURCES["rail"], tint)
 
@@ -943,6 +968,36 @@ func _rect_polygon(rect: Rect2) -> PackedVector2Array:
 	return PackedVector2Array([rect.position, rect.position + Vector2(rect.size.x, 0), rect.end, rect.position + Vector2(0, rect.size.y)])
 
 
+func get_courtyard_routes(origin: Vector2) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var approaches := get_terrain_approaches(origin)
+	if approaches.is_empty() or approaches[0]["owner"] != "hall":
+		return result
+	var hall_end: Vector2 = SceneLayout.unproject_continuous(approaches[0]["end"], origin)
+	var edge_y := float(TerrainSurface.make_plan(origin)["bounds"].end.y)
+	var candidates: Array[Dictionary] = [{"owner": "hall", "a": hall_end, "b": Vector2(hall_end.x, edge_y), "width": 52.0}]
+	for approach: Dictionary in approaches:
+		if approach["owner"] == "hall":
+			continue
+		var wing_end := SceneLayout.unproject_continuous(approach["end"], origin)
+		var elbow := Vector2(wing_end.x, edge_y - 0.5)
+		candidates.append({"owner": approach["owner"], "a": wing_end, "b": elbow, "width": 27.0})
+		candidates.append({"owner": approach["owner"], "a": elbow, "b": Vector2(hall_end.x, elbow.y), "width": 27.0})
+	for candidate: Dictionary in candidates:
+		var start := SceneLayout.project_continuous(candidate["a"], origin)
+		var finish := SceneLayout.project_continuous(candidate["b"], origin)
+		var quad := TerrainSurface.approach_quad(start, finish, candidate["width"])
+		var blocked := false
+		for obstacle: Dictionary in _terrain_obstacles(origin):
+			if obstacle["owner"] == candidate["owner"]:
+				continue # 连接自己的入口，不把自己的台基误判成路障。
+			if Geometry2D.intersect_polygons(quad, _rect_polygon(obstacle["rect"].grow(4))).size() > 0:
+				blocked = true
+		if not blocked:
+			result.append({"owner": candidate["owner"], "start": start, "end": finish, "width": candidate["width"], "quad": quad})
+	return result
+
+
 func get_structured_garden_rect(origin: Vector2) -> Rect2:
 	var hall: Vector2 = get_hall_ground_frame(origin)["foot"]
 	var top: PackedVector2Array = TerrainSurface.make_plan(origin)["top"]
@@ -957,6 +1012,9 @@ func get_structured_garden_rect(origin: Vector2) -> Rect2:
 				blocked = true
 		for approach: Dictionary in get_terrain_approaches(origin):
 			if Geometry2D.intersect_polygons(_rect_polygon(garden.grow(8)), approach["quad"]).size() > 0:
+				blocked = true
+		for route: Dictionary in get_courtyard_routes(origin):
+			if Geometry2D.intersect_polygons(_rect_polygon(garden.grow(8)), route["quad"]).size() > 0:
 				blocked = true
 		if not blocked:
 			return garden

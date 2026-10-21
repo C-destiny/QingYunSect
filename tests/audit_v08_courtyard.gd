@@ -7,7 +7,7 @@ func _capture(mode: String) -> void:
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	assert(root.get_texture().get_image().save_png("res://builds/v08-scene-audit/terrain9-%s-%dx%d.png" % [mode, root.size.x, root.size.y]) == OK)
+	assert(root.get_texture().get_image().save_png("res://builds/v08-scene-audit/terrain10-%s-%dx%d.png" % [mode, root.size.x, root.size.y]) == OK)
 
 func _run() -> void:
 	root.get_node("SaveManager").save_path = "res://tests/.test_courtyard_audit.json"
@@ -23,7 +23,7 @@ func _run() -> void:
 	main._close_management_panel()
 	for window_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = window_size
-		for stage: int in range(4):
+		for stage: int in range(5):
 			main.sect_map.terrain_detail_stage = stage
 			main.sect_map.queue_redraw()
 			await _capture("step%d" % stage)
@@ -46,5 +46,5 @@ func _run() -> void:
 		main.sect_map.visual_plane_lift = 0.0
 	main.queue_free()
 	await process_frame
-	print("PASS: terrain9 staged ground, stairs, rail, garden, cards, preview and lifted plane rendered in two sizes")
+	print("PASS: terrain10 natural edges, connected routes, rail, pond and pine staged in two sizes")
 	quit()

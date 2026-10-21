@@ -21,6 +21,11 @@ static func project_continuous(cell: Vector2, origin_point: Vector2) -> Vector2:
 	var y_axis := ProjectionData.project(Vector2i(0, 1), Vector2.ZERO)
 	return origin_point + (x_axis * cell.x + y_axis * cell.y) * GROUND_SPACING
 
+static func unproject_continuous(point: Vector2, origin_point: Vector2) -> Vector2:
+	var x_axis := project_continuous(Vector2(1, 0), Vector2.ZERO)
+	var y_axis := project_continuous(Vector2(0, 1), Vector2.ZERO)
+	return Transform2D(x_axis, y_axis, origin_point).affine_inverse() * point
+
 # 同一脚点派生精灵、入口与接地影；屋顶高度不参与逻辑占地。
 static func ground_frame(cell: Vector2, origin_point: Vector2, profile: Dictionary, visual_scale: float = 1.0) -> Dictionary:
 	var foot := project_continuous(cell, origin_point)

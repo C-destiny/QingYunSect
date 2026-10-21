@@ -37,7 +37,7 @@ func _run() -> void:
 					if level == 1:
 						assert(frame["rect"].is_equal_approx(preview["rect"]))
 			map.start_placement(&"disciple_quarters")
-			for stage: int in range(4):
+			for stage: int in range(5):
 				map.terrain_detail_stage = stage
 				for x: int in range(12):
 					for y: int in range(8):
@@ -73,5 +73,5 @@ func _run() -> void:
 	assert(state.buildings[0]["cell_x"] == 2 and state.buildings[0]["cell_y"] == 6)
 	map.queue_free()
 	await process_frame
-	print("PASS: shared ground frame, entrances, shadows, level previews, 1536 real input mappings, exterior stair drop and garden yielding")
+	print("PASS: shared ground frame, entrances, shadows, level previews, 1920 input mappings, exterior stair drop and garden yielding")
 	quit()
