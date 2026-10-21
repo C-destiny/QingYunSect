@@ -83,6 +83,7 @@ var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fus
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
 var fixed_layout := false # 主场景默认启用；裸地图保留自由规则以供备份回归。
 var fixed_selected_kind: StringName = &""
+var fixed_hover_kind: StringName = &""
 var terrain_detail_stage := 4 # 审图：0自然边缘、1道路和阶、2栏杆、3池岸、4松石。
 var visual_plane_lift := 0.0 # 仅验证共面视觉标高，默认0；不写建筑或存档。
 # 生成图并非均匀四格，按实际透明边界取样，避免把相邻素材带进运行图。
@@ -107,6 +108,11 @@ func _ready() -> void:
 	GameState.assignments_changed.connect(queue_redraw)
 	GameState.buildings_changed.connect(queue_redraw)
 	GameState.territory_changed.connect(queue_redraw)
+	mouse_exited.connect(func() -> void:
+		if fixed_layout:
+			fixed_hover_kind = &""
+			tooltip_text = ""
+			queue_redraw())
 	queue_redraw()
 
 
@@ -475,15 +481,31 @@ func _draw_pine(base: Vector2, scale_value: float) -> void:
 		]), Color(0.12, 0.34, 0.27, 1.0))
 
 
+func _fixed_resource_at(point: Vector2) -> Dictionary:
+	for resource: Dictionary in resource_nodes:
+		var at := FixedLayout.point(FixedLayout.RESOURCE_POINTS[resource["site_id"]], size)
+		if Rect2(at - Vector2(50, 20), Vector2(100, 32)).has_point(point):
+			return resource
+	return {}
+
+
 func _gui_input(event: InputEvent) -> void:
 	if fixed_layout:
+		if event is InputEventMouseMotion:
+			fixed_hover_kind = FixedView.hit(self, event.position)
+			tooltip_text = "" if fixed_hover_kind == &"" else FixedView.Feedback.describe(GameState, fixed_hover_kind)["tooltip"]
+			var hovered_resource := _fixed_resource_at(event.position)
+			if not hovered_resource.is_empty():
+				fixed_hover_kind = &""
+				tooltip_text = "%s · 点击安排采集弟子" % hovered_resource["resource_name"]
+			mouse_default_cursor_shape = Control.CURSOR_ARROW if tooltip_text.is_empty() else Control.CURSOR_POINTING_HAND
+			queue_redraw()
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			for resource: Dictionary in resource_nodes:
-				var at := FixedLayout.point(FixedLayout.RESOURCE_POINTS[resource["site_id"]], size)
-				if Rect2(at - Vector2(50, 20), Vector2(100, 32)).has_point(event.position):
-					resource_selected.emit(resource)
-					accept_event()
-					return
+			var resource := _fixed_resource_at(event.position)
+			if not resource.is_empty():
+				resource_selected.emit(resource)
+				accept_event()
+				return
 			var kind := FixedView.hit(self, event.position)
 			if kind != &"":
 				fixed_selected_kind = kind
