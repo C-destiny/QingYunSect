@@ -95,6 +95,8 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var offline_summary_text: Label = %OfflineSummaryText
 
 var building_card: Control
+var fixed_site_card: Control
+var fixed_card_refresh := 0.0
 var card_is_hall := false
 
 var selected_resource: Dictionary = {}
@@ -134,18 +136,30 @@ func _ready() -> void:
 	preload("res://scripts/ui/hud_styling.gd").apply(self)
 	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
 	var courtyard_demo := "--courtyard-demo" in OS.get_cmdline_user_args()
+	var fixed_demo := "--fixed-layout-demo" in OS.get_cmdline_user_args() or "--fixed-layout-showcase" in OS.get_cmdline_user_args()
+	sect_map.fixed_layout = not (full_demo or courtyard_demo or "--visual-sample" in OS.get_cmdline_user_args() or "--legacy-free-build" in OS.get_cmdline_user_args())
 	sect_map.structured_terrain = courtyard_demo
-	var visual_demo := courtyard_demo or full_demo or "--visual-sample" in OS.get_cmdline_user_args()
+	var visual_demo := fixed_demo or courtyard_demo or full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
 		# 必须在首次has_save/load之前切换路径；演示模式不读取或覆盖正式玩家存档。
 		SaveManager.save_path = "user://v08_full_visual_demo.json" if full_demo else "user://v08_hall_visual_demo.json"
 		if courtyard_demo:
 			SaveManager.save_path = "user://v08_courtyard_visual_demo.json"
+		if fixed_demo:
+			SaveManager.save_path = "user://v08_fixed_layout_demo.json"
 	building_card = preload("res://scripts/ui/building_card.gd").new()
 	add_child(building_card)
 	building_card.close_requested.connect(_dismiss_building_card)
 	building_card.manage_requested.connect(_manage_card_selection)
 	building_card.upgrade_requested.connect(_upgrade_card_selection)
+	fixed_site_card = preload("res://scripts/ui/fixed_site_card.gd").new()
+	add_child(fixed_site_card)
+	fixed_site_card.construct_requested.connect(_construct_fixed_site)
+	fixed_site_card.instance_requested.connect(_select_fixed_instance)
+	sect_map.fixed_site_selected.connect(_open_fixed_site)
+	resized.connect(func() -> void:
+		if is_instance_valid(fixed_site_card) and fixed_site_card.visible:
+			_open_fixed_site(fixed_site_card.site_kind))
 	resized.connect(_refresh_building_card)
 	sect_map.hall_selected.connect(_on_hall_selected)
 	GameState.resources_changed.connect(_refresh_resources)
@@ -250,7 +264,15 @@ func _ready() -> void:
 	if not visual_demo and SaveManager.has_save():
 		SaveManager.load_game()
 	if visual_demo:
-		if courtyard_demo:
+		if fixed_demo:
+			GameState.resources["wood"] = 1000
+			GameState.resources["spirit_stone"] = 1000
+			GameState.resources["food"] = 1000
+			if "--fixed-layout-showcase" in OS.get_cmdline_user_args():
+				for kind: StringName in BuildingCatalog.BUILDINGS:
+					preload("res://scripts/world/fixed_sect_layout.gd").construct(GameState, kind)
+				GameState.process_construction(30)
+		elif courtyard_demo:
 			preload("res://scripts/world/courtyard_demo.gd").populate(GameState)
 		elif full_demo:
 			preload("res://scripts/world/visual_demo.gd").populate_full_scene(GameState)
@@ -272,11 +294,19 @@ func _ready() -> void:
 	_refresh_battle()
 	_refresh_crafting_panel()
 	_refresh_development_goal()
+	cancel_build_button.visible = not sect_map.fixed_layout
+	if sect_map.fixed_layout:
+		placement_status.text = "选择院落，消耗资源开始建设"
 	print("青云宗 V0.8 开发版：美术与UI定稿启动成功")
 
 
 func _process(delta: float) -> void:
 	_refresh_building_card()
+	if is_instance_valid(fixed_site_card) and fixed_site_card.visible:
+		fixed_card_refresh += delta
+		if fixed_card_refresh >= 0.5:
+			fixed_card_refresh = 0.0
+			_open_fixed_site(fixed_site_card.site_kind)
 	for resource_data: Dictionary in sect_map.resource_nodes:
 		GameState.process_production(
 			resource_data["site_id"],
@@ -320,6 +350,8 @@ func _refresh_resources() -> void:
 
 
 func _on_resource_selected(resource_data: Dictionary) -> void:
+	if is_instance_valid(fixed_site_card):
+		fixed_site_card.hide()
 	building_card.hide()
 	selected_resource = resource_data
 	selected_building_instance = 0
@@ -340,6 +372,8 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 
 
 func _on_building_selected(building: Dictionary) -> void:
+	if is_instance_valid(fixed_site_card):
+		fixed_site_card.hide()
 	selected_resource = {}
 	selected_building_instance = int(building.get("instance_id", 0))
 	sect_map.selected_cell = Vector2i(building["cell_x"], building["cell_y"])
@@ -537,6 +571,8 @@ func _navigate_sidebar(target: Control) -> void:
 
 
 func _open_management_panel(target: Control = null) -> void:
+	if is_instance_valid(fixed_site_card):
+		fixed_site_card.hide()
 	building_card.hide()
 	var module_name := "宗门"
 	if target == management_heading:
@@ -590,6 +626,10 @@ func _close_management_panel() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and is_instance_valid(fixed_site_card) and fixed_site_card.visible:
+		fixed_site_card.hide()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel") and building_card.visible:
 		_dismiss_building_card()
 		get_viewport().set_input_as_handled()
@@ -1276,6 +1316,9 @@ func _refresh_recruitment() -> void:
 
 
 func _start_building_placement(building_id: StringName) -> void:
+	if sect_map.fixed_layout:
+		_open_fixed_site(building_id)
+		return
 	building_card.hide()
 	_close_management_panel()
 	var definition := BuildingCatalog.get_data(building_id)
@@ -1296,6 +1339,9 @@ func _cancel_building_placement() -> void:
 
 
 func _on_placement_requested(building_id: StringName, cell: Vector2i) -> void:
+	if sect_map.fixed_layout:
+		placement_status.text = "固定院落模式，请选择院落建设"
+		return
 	if GameState.start_construction(building_id, cell):
 		var definition := BuildingCatalog.get_data(building_id)
 		placement_status.text = "%s开始施工（%.0f秒）" % [definition["name"], definition["build_time"]]
@@ -1307,6 +1353,43 @@ func _on_placement_requested(building_id: StringName, cell: Vector2i) -> void:
 		placement_status.text = "无法在这里建造"
 
 
+func _open_fixed_site(kind: StringName) -> void:
+	if not sect_map.fixed_layout or BuildingCatalog.get_data(kind).is_empty():
+		return
+	building_card.hide()
+	_close_management_panel()
+	sect_map.fixed_selected_kind = kind
+	sect_map.queue_redraw()
+	fixed_site_card.show_site(kind, GameState, _get_building_total_effect_text(kind))
+	var frame: Dictionary = sect_map.FixedView.site_frame(sect_map, kind)
+	var offset: Vector2 = sect_map.global_position - global_position
+	var rect: Rect2 = frame["rect"]
+	var nav_top: float = $Layout/Body/BottomNav.global_position.y - global_position.y
+	fixed_site_card.place_near(Rect2(rect.position + offset, rect.size), Rect2(Vector2(24, 104), Vector2(size.x - 48, nav_top - 120)))
+
+
+func _construct_fixed_site(kind: StringName) -> void:
+	if not sect_map.fixed_layout:
+		return
+	var snapshot := GameState.export_save_data().duplicate(true)
+	if not preload("res://scripts/world/fixed_sect_layout.gd").construct(GameState, kind):
+		placement_status.text = "资源不足或宗门建设容量已满"
+		return
+	if not SaveManager.save_game():
+		GameState.import_save_data(snapshot)
+		placement_status.text = "保存失败，本次建设已撤回，资源未消耗"
+	else:
+		placement_status.text = "%s院落开始施工" % BuildingCatalog.get_data(kind)["name"]
+	_open_fixed_site(kind)
+
+
+func _select_fixed_instance(instance_id: int) -> void:
+	var building := GameState.get_building(instance_id)
+	if not building.is_empty():
+		fixed_site_card.hide()
+		_on_building_selected(building)
+
+
 func _refresh_buildings() -> void:
 	sect_map.queue_redraw()
 	_refresh_assignment()
@@ -1314,6 +1397,8 @@ func _refresh_buildings() -> void:
 	_refresh_selected_building()
 	_refresh_crafting_panel()
 	var constructing := 0
+	if is_instance_valid(fixed_site_card) and fixed_site_card.visible:
+		_open_fixed_site(fixed_site_card.site_kind)
 	var upgrading := 0
 	for building: Dictionary in GameState.buildings:
 		if not bool(building["completed"]):
@@ -1328,6 +1413,8 @@ func _refresh_buildings() -> void:
 
 
 func _on_hall_selected() -> void:
+	if is_instance_valid(fixed_site_card):
+		fixed_site_card.hide()
 	sect_map.selected_cell = sect_map.MAIN_HALL_CELL
 	sect_map.queue_redraw()
 	_close_management_panel()

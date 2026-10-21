@@ -23,6 +23,7 @@ func _run() -> void:
 	manager.unix_time_provider = func() -> int: return 5000
 	var main := (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
 	root.add_child(main)
+	main.sect_map.fixed_layout = false # 显式回归保留的自由建造备份链路。
 	main.set_process(false)
 	main.autosave_timer.stop()
 	state.resources["wood"] = 1000

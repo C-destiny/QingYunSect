@@ -1,5 +1,7 @@
 # 当前存档事实与迁移边界
 
+V0.8固定院落候选11（2026-10-21）：负责人批准普通显示改固定院落，原cell_x/y仍仅作逻辑存储，不改写旧实例。一个院落展示该类所有实例，保留逐项管理/升级/收益；不合并或删除数据。新建设扫描TerritoryCatalog已有已解锁空格，调用原start_construction付费计时，保存失败恢复操作前完整状态。SAVE_VERSION仍3，无新增字段；正式普通模式不免费生成七建筑。自由建造备份通过--legacy-free-build启用。--fixed-layout-demo和--fixed-layout-showcase在首次读档前切换user://v08_fixed_layout_demo.json，停用自动存档；前者空院落付费试玩，后者只在演示内扣原成本并推进完工。测试与截图不读取正式savegame.json。
+
 V0.8局部融合候选7：台基/道路接缝/前景栏杆均为渲染数据，不占地、不新增持久化字段。仅显式--courtyard-demo在首次读档检查前设置user://v08_courtyard_visual_demo.json并预置1栋侧翼，普通入口不调用演示布置。玩家原ID、格坐标、等级、资源和进度保持，version3兼容契约不变。
 
 V0.8开阔台地候选6追加：sect_scene_layout只改变逻辑投影到画面的位置和间距，不写回building.cell_x/y。12×8、104×52逻辑契约、主殿(4,3)、旧建筑身份/等级/数值及SAVE_VERSION=3保持；普通读档不执行新演示摆位，无迁移/重置。--full-scene-demo仍只使用独立演示路径。

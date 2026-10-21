@@ -14,6 +14,7 @@ func _run() -> void:
 	var state := root.get_node("GameState")
 	var main := (load("res://scenes/main/main.tscn") as PackedScene).instantiate()
 	root.add_child(main)
+	main.sect_map.fixed_layout = false # 历史自由地图/边缘卡片回归；固定场景另有专项。
 	main.set_process(false)
 	main.autosave_timer.stop()
 	state.resources["wood"] = 1000

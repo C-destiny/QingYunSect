@@ -1,0 +1,76 @@
+extends RefCounted
+
+const Layout = preload("res://scripts/world/fixed_sect_layout.gd")
+
+static func site_frame(map: Control, kind: StringName) -> Dictionary:
+	var profile: Dictionary = map.MAIN_HALL_VISUAL if kind == &"hall" else map.get_building_visual(kind)["profile"]
+	return Layout.frame(kind, map.size, profile)
+
+static func plaque_rect(map: Control, kind: StringName) -> Rect2:
+	var frame := site_frame(map, kind)
+	var width := float(Layout.SITES[kind]["width"]) * float(frame["scale"])
+	return Rect2(frame["foot"] + Vector2(width * 0.42, -width * 0.54), Vector2(43, 102) * float(frame["scale"]))
+
+static func draw(map: Control, state: Node) -> void:
+	map.draw_texture_rect(map.DISTANT_CLOUDS, Rect2(Vector2.ZERO, map.size), false)
+	map.draw_texture_rect(map.MAP_BACKDROP, Layout.world_rect(map.size), false)
+	var kinds: Array = Layout.SITES.keys()
+	kinds.sort_custom(func(a: StringName, b: StringName) -> bool: return Vector2(Layout.SITES[a]["foot"]).y < Vector2(Layout.SITES[b]["foot"]).y)
+	for kind: StringName in kinds:
+		var frame := site_frame(map, kind)
+		var foot: Vector2 = frame["foot"]
+		var buildings := Layout.members(state, kind)
+		if kind == &"hall":
+			map.draw_texture_rect(map.MAIN_HALL_SAMPLE, frame["rect"], false)
+		elif not buildings.is_empty():
+			var completed := false
+			for building: Dictionary in buildings:
+				completed = completed or bool(building["completed"])
+			if completed:
+				var spec: Dictionary = map.get_building_visual(kind)
+				map.draw_texture_rect_region(spec["texture"], frame["rect"], spec["source"])
+			else:
+				map._draw_construction_site(foot, Color("b7a67d"))
+		else:
+			map.draw_set_transform(foot, 0, Vector2(1, 0.5))
+			map.draw_arc(Vector2.ZERO, 43.0 * frame["scale"], 0, TAU, 40, Color(0.79, 0.67, 0.37, 0.6), 1.8, true)
+			map.draw_set_transform(Vector2.ZERO)
+		if map.fixed_selected_kind == kind:
+			map.draw_set_transform(foot, 0, Vector2(1, 0.5))
+			map.draw_arc(Vector2.ZERO, 55.0 * frame["scale"], 0, TAU, 48, Color("e6c877"), 3, true)
+			map.draw_set_transform(Vector2.ZERO)
+		var plaque := plaque_rect(map, kind)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("f4ead0")
+		style.border_color = Color("9d8758")
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(5)
+		style.shadow_size = 4
+		style.shadow_color = Color(0, 0, 0, 0.25)
+		map.draw_style_box(style, plaque)
+		var name_text := String(Layout.SITES[kind]["name"])
+		var font_size := maxi(13, roundi(18 * frame["scale"]))
+		for index: int in range(name_text.length()):
+			map.draw_string(ThemeDB.fallback_font, plaque.position + Vector2(5, 24 + index * 20) * frame["scale"], name_text.substr(index, 1), HORIZONTAL_ALIGNMENT_CENTER, plaque.size.x - 10, font_size, Color("203c40"))
+		var status := "Lv.%d" % state.sect_level if kind == &"hall" else ("待建" if buildings.is_empty() else "%d座" % buildings.size())
+		map.draw_string(ThemeDB.fallback_font, plaque.position + Vector2(3, plaque.size.y - 7), status, HORIZONTAL_ALIGNMENT_CENTER, plaque.size.x - 6, maxi(11, font_size - 4), Color("46615c"))
+	for resource: Dictionary in map.resource_nodes:
+		var at := Layout.point(Layout.RESOURCE_POINTS[resource["site_id"]], map.size)
+		map._draw_map_label(at, "%s采集" % resource["resource_name"], 100, 13)
+
+static func hit(map: Control, position: Vector2) -> StringName:
+	var kinds: Array = Layout.SITES.keys()
+	kinds.sort_custom(func(a: StringName, b: StringName) -> bool: return Vector2(Layout.SITES[a]["foot"]).y > Vector2(Layout.SITES[b]["foot"]).y)
+	for kind: StringName in kinds:
+		var frame := site_frame(map, kind)
+		if plaque_rect(map, kind).grow(4).has_point(position) or Rect2(frame["foot"] - Vector2(55, 28) * frame["scale"], Vector2(110, 56) * frame["scale"]).has_point(position):
+			return kind
+		var buildings := Layout.members(map.get_node("/root/GameState"), kind)
+		if kind == &"hall":
+			if map._is_sprite_hit(map.MAIN_HALL_SAMPLE, Rect2(Vector2.ZERO, map.MAIN_HALL_SAMPLE.get_size()), frame["rect"], position):
+				return kind
+		elif not buildings.is_empty():
+			var spec: Dictionary = map.get_building_visual(kind)
+			if map._is_sprite_hit(spec["texture"], spec["source"], frame["rect"], position):
+				return kind
+	return &""

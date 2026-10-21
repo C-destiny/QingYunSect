@@ -3,6 +3,8 @@ extends Control
 const SectProjectionData = preload("res://scripts/world/sect_projection.gd")
 const SceneLayout = preload("res://scripts/world/sect_scene_layout.gd")
 const TerrainSurface = preload("res://scripts/world/sect_terrain_surface.gd")
+const FixedLayout = preload("res://scripts/world/fixed_sect_layout.gd")
+const FixedView = preload("res://scripts/world/fixed_sect_view.gd")
 const DISTANT_CLOUDS: Texture2D = preload("res://assets/environment/sect_cloud_distance.png")
 const TERRAIN_PAVING: Texture2D = preload("res://assets/environment/sect_limestone_paving.png")
 const TERRAIN_CLIFF: Texture2D = preload("res://assets/environment/sect_cliff_material.png")
@@ -23,6 +25,7 @@ signal resource_selected(resource_data: Dictionary)
 signal placement_requested(building_type: StringName, cell: Vector2i)
 signal building_selected(building: Dictionary)
 signal region_selected(region_id: StringName)
+signal fixed_site_selected(kind: StringName)
 
 var GRID_SIZE: Vector2i:
 	get:
@@ -78,6 +81,8 @@ var hit_images: Dictionary = {}
 var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
 var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
+var fixed_layout := false # 主场景默认启用；裸地图保留自由规则以供备份回归。
+var fixed_selected_kind: StringName = &""
 var terrain_detail_stage := 4 # 审图：0自然边缘、1道路和阶、2栏杆、3池岸、4松石。
 var visual_plane_lift := 0.0 # 仅验证共面视觉标高，默认0；不写建筑或存档。
 # 生成图并非均匀四格，按实际透明边界取样，避免把相邻素材带进运行图。
@@ -106,6 +111,9 @@ func _ready() -> void:
 
 
 func _draw() -> void:
+	if fixed_layout:
+		FixedView.draw(self, GameState)
+		return
 	var origin := _map_origin()
 	# 层级只在渲染端组织：远景→地面道路→接地影→深度物件→交互，HUD仍由主场景控制。
 	_draw_backdrop(origin)
@@ -468,6 +476,24 @@ func _draw_pine(base: Vector2, scale_value: float) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if fixed_layout:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			for resource: Dictionary in resource_nodes:
+				var at := FixedLayout.point(FixedLayout.RESOURCE_POINTS[resource["site_id"]], size)
+				if Rect2(at - Vector2(50, 20), Vector2(100, 32)).has_point(event.position):
+					resource_selected.emit(resource)
+					accept_event()
+					return
+			var kind := FixedView.hit(self, event.position)
+			if kind != &"":
+				fixed_selected_kind = kind
+				if kind == &"hall":
+					hall_selected.emit()
+				else:
+					fixed_site_selected.emit(kind)
+				queue_redraw()
+				accept_event()
+		return
 	if event is InputEventMouseMotion:
 		hovered_position = event.position
 		hovered_cell = _screen_to_cell(event.position, _map_origin())
@@ -568,6 +594,8 @@ func _pick_visual_building(point: Vector2, origin: Vector2) -> Dictionary:
 
 
 func start_placement(building_type: StringName) -> void:
+	if fixed_layout:
+		return # 固定模式不能进入自由落点，旧逻辑仅供显式备份模式使用。
 	placement_building = building_type
 	selected_cell = Vector2i(-1, -1)
 	queue_redraw()
@@ -580,6 +608,7 @@ func cancel_placement() -> void:
 
 func clear_selection() -> void:
 	selected_cell = Vector2i(-1, -1)
+	fixed_selected_kind = &""
 	queue_redraw()
 
 
@@ -911,6 +940,8 @@ func get_building_visual_rect(building: Dictionary, origin: Vector2) -> Rect2:
 
 
 func get_building_ground_frame(building: Dictionary, origin: Vector2) -> Dictionary:
+	if fixed_layout:
+		return FixedView.site_frame(self, StringName(building["type"]))
 	var spec := get_building_visual(StringName(building["type"]))
 	var cell := Vector2i(building["cell_x"], building["cell_y"])
 	return SceneLayout.ground_frame(Vector2(cell), origin, spec["profile"],
@@ -918,6 +949,8 @@ func get_building_ground_frame(building: Dictionary, origin: Vector2) -> Diction
 
 
 func get_hall_ground_frame(origin: Vector2) -> Dictionary:
+	if fixed_layout:
+		return FixedView.site_frame(self, &"hall")
 	return SceneLayout.ground_frame(Vector2(MAIN_HALL_CELL), origin, MAIN_HALL_VISUAL)
 
 
