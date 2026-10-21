@@ -1357,9 +1357,7 @@ func _upgrade_card_selection() -> void:
 func _refresh_building_card() -> void:
 	if not is_instance_valid(building_card) or not building_card.visible:
 		return
-	var cell: Vector2i = sect_map.MAIN_HALL_CELL
-	var profile: Dictionary = sect_map.MAIN_HALL_VISUAL
-	var building_visual_rect := Rect2()
+	var building_visual_rect: Rect2 = sect_map.get_hall_ground_frame(sect_map._map_origin())["rect"]
 	if card_is_hall:
 		building_card.title_label.text = "宗门主殿 · Lv.%d" % GameState.sect_level
 		building_card.status_label.text = sect_level_status.text + "\n固定主殿 · 宗门事务请进入详细管理"
@@ -1371,8 +1369,6 @@ func _refresh_building_card() -> void:
 			_dismiss_building_card()
 			return
 		var kind := StringName(building["type"])
-		cell = Vector2i(building["cell_x"], building["cell_y"])
-		profile = sect_map.get_building_visual(kind)["profile"]
 		building_visual_rect = sect_map.get_building_visual_rect(building, sect_map._map_origin())
 		building_card.title_label.text = "%s · Lv.%d" % [BuildingCatalog.get_data(kind)["name"], int(building["level"])]
 		var status := "已完工"
@@ -1384,7 +1380,6 @@ func _refresh_building_card() -> void:
 		building_card.upgrade_button.text = upgrade_button.text
 		building_card.upgrade_button.disabled = not GameState.can_upgrade_building(selected_building_instance)
 	var map_offset: Vector2 = sect_map.global_position - global_position
-	var ground: Vector2 = sect_map._cell_to_screen(cell, sect_map._map_origin()) + map_offset
-	var visual_rect: Rect2 = sect_map.get_grounded_rect(ground, profile) if card_is_hall else Rect2(building_visual_rect.position + map_offset, building_visual_rect.size)
+	var visual_rect := Rect2(building_visual_rect.position + map_offset, building_visual_rect.size)
 	var nav_top: float = $Layout/Body/BottomNav.global_position.y - global_position.y
 	building_card.place_near(visual_rect, Rect2(Vector2(24, 104), Vector2(size.x - 48, nav_top - 120)))

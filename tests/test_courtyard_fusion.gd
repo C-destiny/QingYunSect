@@ -57,9 +57,9 @@ func _run() -> void:
 		assert(picked_pixels > 50)
 	assert(state.export_save_data() == snapshot)
 	# 边缘施工时装饰让位，不禁止原有合法建造。
-	assert(state.start_construction(&"lumber_yard", Vector2i(11, 6)))
+	assert(state.start_construction(&"lumber_yard", Vector2i(1, 7)))
 	for item: Dictionary in map.get_courtyard_foreground(map._map_origin()):
-		assert(item["key"] != "courtyard:edge-right")
+		assert(item["key"] != "courtyard:edge-left")
 	var manager := root.get_node("SaveManager")
 	manager.save_path = "res://tests/.test_courtyard_fusion.json"
 	manager.unix_time_provider = func() -> int: return 5000

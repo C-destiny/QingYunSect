@@ -17,7 +17,7 @@ static func make_plan(origin: Vector2) -> Dictionary:
 	])
 	return {"bounds": bounds, "top": top, "height": 0.0,
 		"foreground": [
-			{"foot": LayoutData.project_continuous(Vector2(2.3, last.y - 0.05), origin), "width": 184.0, "key": "courtyard:edge-left"},
+			{"foot": LayoutData.project_continuous(Vector2(1.0, last.y - 0.05), origin), "width": 184.0, "key": "courtyard:edge-left"},
 			{"foot": LayoutData.project_continuous(Vector2(last.x - 0.05, 5.5), origin), "width": 184.0, "key": "courtyard:edge-right"},
 		]}
 
@@ -61,3 +61,53 @@ static func draw_surface(canvas: Control, origin: Vector2, ground: Texture2D, ro
 			y += 2.0
 		x += 2.0
 	canvas.draw_polyline(PackedVector2Array([top[1], top[2], top[3]]), Color("bdb8a3"), 3.0, true)
+
+# 台阶只在可建造矩形之外形成视觉落差，绝不抬高或切断内部逻辑格。
+static func edge_stair_plan(origin: Vector2) -> Array[Dictionary]:
+	var bounds: Rect2 = make_plan(origin)["bounds"]
+	var result: Array[Dictionary] = []
+	for index: int in range(6):
+		var y0 := bounds.end.y + float(index) * 0.16
+		var y1 := y0 + 0.16
+		var drop := Vector2(0, float(index) * 4.0)
+		var quad := PackedVector2Array([
+			LayoutData.project_continuous(Vector2(2.7, y0), origin) + drop,
+			LayoutData.project_continuous(Vector2(3.8, y0), origin) + drop,
+			LayoutData.project_continuous(Vector2(3.8, y1), origin) + drop,
+			LayoutData.project_continuous(Vector2(2.7, y1), origin) + drop])
+		result.append({"quad": quad, "logical_y": y0, "drop": drop.y})
+	return result
+
+static func draw_edge_stairs(canvas: Control, origin: Vector2, paving: Texture2D, rock: Texture2D) -> void:
+	# 下端必须有承托落台，不能把一截阶梯悬挂在崖面上。
+	var edge_y := float(make_plan(origin)["bounds"].end.y)
+	var landing := PackedVector2Array([
+		LayoutData.project_continuous(Vector2(2.4, edge_y + 0.96), origin) + Vector2(0, 24),
+		LayoutData.project_continuous(Vector2(4.1, edge_y + 0.96), origin) + Vector2(0, 24),
+		LayoutData.project_continuous(Vector2(4.1, edge_y + 1.5), origin) + Vector2(0, 24),
+		LayoutData.project_continuous(Vector2(2.4, edge_y + 1.5), origin) + Vector2(0, 24)])
+	for edge: Vector2i in [Vector2i(1, 2), Vector2i(2, 3)]:
+		canvas.draw_polygon(PackedVector2Array([landing[edge.x], landing[edge.y], landing[edge.y] + Vector2(0, 42), landing[edge.x] + Vector2(0, 42)]),
+			PackedColorArray([Color(0.83, 0.89, 0.87)]),
+			PackedVector2Array([Vector2(0.2, 0.1), Vector2(0.6, 0.1), Vector2(0.6, 0.55), Vector2(0.2, 0.55)]), rock)
+	canvas.draw_polygon(landing, PackedColorArray([Color.WHITE]),
+		PackedVector2Array([Vector2.ZERO, Vector2(0.7, 0), Vector2(0.7, 0.4), Vector2(0, 0.4)]), paving)
+	for step: Dictionary in edge_stair_plan(origin):
+		var quad: PackedVector2Array = step["quad"]
+		canvas.draw_polygon(quad, PackedColorArray([Color(1, 0.99, 0.94)]),
+			PackedVector2Array([Vector2.ZERO, Vector2(0.5, 0), Vector2(0.5, 0.18), Vector2(0, 0.18)]), paving)
+		canvas.draw_colored_polygon(PackedVector2Array([quad[2], quad[3], quad[3] + Vector2(0, 4), quad[2] + Vector2(0, 4)]), Color("a7a18e"))
+		canvas.draw_line(quad[2], quad[3], Color("e0d8c2"), 1.4, true)
+
+static func approach_quad(start: Vector2, finish: Vector2, width: float) -> PackedVector2Array:
+	var across := Vector2(1, 0.5).normalized() * width * 0.5
+	return PackedVector2Array([start - across, start + across, finish + across, finish - across])
+
+static func draw_approach(canvas: Control, start: Vector2, finish: Vector2, width: float) -> void:
+	var quad := approach_quad(start, finish, width)
+	canvas.draw_colored_polygon(quad, Color(0.91, 0.88, 0.78, 0.68))
+	canvas.draw_polyline(PackedVector2Array([quad[0], quad[3], quad[2], quad[1]]), Color(0.64, 0.60, 0.47, 0.42), 1.2, true)
+	for index: int in range(1, 5):
+		var center := start.lerp(finish, float(index) / 5.0)
+		var across := Vector2(1, 0.5).normalized() * width * 0.48
+		canvas.draw_line(center - across, center + across, Color(0.66, 0.63, 0.54, 0.25), 1.0, true)

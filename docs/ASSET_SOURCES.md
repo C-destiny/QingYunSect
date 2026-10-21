@@ -1,5 +1,7 @@
 # 素材来源与许可记录
 
+2026-10-21候选9未引入新位图或外部资源。scripts/world/sect_terrain_surface.gd的入口/台阶/承托落台由项目代码绘制，纹理复用既有铺装/岩壁；低栏杆和池石沿用COURTYARD_FUSION.md、HALL_GARDEN_POND.md，地形材质沿用TERRAIN_LAYERS.md。docs/art/v08-terrain9-*.png均为隔离Godot逐阶段实际截图。
+
 2026-10-21地形整改候选8：assets/environment/sect_cloud_distance.png、sect_limestone_paving.png、sect_cliff_material.png为内置ImageGen生成的独立背景/铺装/岩壁材质，来源、尺寸、完整提示词、SHA256和使用范围见assets/environment/TERRAIN_LAYERS.md。docs/art/v08-terrain8-*.png为隔离Godot实际运行截图，非生成概念图。旧庭院图集仅复用低栏杆，沿用原来源；无外部抓取素材。
 
 本文件记录V0.8起引入项目的视觉、字体和音频素材。未列入本表的外部素材不得进入发布包。

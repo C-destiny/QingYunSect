@@ -20,3 +20,12 @@ static func project_continuous(cell: Vector2, origin_point: Vector2) -> Vector2:
 	var x_axis := ProjectionData.project(Vector2i(1, 0), Vector2.ZERO)
 	var y_axis := ProjectionData.project(Vector2i(0, 1), Vector2.ZERO)
 	return origin_point + (x_axis * cell.x + y_axis * cell.y) * GROUND_SPACING
+
+# 同一脚点派生精灵、入口与接地影；屋顶高度不参与逻辑占地。
+static func ground_frame(cell: Vector2, origin_point: Vector2, profile: Dictionary, visual_scale: float = 1.0) -> Dictionary:
+	var foot := project_continuous(cell, origin_point)
+	var extent := Vector2(profile["size"]) * visual_scale
+	var rect := Rect2(foot - extent * Vector2(profile["foot"]), extent)
+	return {"foot": foot, "rect": rect,
+		"entrance": rect.position + extent * Vector2(profile.get("entrance", profile["foot"])),
+		"shadow": foot + Vector2(profile.get("shadow_offset", Vector2(8, 6))), "scale": visual_scale}

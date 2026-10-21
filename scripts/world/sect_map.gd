@@ -50,8 +50,8 @@ const BUILDING_ATLAS_INDEX := {
 }
 # 脚点为图集格内的归一化地面位置；普通图集沿用原位置，主殿已按独立样板底座校准。
 # 只影响渲染，不作为占地、点击或存档数据；尺寸单位为逻辑像素。
-const MAIN_HALL_VISUAL := {"size": Vector2(390, 390), "foot": Vector2(0.5, 0.82)}
-const QUARTERS_VISUAL := {"size": Vector2(172, 172), "foot": Vector2(0.5, 0.83)}
+const MAIN_HALL_VISUAL := {"size": Vector2(390, 390), "foot": Vector2(0.5, 0.82), "entrance": Vector2(0.28, 0.79), "shadow_offset": Vector2(12, 17)}
+const QUARTERS_VISUAL := {"size": Vector2(172, 172), "foot": Vector2(0.5, 0.83), "entrance": Vector2(0.31, 0.805)}
 const BUILDING_VISUAL := {"size": Vector2(136, 153), "foot": Vector2(0.5, 0.5 + 55.0 / 153.0)}
 const RESOURCE_VISUAL := {"size": Vector2(126, 84), "foot": Vector2(0.5, 0.5 + 41.0 / 84.0)}
 
@@ -76,6 +76,8 @@ var hit_images: Dictionary = {}
 var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
 var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
+var terrain_detail_stage := 3 # 审图：0地基、1入口和外沿阶、2栏杆、3园林。
+var visual_plane_lift := 0.0 # 仅验证共面视觉标高，默认0；不写建筑或存档。
 # 生成图并非均匀四格，按实际透明边界取样，避免把相邻素材带进运行图。
 const COURTYARD_SOURCES := {
 	"hall": Rect2(0, 64, 940, 510), "wing": Rect2(955, 182, 581, 378),
@@ -182,33 +184,46 @@ func get_courtyard_plan(origin: Vector2) -> Dictionary:
 func _draw_courtyard_ground(origin: Vector2) -> void:
 	if structured_terrain:
 		TerrainSurface.draw_surface(self, origin, TERRAIN_PAVING, TERRAIN_CLIFF)
+		if terrain_detail_stage >= 1:
+			for approach: Dictionary in get_terrain_approaches(origin):
+				TerrainSurface.draw_approach(self, approach["start"], approach["end"], approach["width"])
+			TerrainSurface.draw_edge_stairs(self, origin, TERRAIN_PAVING, TERRAIN_CLIFF)
 
 
 func get_courtyard_foreground(origin: Vector2) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	if not structured_terrain:
+	if not structured_terrain or terrain_detail_stage < 2:
 		return result
 	var plan := get_courtyard_plan(origin)
-	for entry: Dictionary in plan["foreground"]:
+	for entry: Dictionary in plan["foreground"].slice(0, 1): # 本轮只审一段栏杆，不一次铺满。
 		var foot: Vector2 = entry["foot"]
 		var width := float(entry["width"])
+		var rect := Rect2(foot - Vector2(width * 0.5, width * 380.0 / 640.0 * 0.65), Vector2(width, width * 380.0 / 640.0))
 		var blocked := false
 		# 外缘纯视觉栏杆：任何旧建筑或新施工进入落点时均退让。
 		for building: Dictionary in GameState.buildings:
-			var ground := _cell_to_screen(Vector2i(building["cell_x"], building["cell_y"]), origin)
-			if Rect2(foot - Vector2(width * 0.5, 26), Vector2(width, 52)).has_point(ground):
+			if rect.grow(4).intersects(_visual_base(get_building_visual_rect(building, origin))):
 				blocked = true
 				break
 		if not blocked:
 			result.append({"kind": "decor", "key": entry["key"], "cell": _screen_to_cell(foot, origin),
 				"depth": (foot.y - origin.y) / (TILE_SIZE.y * 0.5 * SceneLayout.GROUND_SPACING),
-				"rect": Rect2(foot - Vector2(width * 0.5, width * 380.0 / 640.0 * 0.65), Vector2(width, width * 380.0 / 640.0))})
+				"rect": rect})
+	if terrain_detail_stage >= 3:
+		var garden := get_structured_garden_rect(origin)
+		if garden.has_area():
+			var foot := garden.position + garden.size * Vector2(0.5, 0.8)
+			result.append({"kind": "decor", "key": "courtyard:garden", "cell": _screen_to_cell(foot, origin),
+				"depth": (foot.y - origin.y) / (TILE_SIZE.y * 0.5 * SceneLayout.GROUND_SPACING), "rect": garden})
 	return result
 
 
 func _draw_courtyard_foreground(item: Dictionary) -> void:
 	var tint := Color(1, 1, 1, 0.32) if is_grid_visible() else Color.WHITE
-	draw_texture_rect_region(courtyard_atlas, item["rect"], COURTYARD_SOURCES["rail"], tint)
+	if item["key"] == "courtyard:garden":
+		draw_texture_rect(GARDEN_POND, item["rect"], false, tint)
+	else:
+		draw_texture_rect_region(courtyard_atlas, item["rect"], COURTYARD_SOURCES["rail"], tint)
 
 
 # 无入参，返回是否显示完整建造网格；只读，不改变地图、资源或存档。
@@ -285,19 +300,20 @@ func _is_world_item_before(first: Dictionary, second: Dictionary) -> bool:
 
 func _draw_shadow_layer(items: Array[Dictionary], origin: Vector2) -> void:
 	# 所有接地影先于建筑主体，防止后绘制建筑的影子盖在前一栋墙面上。
-	var hall_center := _cell_to_screen(MAIN_HALL_CELL, origin)
+	var hall_frame := get_hall_ground_frame(origin)
+	var hall_center: Vector2 = hall_frame["foot"]
 	# 与左上光源对应的右下接地影独立于位图，后续可按底座轮廓校准。
-	draw_set_transform(hall_center + Vector2(12, 17), 0.0, Vector2(1.0, 0.27))
+	draw_set_transform(hall_frame["shadow"], 0.0, Vector2(1.0, 0.27))
 	draw_circle(Vector2.ZERO, 145.0, Color(0.08, 0.12, 0.13, 0.12))
 	draw_set_transform(hall_center + Vector2(0, 10), 0.0, Vector2(1.0, 0.17))
 	draw_circle(Vector2.ZERO, 130.0, Color(0.06, 0.09, 0.10, 0.08))
 	draw_set_transform(Vector2.ZERO)
 	for item: Dictionary in items:
 		if item["kind"] == "building":
-			var center := _cell_to_screen(item["cell"], origin)
+			var frame := get_building_ground_frame(item["data"], origin)
 			var spec := get_building_visual(StringName(item["data"]["type"]))
 			var radius := float(spec["profile"]["size"].x) * 0.27
-			draw_set_transform(center + Vector2(8, 6), 0.0, Vector2(1.0, 0.38))
+			draw_set_transform(frame["shadow"], 0.0, Vector2(1.0, 0.38))
 			draw_circle(Vector2.ZERO, radius, Color(0.07, 0.10, 0.11, 0.13))
 			draw_set_transform(Vector2.ZERO)
 
@@ -474,7 +490,7 @@ func _gui_input(event: InputEvent) -> void:
 				return
 
 		if placement_building == &"" and (clicked_cell == MAIN_HALL_CELL or not _is_hall_occluding_active_building(_map_origin())):
-			var hall_rect := get_grounded_rect(_cell_to_screen(MAIN_HALL_CELL, _map_origin()), MAIN_HALL_VISUAL)
+			var hall_rect: Rect2 = get_hall_ground_frame(_map_origin())["rect"]
 			if clicked_cell == MAIN_HALL_CELL or _is_sprite_hit(MAIN_HALL_SAMPLE,
 				Rect2(Vector2.ZERO, MAIN_HALL_SAMPLE.get_size()), hall_rect, event.position):
 				selected_cell = MAIN_HALL_CELL
@@ -510,7 +526,7 @@ func _pick_visual_building(point: Vector2, origin: Vector2) -> Dictionary:
 		if item["kind"] == "hall":
 			if not _is_hall_occluding_active_building(origin) and _is_sprite_hit(
 				MAIN_HALL_SAMPLE, Rect2(Vector2.ZERO, MAIN_HALL_SAMPLE.get_size()),
-				get_grounded_rect(ground, MAIN_HALL_VISUAL), point
+				get_hall_ground_frame(origin)["rect"], point
 			):
 				return {}
 		elif item["kind"] == "resource":
@@ -564,7 +580,7 @@ func get_placement_feedback(cell: Vector2i) -> Dictionary:
 
 
 func _map_origin() -> Vector2:
-	return SceneLayout.origin(size)
+	return SceneLayout.origin(size) - Vector2(0, visual_plane_lift if structured_terrain else 0.0)
 
 
 func _cell_to_screen(cell: Vector2i, origin: Vector2) -> Vector2:
@@ -579,7 +595,7 @@ func _draw_main_hall(origin: Vector2) -> void:
 	var center := _cell_to_screen(MAIN_HALL_CELL, origin)
 	if MAIN_HALL_SAMPLE != null:
 		var tint := Color(1, 1, 1, 0.28) if _is_hall_occluding_active_building(origin) else Color.WHITE
-		draw_texture_rect(MAIN_HALL_SAMPLE, get_grounded_rect(center, MAIN_HALL_VISUAL), false, tint)
+		draw_texture_rect(MAIN_HALL_SAMPLE, get_hall_ground_frame(origin)["rect"], false, tint)
 		return
 	if LANDMARK_ATLAS != null:
 		_draw_grounded_atlas(LANDMARK_ATLAS, LANDMARK_ATLAS_CELLS, Vector2i(0, 0), center, MAIN_HALL_VISUAL)
@@ -601,7 +617,7 @@ func _draw_main_hall(origin: Vector2) -> void:
 
 func _is_hall_occluding_active_building(origin: Vector2) -> bool:
 	# 主殿有视觉外延但不扩占地；操作其后方旧建筑时让主殿淡出，不能靠禁建解决遮挡。
-	var hall_rect := get_grounded_rect(_cell_to_screen(MAIN_HALL_CELL, origin), MAIN_HALL_VISUAL)
+	var hall_rect: Rect2 = get_hall_ground_frame(origin)["rect"]
 	for building: Dictionary in GameState.buildings:
 		var cell := Vector2i(int(building["cell_x"]), int(building["cell_y"]))
 		if cell != selected_cell and cell != hovered_cell:
@@ -662,7 +678,7 @@ func _draw_building_status(building: Dictionary, origin: Vector2) -> void:
 	var completed := bool(building["completed"])
 	var name_text: String = definition["name"]
 	# 完工且被主殿遮住的旧建筑平时不隔着屋顶显示标签；悬停/选中仍透显并保留信息。
-	var hall_rect := get_grounded_rect(_cell_to_screen(MAIN_HALL_CELL, origin), MAIN_HALL_VISUAL)
+	var hall_rect: Rect2 = get_hall_ground_frame(origin)["rect"]
 	if completed and cell.x + cell.y <= MAIN_HALL_CELL.x + MAIN_HALL_CELL.y and hall_rect.has_point(center):
 		if cell != selected_cell and cell != hovered_cell:
 			return
@@ -804,7 +820,7 @@ func _draw_placement_preview(origin: Vector2) -> void:
 	if feedback["category"] != "outside":
 		var spec := get_building_visual(placement_building)
 		var tint := Color(1, 1, 1, 0.42) if is_valid else Color(1, 0.35, 0.25, 0.28)
-		draw_texture_rect_region(spec["texture"], get_grounded_rect(center, spec["profile"]), spec["source"], tint)
+		draw_texture_rect_region(spec["texture"], get_preview_ground_frame(hovered_cell, origin)["rect"], spec["source"], tint)
 		var preview_color := Color(0.35, 0.82, 0.48, 0.4) if is_valid else Color(0.89, 0.30, 0.25, 0.4)
 		var points := _cell_points(center)
 		draw_colored_polygon(points, preview_color)
@@ -866,7 +882,82 @@ func get_building_visual(building_type: StringName) -> Dictionary:
 
 
 func get_building_visual_rect(building: Dictionary, origin: Vector2) -> Rect2:
+	return get_building_ground_frame(building, origin)["rect"]
+
+
+func get_building_ground_frame(building: Dictionary, origin: Vector2) -> Dictionary:
 	var spec := get_building_visual(StringName(building["type"]))
 	var cell := Vector2i(building["cell_x"], building["cell_y"])
-	return get_grounded_rect(_cell_to_screen(cell, origin), spec["profile"],
+	return SceneLayout.ground_frame(Vector2(cell), origin, spec["profile"],
 		1.0 + float(int(building.get("level", 1)) - 1) * 0.055)
+
+
+func get_hall_ground_frame(origin: Vector2) -> Dictionary:
+	return SceneLayout.ground_frame(Vector2(MAIN_HALL_CELL), origin, MAIN_HALL_VISUAL)
+
+
+func get_preview_ground_frame(cell: Vector2i, origin: Vector2) -> Dictionary:
+	return SceneLayout.ground_frame(Vector2(cell), origin, get_building_visual(placement_building)["profile"])
+
+
+func _terrain_obstacles(origin: Vector2) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var hall: Rect2 = get_hall_ground_frame(origin)["rect"]
+	result.append({"owner": "hall", "rect": _visual_base(hall)})
+	for building: Dictionary in GameState.buildings:
+		result.append({"owner": str(building["instance_id"]), "rect": _visual_base(get_building_visual_rect(building, origin))})
+	for resource: Dictionary in resource_nodes:
+		var rect := get_grounded_rect(_cell_to_screen(resource["cell"], origin), RESOURCE_VISUAL)
+		result.append({"owner": String(resource["site_id"]), "rect": _visual_base(rect)})
+	return result
+
+
+func _visual_base(rect: Rect2) -> Rect2:
+	return Rect2(rect.position + rect.size * Vector2(0.12, 0.58), rect.size * Vector2(0.76, 0.34))
+
+
+func get_terrain_approaches(origin: Vector2) -> Array[Dictionary]:
+	var candidates: Array[Dictionary] = [{"owner": "hall", "frame": get_hall_ground_frame(origin), "width": 52.0, "length": 78.0}]
+	var wing := get_courtyard_wing(origin)
+	if not wing.is_empty():
+		candidates.append({"owner": str(wing["instance_id"]), "frame": get_building_ground_frame(wing, origin), "width": 27.0, "length": 48.0})
+	var result: Array[Dictionary] = []
+	var obstacles := _terrain_obstacles(origin)
+	for candidate: Dictionary in candidates:
+		var start: Vector2 = candidate["frame"]["entrance"]
+		var finish := start + Vector2(-1, 0.5) * float(candidate["length"])
+		var quad := TerrainSurface.approach_quad(start, finish, candidate["width"])
+		var blocked := false
+		for obstacle: Dictionary in obstacles:
+			if obstacle["owner"] == candidate["owner"]:
+				continue # 仅自身入口接缝允许延伸至自身台基，其他构件必须让位。
+			if Geometry2D.intersect_polygons(quad, _rect_polygon(obstacle["rect"].grow(4))).size() > 0:
+				blocked = true
+				break
+		if not blocked:
+			result.append({"start": start, "end": finish, "width": candidate["width"], "owner": candidate["owner"], "quad": quad})
+	return result
+
+
+func _rect_polygon(rect: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([rect.position, rect.position + Vector2(rect.size.x, 0), rect.end, rect.position + Vector2(0, rect.size.y)])
+
+
+func get_structured_garden_rect(origin: Vector2) -> Rect2:
+	var hall: Vector2 = get_hall_ground_frame(origin)["foot"]
+	var top: PackedVector2Array = TerrainSurface.make_plan(origin)["top"]
+	for offset: Vector2 in [Vector2(180, 145), Vector2(240, 75)]:
+		var garden := Rect2(hall + offset - Vector2(105, 63), Vector2(210, 126))
+		var blocked := false
+		for corner: Vector2 in _rect_polygon(garden):
+			if not Geometry2D.is_point_in_polygon(corner, top):
+				blocked = true
+		for obstacle: Dictionary in _terrain_obstacles(origin):
+			if garden.grow(8).intersects(obstacle["rect"]):
+				blocked = true
+		for approach: Dictionary in get_terrain_approaches(origin):
+			if Geometry2D.intersect_polygons(_rect_polygon(garden.grow(8)), approach["quad"]).size() > 0:
+				blocked = true
+		if not blocked:
+			return garden
+	return Rect2() # 没有安全位置就隐藏地景，绝不搬玩家建筑或减少合法格。
