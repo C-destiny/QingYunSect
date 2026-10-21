@@ -71,7 +71,31 @@ func _run() -> void:
 				assert(Rect2(Vector2.ZERO, main.size).encloses(main.fixed_site_card.get_rect()))
 				assert(not main.fixed_site_card.get_global_rect().intersects(main.get_node("Layout/Body/BottomNav").get_global_rect()))
 				main.fixed_site_card.hide()
+	# 定时刷新必须保留旧档多实例列表的滚动、焦点和按钮身份。
+	for index: int in range(9):
+		assert(Layout.construct(state, &"disciple_quarters"))
+	main._open_fixed_site(&"disciple_quarters")
+	await process_frame
+	await process_frame
+	main.fixed_site_card.member_scroll.scroll_vertical = 90
+	var scroll_before: int = main.fixed_site_card.member_scroll.scroll_vertical
+	assert(scroll_before > 0)
+	var row: Button = main.fixed_site_card.member_list.get_child(2)
+	row.grab_focus()
+	var focus_scroll: int = main.fixed_site_card.member_scroll.scroll_vertical
+	main._open_fixed_site(&"disciple_quarters")
+	await process_frame
+	assert(main.fixed_site_card.member_list.get_child(2) == row and row.has_focus())
+	assert(main.fixed_site_card.member_scroll.scroll_vertical == focus_scroll)
 	var snapshot: Dictionary = state.export_save_data().duplicate(true)
+	var details = preload("res://scripts/world/fixed_courtyard_details.gd")
+	var previous_depth := -INF
+	for item: Dictionary in details.items(main.sect_map):
+		assert(item["depth"] >= previous_depth)
+		previous_depth = item["depth"]
+		assert(Rect2(Vector2.ZERO, main.sect_map.size).encloses(item["rect"]))
+	# 绘制配置/景观查询不允许改写游戏数据。
+	assert(state.export_save_data() == snapshot)
 	manager.save_path = "res://tests/missing-fixed-directory/fail.json"
 	main._construct_fixed_site(&"spirit_field")
 	assert(JSON.stringify(state.export_save_data()) == JSON.stringify(snapshot))

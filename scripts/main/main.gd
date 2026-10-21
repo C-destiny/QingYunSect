@@ -1357,7 +1357,9 @@ func _open_fixed_site(kind: StringName) -> void:
 	if not sect_map.fixed_layout or BuildingCatalog.get_data(kind).is_empty():
 		return
 	building_card.hide()
-	_close_management_panel()
+	# 定时刷新不能重复关闭已关闭的抽屉，否则会把列表键盘焦点抢回底栏。
+	if management_sidebar.visible:
+		_close_management_panel()
 	sect_map.fixed_selected_kind = kind
 	sect_map.queue_redraw()
 	fixed_site_card.show_site(kind, GameState, _get_building_total_effect_text(kind))

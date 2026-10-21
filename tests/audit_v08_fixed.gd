@@ -6,7 +6,7 @@ func capture(label: String) -> void:
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
-	assert(root.get_texture().get_image().save_png("res://builds/v08-scene-audit/fixed11-%s-%dx%d.png" % [label, root.size.x, root.size.y]) == OK)
+	assert(root.get_texture().get_image().save_png("res://builds/v08-scene-audit/fixed12-%s-%dx%d.png" % [label, root.size.x, root.size.y]) == OK)
 func _run() -> void:
 	var manager := root.get_node("SaveManager")
 	manager.save_path = "res://tests/.test_fixed_audit.json"
@@ -43,5 +43,5 @@ func _run() -> void:
 		main._dismiss_building_card()
 	main.queue_free()
 	await process_frame
-	print("PASS: fixed11 empty, paid construction and completed seven sites with interactive cards rendered in two sizes")
+	print("PASS: fixed12 shadows, garden depth, empty, paid construction and completed sites with interactive cards in two sizes")
 	quit()

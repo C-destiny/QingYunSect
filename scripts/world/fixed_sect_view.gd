@@ -1,6 +1,7 @@
 extends RefCounted
 
 const Layout = preload("res://scripts/world/fixed_sect_layout.gd")
+const Garden = preload("res://scripts/world/fixed_courtyard_details.gd")
 
 static func site_frame(map: Control, kind: StringName) -> Dictionary:
 	var profile: Dictionary = map.MAIN_HALL_VISUAL if kind == &"hall" else map.get_building_visual(kind)["profile"]
@@ -14,11 +15,18 @@ static func plaque_rect(map: Control, kind: StringName) -> Rect2:
 static func draw(map: Control, state: Node) -> void:
 	map.draw_texture_rect(map.DISTANT_CLOUDS, Rect2(Vector2.ZERO, map.size), false)
 	map.draw_texture_rect(map.MAP_BACKDROP, Layout.world_rect(map.size), false)
+	# 所有地面阴影先于主体；园林不参加占地或拾取。
+	Garden.draw_ground(map, state)
 	var kinds: Array = Layout.SITES.keys()
 	kinds.sort_custom(func(a: StringName, b: StringName) -> bool: return Vector2(Layout.SITES[a]["foot"]).y < Vector2(Layout.SITES[b]["foot"]).y)
+	var decorations := Garden.items(map)
+	var decor_index := 0
 	for kind: StringName in kinds:
 		var frame := site_frame(map, kind)
 		var foot: Vector2 = frame["foot"]
+		while decor_index < decorations.size() and decorations[decor_index]["depth"] <= foot.y:
+			Garden.draw_item(map, decorations[decor_index])
+			decor_index += 1
 		var buildings := Layout.members(state, kind)
 		if kind == &"hall":
 			map.draw_texture_rect(map.MAIN_HALL_SAMPLE, frame["rect"], false)
@@ -39,6 +47,13 @@ static func draw(map: Control, state: Node) -> void:
 			map.draw_set_transform(foot, 0, Vector2(1, 0.5))
 			map.draw_arc(Vector2.ZERO, 55.0 * frame["scale"], 0, TAU, 48, Color("e6c877"), 3, true)
 			map.draw_set_transform(Vector2.ZERO)
+	while decor_index < decorations.size():
+		Garden.draw_item(map, decorations[decor_index])
+		decor_index += 1
+	# 纸牌最后绘制，前景树石不能遮住操作入口。
+	for kind: StringName in kinds:
+		var buildings := Layout.members(state, kind)
+		var frame := site_frame(map, kind)
 		var plaque := plaque_rect(map, kind)
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color("f4ead0")

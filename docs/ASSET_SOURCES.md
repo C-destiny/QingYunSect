@@ -1,5 +1,7 @@
 # 素材来源与许可记录
 
+2026-10-21候选12无新增位图。fixed_courtyard_details.gd复用sect_pine_rock.png（assets/environment/TERRAIN_NATURE.md）与hall-garden-pond.png（assets/environment/HALL_GARDEN_POND.md）；软影/门前短石由原创代码绘制。docs/art/v08-fixed12-*.png为隔离Godot实际运行截图，非新生成概念图。
+
 2026-10-21固定院落候选11无新增AI位图：复用sect_open_terraces.png（assets/environment/OPEN_TERRACES.md）、既有主殿样板/七建筑图集及远云资产；竖式纸牌由代码原创绘制。docs/art/v08-fixed11-*.png为隔离Godot实际运行截图。
 
 
