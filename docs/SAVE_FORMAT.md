@@ -1,5 +1,7 @@
 # 当前存档事实与迁移边界
 
+2026-10-22候选17：fixed_sect_layout的foot/width/resource_points是背景像素显示配置，按新园林重校准；不写回建筑cell_x/y、ID、等级或数量。无新存档字段，无版本升级，version3及旧档兼容逻辑不变。普通固定院落仍付费计时，七院落展示仍在独立演示档中运行。
+
 V0.8固定院落候选11（2026-10-21）：负责人批准普通显示改固定院落，原cell_x/y仍仅作逻辑存储，不改写旧实例。一个院落展示该类所有实例，保留逐项管理/升级/收益；不合并或删除数据。新建设扫描TerritoryCatalog已有已解锁空格，调用原start_construction付费计时，保存失败恢复操作前完整状态。SAVE_VERSION仍3，无新增字段；正式普通模式不免费生成七建筑。自由建造备份通过--legacy-free-build启用。--fixed-layout-demo和--fixed-layout-showcase在首次读档前切换user://v08_fixed_layout_demo.json，停用自动存档；前者空院落付费试玩，后者只在演示内扣原成本并推进完工。测试与截图不读取正式savegame.json。
 
 V0.8局部融合候选7：台基/道路接缝/前景栏杆均为渲染数据，不占地、不新增持久化字段。仅显式--courtyard-demo在首次读档检查前设置user://v08_courtyard_visual_demo.json并预置1栋侧翼，普通入口不调用演示布置。玩家原ID、格坐标、等级、资源和进度保持，version3兼容契约不变。

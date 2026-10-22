@@ -83,6 +83,7 @@ var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fus
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
 var fixed_layout := false # 主场景默认启用；裸地图保留自由规则以供备份回归。
 var fixed_courtyard_blend := true # V0.8局部背景融合；审图可关以对照旧场景，不持久化。
+var fixed_garden_scene := true # 候选17整体园林背景；不修改存档建筑坐标。
 var fixed_selected_kind: StringName = &""
 var fixed_hover_kind: StringName = &""
 var terrain_detail_stage := 4 # 审图：0自然边缘、1道路和阶、2栏杆、3池岸、4松石。

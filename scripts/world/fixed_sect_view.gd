@@ -5,6 +5,7 @@ const Garden = preload("res://scripts/world/fixed_courtyard_details.gd")
 const Outline = preload("res://scripts/world/building_selection_outline.gd")
 const Feedback = preload("res://scripts/world/fixed_site_feedback.gd")
 const Blend = preload("res://scripts/world/fixed_courtyard_blend.gd")
+const GARDEN_BACKDROP: Texture2D = preload("res://assets/environment/sect_garden_scene17.png")
 
 static func site_frame(map: Control, kind: StringName) -> Dictionary:
 	var profile: Dictionary = map.MAIN_HALL_VISUAL if kind == &"hall" else map.get_building_visual(kind)["profile"]
@@ -13,11 +14,16 @@ static func site_frame(map: Control, kind: StringName) -> Dictionary:
 static func plaque_rect(map: Control, kind: StringName) -> Rect2:
 	var frame := site_frame(map, kind)
 	var width := float(Layout.SITES[kind]["width"]) * float(frame["scale"])
-	return Rect2(frame["foot"] + Vector2(width * 0.42, -width * 0.54), Vector2(43, 102) * float(frame["scale"]))
+	var offset := Vector2(width * 0.42, -width * 0.54)
+	if Layout.SITES[kind].has("plaque_offset"):
+		offset = Vector2(Layout.SITES[kind]["plaque_offset"]) * float(frame["scale"])
+	return Rect2(frame["foot"] + offset, Vector2(43, 102) * float(frame["scale"]))
 
 static func draw(map: Control, state: Node) -> void:
 	map.draw_texture_rect(map.DISTANT_CLOUDS, Rect2(Vector2.ZERO, map.size), false)
-	if map.fixed_courtyard_blend:
+	if map.fixed_garden_scene:
+		map.draw_texture_rect(GARDEN_BACKDROP, Layout.world_rect(map.size), false)
+	elif map.fixed_courtyard_blend:
 		Blend.draw_background(map)
 		Blend.draw_ground(map, state)
 	else:

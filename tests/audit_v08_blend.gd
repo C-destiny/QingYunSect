@@ -23,6 +23,7 @@ func _run() -> void:
 	root.get_node("SaveManager").save_path = "res://tests/.test_blend_audit.json"
 	main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate() as Control
 	root.add_child(main)
+	main.sect_map.fixed_garden_scene = false # 仅回看历史候选16，不代表当前普通场景。
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var state := root.get_node("GameState")

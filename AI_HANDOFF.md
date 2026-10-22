@@ -1,5 +1,13 @@
 # 会话交接
 
+## 2026-10-22 候选17完整园林背景重制（优先于历史）
+
+负责人用主殿/演武场/弟子居局部截图明确否定候选16“融合的还是很差劲”，要求以现有建筑风格改造背景。本轮基线13505c6，原工作区干净，继续V0.8 #37/#38，不记候选16验收。ImageGen第一稿沿用旧背景仍插画化，弃用；最终只以主殿/弟子居资产作风格参考重新生成sect_garden_scene17.png（实际1672×941，不宣称4K/3D）。原素材保留，fixed_garden_scene默认true时直接整图绘制，跳过候选16的羽化/补丁与全部旧园林贴片；保留轻接地影。Layout八处foot/width和资源标签为纯背景像素显示配置，新位置不写回旧cell_x/y/ID/数量/等级，version3不变。主殿310宽/脚点755,230避免HUD挡峰顶，伐木场牌移左避免压炼器坊。
+
+最终62项快速回归PASS/退出0/无错误，builds/local-validation/20261022-141652/；GPU两尺寸12图PASS，builds/garden17-capture-final.log。Windows导入/导出无错误，四入口隔离APPDATA启动PASS；展示7建筑且正式档未加载。包builds/QingYunSect-v0.8-garden17-win64.exe，145657632字节，SHA256 7C400B406CC613FC445B1A6F9BD965E7E685C98B11F14653CE368D8768F51CD3。Run-Courtyard-Preview.cmd已指向此包。旧候选16测试/审图显式关闭新背景，仅作历史链回归。
+
+报告docs/V0.8_GARDEN_REDESIGN.md，来源/完整最终提示词assets/environment/GARDEN_SCENE17.md，实际图docs/art/v08-garden17-*.png。#37/#38评论6334201970/6334202932已同步仍TESTED/open；Project未同步，源码未推送、另一电脑未验证。未真人鼠标/30分钟真实长稳/联机；背景仍烘焙2D，局部放大有分辨率限制，不宣称彻底融合或V0.8完成，等负责人看新实际画面确认。
+
 ## 2026-10-22 候选16局部背景融合（优先于历史）
 
 负责人反馈建筑硬贴并明确“进行优化”，本轮只优化主殿—前庭—弟子居，未推广其他院落。基线bf726f5、原工作区干净。新增fixed_courtyard_blend.gd：原背景保留，ImageGen改稿只在两块羽化窗口内叠加；真实profile入口至原台阶/同层前庭连通；苔草柔边、五件复用松石按脚点混排、两层接地影。sect_map.fixed_courtyard_blend=false可审图对照，不持久化。无新玩法/数值/数据身份/逻辑格/version3变化；正式玩家档未访问。

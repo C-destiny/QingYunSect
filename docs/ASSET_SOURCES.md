@@ -1,5 +1,7 @@
 # 素材来源与许可记录
 
+2026-10-22候选17新增`assets/environment/sect_garden_scene17.png`，内置ImageGen以现有主殿/弟子居为风格参考重新生成，实际1672×941；完整提示词、SHA256、来源/使用边界见`assets/environment/GARDEN_SCENE17.md`。旧背景和候选16留存，不覆盖。`docs/art/v08-garden17-*.png`为隔离Godot实际运行图，不是生成效果图。
+
 2026-10-22候选16新增`assets/environment/sect_courtyard_fusion16.png`：内置ImageGen编辑原有背景，1672×941；完整提示词、SHA256、使用范围见`assets/environment/COURTYARD_BLEND16.md`。原背景保留，运行只在主殿/弟子居局部窗口羽化叠加。松石/苔草复用已登记素材；入口和柔边由代码绘制。`docs/art/v08-blend16-{before,after}.png`是隔离Godot同状态实际运行图，不是生成概念图。
 
 2026-10-21候选12无新增位图。fixed_courtyard_details.gd复用sect_pine_rock.png（assets/environment/TERRAIN_NATURE.md）与hall-garden-pond.png（assets/environment/HALL_GARDEN_POND.md）；软影/门前短石由原创代码绘制。docs/art/v08-fixed12-*.png为隔离Godot实际运行截图，非新生成概念图。

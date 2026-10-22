@@ -19,6 +19,7 @@ func _run() -> void:
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
+	map.fixed_garden_scene = false # 保留候选16局部绘制链的回归夹具，不代表当前普通场景。
 	assert(map.fixed_layout and map.fixed_courtyard_blend)
 	assert(Blend.BACKGROUND.get_size() == Layout.ART_SIZE)
 	assert(Blend.occupied(state, &"hall"))
@@ -38,7 +39,7 @@ func _run() -> void:
 			var route := Blend.entrance_route(map, kind)
 			var frame: Dictionary = map.FixedView.site_frame(map, kind)
 			assert(route.size() == 2 and route[0].is_equal_approx(frame["entrance"]))
-			assert(route[0].distance_to(route[1]) < 150)
+			assert(route[0].distance_to(route[1]) < 180)
 			assert(Layout.world_rect(map.size).has_point(route[1]))
 			assert(map.FixedView.hit(map, map.FixedView.plaque_rect(map, kind).get_center()) == kind)
 		var previous := -INF

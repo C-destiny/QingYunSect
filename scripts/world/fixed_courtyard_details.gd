@@ -18,6 +18,8 @@ const SAMPLE_DETAILS := [
 
 static func items(map: Control) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
+	if map.fixed_garden_scene:
+		return result # 新背景已有同风格园林，撤掉旧版重复盆景/水池贴片。
 	var scale_value := Layout.world_rect(map.size).size.x / Layout.ART_SIZE.x
 	var details: Array = DETAILS.duplicate()
 	if map.fixed_courtyard_blend:
@@ -54,6 +56,9 @@ static func draw_ground(map: Control, state: Node) -> void:
 		var frame: Dictionary = Layout.frame(kind, map.size, profile)
 		var scale_value := float(frame["scale"])
 		var width := float(Layout.SITES[kind]["width"]) * scale_value
+		if map.fixed_garden_scene:
+			shadow(map, frame["foot"] + Vector2(5, 3) * scale_value, width * 0.34, width * 0.06, 0.12)
+			continue # 不再用独立灰石片/苔草斑覆盖新背景。
 		if map.fixed_courtyard_blend and kind in [&"hall", &"disciple_quarters"]:
 			# 宽而浅的环境影加近台基接触影，不用孤立的深黑椭圆托住整栋楼。
 			shadow(map, frame["foot"] + Vector2(12, 7) * scale_value, width * 0.43, width * 0.10, 0.14)
