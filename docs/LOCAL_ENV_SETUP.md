@@ -1,5 +1,19 @@
 # 本机开发环境配置说明
 
+## 2026-10-22 双机通用Windows测试入口
+
+以下旧章节记录单位电脑环境；E盘开发机仍使用`E:/Rgame/qingyun-sect`与`E:/Rgame/tools/godot-4.7.2/`。优先在仓库根目录通过PowerShell运行：
+
+```powershell
+.\tests\run_all_tests.ps1
+# 自定义安装路径：
+.\tests\run_all_tests.ps1 -Godot 'D:\Tools\Godot_v4.7.2-stable_win64_console.exe'
+# 包含30分钟真实运行项：
+.\tests\run_all_tests.ps1 -All
+```
+
+脚本自动识别仓库父目录下的tools或`C:/Tools/`引擎，也接受`GODOT_EXE`环境变量。日志写入被忽略的`builds/local-validation/`独立时间戳目录；测试隔离APPDATA/TEMP/TMP，普通单项超时60秒，真实长稳项2100秒。60项快速测试已在E盘开发机验证通过。失败返回1，成功返回0。旧Bash脚本保留了单位电脑绝对路径，不能直接用于E盘开发机。
+
 配置日期：2026-10-19。本文件记录本机（家勋台式机）实际可用的环境与验证证据，供换机或重建时对照。
 
 ## 环境要求（来自项目文档）

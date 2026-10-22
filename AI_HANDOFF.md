@@ -1,5 +1,15 @@
 # 会话交接
 
+## 2026-10-22 原E盘开发机恢复（优先于历史快照）
+
+负责人要求同步单位电脑进展并接手。已安全fetch、fast-forward到`5e325bf`（原`45b35b3`，25提交），本机目录`E:/Rgame/qingyun-sect`。当前有效方案是AGENTS顶部2026-10-21固定院落决策；候选14为最新游戏内容，V0.8未整体验收。
+
+60组快速回归全部PASS/退出0/无错误，包含8小时挂机及跨系统模拟；日志`builds/local-validation/20261022-113110/`。新增`tests/run_all_tests.ps1`自动识别E盘和C盘引擎或接受-Godot参数，隔离APPDATA/TEMP/TMP，单测60秒上限，检查退出码/PASS/错误日志，失败退出1。原Bash脚本保留，推荐Windows使用新入口。30分钟真实长稳和人工鼠标未做。
+
+首次受限导入/导出存在Godot Safe save权限错误；隔离环境放宽执行权限重做最终import/export日志无错误。最新本机包`builds/QingYunSect-v0.8-sync15-win64.exe`，140486744字节，SHA256 `8DD77EF599AB730BA8791F2C74941079C95FCD9B2ADFC28D336DF9ACC95307F8`。普通、fixed-layout-demo、fixed-layout-showcase、legacy-free-build四入口隔离启动PASS；audit_v08_feedback两尺寸14图GPU生成通过，已目视检查小窗施工/大图完工。不是新增玩法候选，游戏内容与候选14相同。
+
+Issue #41/#42已追加证据评论6332026224/6332027164，保持open。Project未同步。接下来按V0.8固定院落视觉与交互反馈修整；对比文档建议未获实施批准。新脚本与交接作为本机阶段提交，不自动推送。正式玩家存档未访问，未修改GameState/SaveManager或存档格式。
+
 日期：2026-10-21。当前任务来源为GitHub Issues；每次接手重新核对，不直接沿用此快照。
 
 ## 当前事实
