@@ -1,5 +1,13 @@
 # 会话交接
 
+## 2026-10-22 候选16局部背景融合（优先于历史）
+
+负责人反馈建筑硬贴并明确“进行优化”，本轮只优化主殿—前庭—弟子居，未推广其他院落。基线bf726f5、原工作区干净。新增fixed_courtyard_blend.gd：原背景保留，ImageGen改稿只在两块羽化窗口内叠加；真实profile入口至原台阶/同层前庭连通；苔草柔边、五件复用松石按脚点混排、两层接地影。sect_map.fixed_courtyard_blend=false可审图对照，不持久化。无新玩法/数值/数据身份/逻辑格/version3变化；正式玩家档未访问。
+
+61项快速全量回归最终PASS，日志builds/local-validation/20261022-133147/；新测试初期JSON数字字符串比较和失败残留测试档已修复，归一化比较及开始清理自己隔离档后全量通过。图形OpenGL/RTX5070Ti双尺寸12图，builds/blend16-capture-final.log PASS；首图铺装偏灰/树石过小已调整并重拍。Windows最终导出及四入口隔离启动PASS，首轮受限导入Safe save失败废弃后重做无错误。包builds/QingYunSect-v0.8-blend16-win64.exe，142961672字节，SHA256 9D5D15F9C985AEE18F7B77432E2C2DD99206AFD66D8C871B40FDA623675FEAAB。
+
+新Run-Courtyard-Preview.cmd用`-- --fixed-layout-showcase`打开独立演示；正常EXE继续原档。报告docs/V0.8_COURTYARD_BLEND.md，前后图docs/art/v08-blend16-{before,after}.png，完整生成提示词和来源assets/environment/COURTYARD_BLEND16.md。#37/#38评论6333575407/6333576261已同步，仍待验收；Project未同步/源码未推送/另一电脑未验证。未真人鼠标/30分钟真实长稳/联机。仍有建筑与背景笔触差异和烘焙地形限制，不称完全融合；等负责人反馈局部后再推广，不擅自进入V0.9。
+
 ## 2026-10-22 原E盘开发机恢复（优先于历史快照）
 
 负责人要求同步单位电脑进展并接手。已安全fetch、fast-forward到`5e325bf`（原`45b35b3`，25提交），本机目录`E:/Rgame/qingyun-sect`。当前有效方案是AGENTS顶部2026-10-21固定院落决策；候选14为最新游戏内容，V0.8未整体验收。

@@ -7,11 +7,22 @@ const DETAILS := [
 	{"kind": "pond", "foot": Vector2(1225, 705), "width": 145.0},
 	{"kind": "pine", "foot": Vector2(1280, 720), "width": 88.0},
 ]
+const SAMPLE_DETAILS := [
+	# 局部样板：少量前后景包住台基，避开正门和主路；其余院落不推广。
+	{"kind": "pine", "foot": Vector2(591, 252), "width": 112.0},
+	{"kind": "pine", "foot": Vector2(884, 276), "width": 98.0},
+	{"kind": "pine", "foot": Vector2(1064, 739), "width": 108.0},
+	{"kind": "pine", "foot": Vector2(918, 735), "width": 82.0},
+	{"kind": "pine", "foot": Vector2(940, 664), "width": 92.0},
+]
 
 static func items(map: Control) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var scale_value := Layout.world_rect(map.size).size.x / Layout.ART_SIZE.x
-	for detail: Dictionary in DETAILS:
+	var details: Array = DETAILS.duplicate()
+	if map.fixed_courtyard_blend:
+		details.append_array(SAMPLE_DETAILS)
+	for detail: Dictionary in details:
 		var texture: Texture2D = map.GARDEN_PINE if detail["kind"] == "pine" else map.GARDEN_POND
 		var extent := Vector2(detail["width"], float(detail["width"]) * texture.get_height() / texture.get_width()) * scale_value
 		var foot := Layout.point(detail["foot"], map.size)
@@ -43,6 +54,11 @@ static func draw_ground(map: Control, state: Node) -> void:
 		var frame: Dictionary = Layout.frame(kind, map.size, profile)
 		var scale_value := float(frame["scale"])
 		var width := float(Layout.SITES[kind]["width"]) * scale_value
+		if map.fixed_courtyard_blend and kind in [&"hall", &"disciple_quarters"]:
+			# 宽而浅的环境影加近台基接触影，不用孤立的深黑椭圆托住整栋楼。
+			shadow(map, frame["foot"] + Vector2(12, 7) * scale_value, width * 0.43, width * 0.10, 0.14)
+			shadow(map, frame["foot"] + Vector2(2, 2) * scale_value, width * 0.29, width * 0.045, 0.16)
+			continue # 样板使用连续入口铺装，取消原先孤立的四边形短石。
 		shadow(map, frame["foot"] + Vector2(10, 7) * scale_value, width * 0.38, width * 0.095, 0.22)
 		# 只补门前短接地石，不重铺台基，不跨背景长阶或悬崖。
 		var entrance: Vector2 = frame["entrance"]

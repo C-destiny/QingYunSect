@@ -4,6 +4,7 @@ const Layout = preload("res://scripts/world/fixed_sect_layout.gd")
 const Garden = preload("res://scripts/world/fixed_courtyard_details.gd")
 const Outline = preload("res://scripts/world/building_selection_outline.gd")
 const Feedback = preload("res://scripts/world/fixed_site_feedback.gd")
+const Blend = preload("res://scripts/world/fixed_courtyard_blend.gd")
 
 static func site_frame(map: Control, kind: StringName) -> Dictionary:
 	var profile: Dictionary = map.MAIN_HALL_VISUAL if kind == &"hall" else map.get_building_visual(kind)["profile"]
@@ -16,7 +17,11 @@ static func plaque_rect(map: Control, kind: StringName) -> Rect2:
 
 static func draw(map: Control, state: Node) -> void:
 	map.draw_texture_rect(map.DISTANT_CLOUDS, Rect2(Vector2.ZERO, map.size), false)
-	map.draw_texture_rect(map.MAP_BACKDROP, Layout.world_rect(map.size), false)
+	if map.fixed_courtyard_blend:
+		Blend.draw_background(map)
+		Blend.draw_ground(map, state)
+	else:
+		map.draw_texture_rect(map.MAP_BACKDROP, Layout.world_rect(map.size), false)
 	# 所有地面阴影先于主体；园林不参加占地或拾取。
 	Garden.draw_ground(map, state)
 	var kinds: Array = Layout.SITES.keys()
