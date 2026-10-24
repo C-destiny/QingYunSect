@@ -20,6 +20,7 @@ func _run() -> void:
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
 	map.fixed_garden_scene = false # 保留候选16局部绘制链的回归夹具，不代表当前普通场景。
+	map.fixed_planar_sample = false
 	assert(map.fixed_layout and map.fixed_courtyard_blend)
 	assert(Blend.BACKGROUND.get_size() == Layout.ART_SIZE)
 	assert(Blend.occupied(state, &"hall"))

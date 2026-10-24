@@ -1,5 +1,89 @@
 # 会话交接
 
+## 2026-10-24 最新：阶段上传授权与双机交接
+
+负责人要求全部上传同步；保留当前feature/v0.8-visual-polish、不合并main、不把上传当验收。已核验上传前68快测PASS/0失败（builds/local-validation/20261024-155119/），未跑30分钟真实稳定性、不重导出。新增docs/SYNC_2026-10-24.md记录同步范围、候选24局限、获批但未实施的主殿完整庭院样板及另一台电脑导入/测试/预览方式；README修正早期V0.4状态为当前V0.8待验收。推送成功需独立核对远端SHA，不凭本文认定；本机构建和日志仍排除上传，技能/许可和HumanLayer文档随源码同步。原历史摘要描述的是各轮当时状态，最终以本轮远端核验和最新Issue为准。
+
+## 2026-10-24 最新：HumanLayer流程适配，无平台安装
+
+负责人先同意主殿＋庭院独立实机样板，随后改为配置humanlayer/humanlayer，并选择“2：仅开发流程”。样板仅做读取准备，未生成新图或修改游戏。已审查上游固定提交2f66a45b186d88488fa356862be0117db1ccae9f的RPI README、create-research/create-plan/implement-plan及两个模板；筛选为AGENTS追加段和.agents/HUMANLAYER_WORKFLOW.md，不安装上游技能/运行时/后台服务。保留上游LICENSE/NOTICE及固定来源；现有24技能、Superpowers/ECC/Karpathy/十五条铁律和旧档/人工验收门禁不变。只做文档与范围核验，不将历史68快测当本轮重跑，不声称平台集成或未来行为已实证。
+
+仍在feature/v0.8-visual-polish，HEAD26ca346、领先origin3提交，原脏工作区保留。本配置未提交推送、不改GitHub游戏Issue/Project状态，V0.8未验收。候选24先保留，负责人明确反馈与渲染图仍差距很大；后续如恢复游戏开发，先确认主殿完整庭院样板的当前批准范围并按新流程核对，不擅自全图推广。
+
+## 2026-10-24 最新：伐木场高清近景材质24
+
+负责人指出背景糊、建筑太精细；诊断原底图软绘制且整景分辨率低，建筑是独立高细节缩小，非背景独立模糊器。负责人“开始”批准伐木场局部对照；不视为23/22或V0.8验收。tests/prepare_material24_reference.gd从22图截Rect(345,270,330,220)作330×220参考（工具有直接载PNG不适用于导出提示，不是运行发布代码）。内置ImageGen参考此图和lumber-contact20材质，生成1536×1024、3902654字节的sect_lumber_near24.png，SHA B4B9A8B6B1B660DA30C69DC80639ECBD0B49AD2217296360C9E39E39714E29A5，缓存exec-245ff086-fc0f-468c-b0dd-7352e7687809.png。原样复制，无Python改图；来源/完整提示词NEAR_MATERIAL24.md。
+
+map.near_material_sample默认true、不持久化；Planar在旧局部窗口后覆盖该Rect，原地面/建筑/施工/拾取不变。首图高分缩小有碎噪点；最终只给新图导入mipmaps，SectMap._ready用LINEAR_WITH_MIPMAPS，既有素材无mips。1920关样板的新过滤整图与旧线性基线RGB逐像素一致（只读Pillow/ImageChops验证，未编辑图片）。不称全图精确相机或素材局部所有景物完全保形；新近景仍偏亮黄绿，需要审美判断，不改建筑、不全图推广。
+
+专项两次有效红exit1（未接入/无缩小过滤）后绿，最终68快测PASS，builds/local-validation/20261024-002621/；最终GPU16双尺寸整图/局部+1对照，material24-capture-final.log，变化1625/1630、区域外每5物理像素样本0；截图不修改数据。测试后串行Windows导出/四入口隔离启动PASS，包material24，159684512字节、SHA C169FCD814DD92F21E66DC7567E00E2C4FB2B4035660B49D26767EDADA2B1200。预览/施工入口都更新，旧23包保留。报告docs/V0.8_NEAR_MATERIAL24.md，docs/art/v08-material24-{comparison,context,after}.png。
+
+#37评论6369714085/#38评论6369716853，open/TESTED，Project未同步；无真人鼠标/真实30分钟长稳/联机/另一电脑验证，源码未提交推送，所有原脏工作区保留，不进入V0.9。下一步等用户比较原生画面后决定材质方向，不擅自推广或再重绘整图。
+
+## 2026-10-23 最新：施工接地与拾取修正23
+
+负责人“继续开发”后核对#37/#38仍open/TESTED；未将22记为验收，仍在V0.8范围。grounds22施工图中木架仍调用旧foot+固定屏幕尺寸，掉在院坪下，未完工拾取还按完整精灵Alpha。只改fixed_sect_view.gd，construction_geometry复用Planar.site_ground_quad（田/演武无石板，临时用各自未来精灵脚部参考区），0.86内缩、按院宽0.27抬顶形成竖直木杆，描边/选中在梁柱本身，点击使用base/top凸包，不命中凸包外不可见屋顶。凸包允许框内留空点击，非逐杆精确拾取。有完工同类实例仍绘制主体，施工进度保留；自由建造旧函数不改。背景/PNG/数值/逻辑格/旧ID/version3无变化。
+
+新test_fixed_construction_ground有效红exit1；夹具曾误要求每栋都存在凸包外屋顶，弟子居无此样本，改为只对实际存在的外部点检查并保证有效采样，不改游戏适配测试。最终67快测PASS，builds/local-validation/20261023-183512/；GPU16张两尺寸施工/选中/卡片/完工和伐木局部，construction23-capture.log，实际已看1280全景与卡片。测试后串行导出、四入口隔离启动PASS，包construction23、155870352字节、SHA84D9BA5E7D95190AE740DD9BD71FD037E14DC318F3B2D3F76AD04606E58CD7FC。新增Run-Construction-Test.cmd调用原fixed-layout-demo独立付费施工；预览器指向同包showcase。docs/V0.8_CONSTRUCTION23.md及三图v08-construction23-*。
+
+无真人鼠标/30分钟真实长稳/联机/另一电脑验证，22整体及23施工视觉仍待用户确认，不进入V0.9。#38评论6363050115，保持open/TESTED；Project未同步，未提交推送，原所有未提交改动保留。
+
+## 2026-10-23 最新：全建筑地面试稿22
+
+负责人“试一下全部建筑”批准将21方法推广全部院落，非候选21或整版验收。Planar新增ALL_CLEAR七窗口与SITE_BASES，主殿/藏经阁/炼器坊/弟子居/采灵坊按各自台基参考线铺既有石材，伐木场继续21；演武场使用精灵自带圆台，灵田自然土草过渡，两者不叠矩形石板。建筑脚点/显示位置/图集/拾取保持，弟子居沿用旧校准，不新增旋转。map.all_ground_alignment为不持久化开关，关闭对照21，不影响存档/version3。
+
+内置ImageGen两次：以sect_lumber_clear21.png清框，缓存exec-abb07b8c-987b-4652-8acd-6d9f623f171b.png；首轮实机主殿背景大楼梯仍冲突，第二次仅清该楼梯改自然石径，缓存exec-8e9c2c88-c076-4115-9ac8-06bd87898172.png。最终assets/environment/sect_sites_clear22.png为第二次原样PNG，1672×941/3325298字节/SHA15B356411B959E619B34D147049D5EE2F154B345A7CE1CAD4645E87449F82A96，来源/完整提示词ALL_GROUNDS22.md。仅局部窗口采样，不能说生成编辑其他景物完全不变；原缓存都保留。
+
+新增test_all_ground_alignment有效红exit1；接入后初版JSON文本比较断言失败，改解析数据相等（游戏存档未改），最终66快测PASS，builds/local-validation/20261023-122532/。最终GPU71张、grounds22-capture-final.log，七新地面实际采样变化540～724、四处风景/路样本不变；八栋两尺寸原生局部/选中/卡片，空场与施工仅1920。测试后Windows串行导出/四入口隔离启动PASS，包grounds22、155868672字节、SHA4291C1951CB466C966CBBA6917D036AF07ADCBB12931F54E814A216D9D29FCCB。预览启动器指向新包，报告docs/V0.8_ALL_GROUNDS22.md和docs/art/v08-grounds22-{before,after,details}.png。仍需主殿接地、整体透视、比例/锐度/草地审美确认；不能称完整3D共面或V0.8完成。无真人鼠标/真实30分钟长稳/联机/另一电脑验证，#37评论6357386490/#38评论6357387798，open/TESTED，Project未同步；未提交推送，不清理原脏工作区。
+
+## 2026-10-23 最新：伐木场地面几何校准21
+
+负责人明确指出建筑底座与背景方框两套方向冲突，随后“再次修改”。候选20未通过视觉验收。本轮只改伐木场背景；内置ImageGen编辑候选17清除旧院坪/矩形框，得到sect_lumber_clear21.png，1672×941、3586704字节、SHA C0DF3E4CCCDE6BA04FC20A6A09E10CE1E19723088353C0A1DF096018A987063A，缓存exec-201698f9-97c3-421a-b1c4-c68abbc8722a.png。完整提示词及来源assets/environment/LUMBER_GROUND21.md。运行仅混入Rect(360,285,300,160)，其他背景保留17与19两旧窗口。按lumber-contact20台基实测(199,575)->(530,743)->(870,575)生成两轴，投影已有俯视石材为小院并羽化草缘；不旋转建筑，不修改脚点/拾取/逻辑格/玩法/version3。map.lumber_ground_alignment只作非持久化对照。
+
+新测试初稿静态反射解析错不计红测；修正实例调用后对旧代码红exit1，新实现绿。最终65快测PASS，builds/local-validation/20261023-120557/；双尺寸16实际图，lumber21-capture.log，像素变化834/820及其他三院落采样0，实际局部已目视，不是全图逐像素保证。Windows测试后串行导出及四入口隔离启动PASS；包lumber21，153558696字节、SHA AC35F80C4A30FB5EFF10BA6DED78847A6D3BAE15599F0157224D87A57ACEA047。Run-Courtyard-Preview.cmd已更新，docs/V0.8_LUMBER_GROUND21.md及docs/art/v08-lumber21-*。未真人鼠标/30分钟真实长稳/联机/另一电脑验证；其余院落仍有透视/材质差异，需用户确认局部方向再推广。#37评论6357146925/#38评论6357148054，open/TESTED；Project未同步，未提交推送，保留此前所有脏工作区，不进V0.9。
+
+## 2026-10-23 最新：伐木场单栋接地样板20
+
+负责人提供六建筑重绘提示词，评估后同意先试伐木场一栋，非全图/候选19验收。ImageGen参考原六联图左上工坊和courtyard19实机，首稿exec-13bcffc9-d9ea-4634-bcdb-46dbed14578c.png、编辑稿exec-d194e3d0-c03a-4791-ac19-ccebc73bc09b.png，实际均1254方图，不满足精确1024/10%边距。保留原缓存，用tests/prepare_lumber_asset.gd仅等比尺寸/透明画布归一化（非Python改图），得到assets/buildings/lumber-contact20.png，1024方、652980字节、SHA8938FE5D3C965BEF600E49DD9EE48C2F69CC6C76DB89D4FF1E52588DB2453E95。Alpha0～255，820444全透明像素，used_rect138,121..873,814；完整提示词/处理链/LUMBER_CONTACT20.md已记录。原C2PA元数据可能未随归一化保留，不声称保留，来源链由文档维持。
+
+sect_map新增不持久化lumber_contact_sample默认true，get_building_visual只对lumber返回独立图；原atlas未覆盖、其余建筑不变。内采样Rect(102,102,820,820)，foot由整图(.5,.8)换算到(.5,(819.2-102)/820)，避免透明边缩小体积；世界脚点、原数值/ID/逻辑格/version3不改。新test_lumber_contact_sample红测旧图集exit1，接入后绿；最终调内部采样区后64快测重新全量PASS，builds/local-validation/20261023-114015/。两尺寸8整图+4原生局部裁切，builds/lumber20-capture-final.log；修过跨尺寸审图卡片残留，最终已重拍，目视前后图。Windows串行导出无错误、四入口隔离APPDATA启动PASS，lumber20包151061952字节、SHA78B9C28279F629AD1D7B9B20C7A9D88C0C7495CA79700C17E8F9A109D42DD252，Run-Courtyard-Preview.cmd已指向它。报告docs/V0.8_LUMBER_CONTACT20.md与docs/art/v08-lumber20-{before,after,context}.png。
+
+新版偏暖偏亮、石台边缘仍明显，必须诚实等待用户判断，不说已融合或推广五栋。#38追加证据保持TESTED/open，Project未同步；源码未提交推送，无真人鼠标/真实30分钟长稳/联机/另一电脑验证。当前技能/前轮游戏未提交改动全部保留，不自动开始V0.9。
+
+## 2026-10-23 最新：候选19局部材质地面交付待验收
+
+负责人指出候选18素色网格板“太糟糕”，同意先试保留远景/重做近景。使用create-game-assets+ImageGen编辑sect_plane_underlay18.png，以main-hall-sample.png作材质/光照参考，生成sect_courtyard_ground19.png，1672×941，SHA D61D0CA23C759F97B650B69A96890F37BE9436E21A7095AA31EE6999801C12B8。缓存exec-314ef6ac-73e8-4b1a-8e9a-8ec9adf24793.png，来源与完整提示词已记assets/environment/COURTYARD_GROUND19.md。Planar.UNDERLAY改19，移除本会话先前素色绘制函数/调用，仅保留guides；既有两窗口羽化、建筑仿射/脚点/描边/逆拾取保留，其他六院落及原背景不改。不涉及核心数据/公式/存档。
+
+图形回归改为读取实际像素材质变化，坐标通过root.get_final_transform和map全局变换；曾常量标记测试/取样漏viewport缩放，均不作有效证据，已改真实检测。临时恢复旧板红测两尺寸18/17变化、退出1；最终材质68/65、退出0，builds/courtyard19-capture-final.log；最终两尺寸14图，目视局部1280与完整1920。63快测最终PASS，builds/local-validation/20261023-105734/。测试停止后串行Windows导出无错误，四入口各自隔离APPDATA启动PASS，展示7建筑formal save not loaded；150592136字节、SHA F338C282D92FBE4F3A37FE0C86362DFB6ABA72C0480A5AFD6E654F24C480986D，包builds/QingYunSect-v0.8-courtyard19-win64.exe。Run-Courtyard-Preview.cmd指向19，报告docs/V0.8_COURTYARD_GROUND19.md，三张实际图docs/art/v08-courtyard19-*。补.agents/.gdignore和本地builds/.gdignore阻止下载开发附件被引擎导入。无真人鼠标/30分钟长稳/联机/另一电脑验证；石材纹理和透视仍需用户审美判断，不称全图融合已解决。
+
+#37/#38已追加证据保持TESTED/open，未关单/未整版验收、Project未同步、源码未提交推送，保留所有此前技能和游戏未提交修改。候选18旧包不补称通过，由19串行验证替代；先等用户看局部效果，再决定推广，禁止直接进入V0.9。
+
+## 2026-10-23 最新：游戏专项六技能安装
+
+负责人在评估后明确“好，安装上吧”。仅装create-game-assets、game-ui-ux、godot-ui-control、godot-gdscript、godot-gdscript-headless-testing、godot-export六目录，未安装全套路由器或其他引擎/肉鸽/联机。系统skill-installer固定SHA38a4c2500eeb5ff9ac084336b8f66108069d2f8d，20文件Git blob逐项匹配，SHA256清单`.agents/gamedev.lock.json`，Apache-2.0和NOTICE在`.agents/licenses/gamedev/`。Superpowers15、ECC3及Karpathy/十五铁律/验收规则保留，AGENTS增加按语义自动选用和实际Godot/Windows适配边界，总24技能。附带美术Python脚本未执行，依赖未安装；不声称完整技能工作流或游戏验证完成。
+
+本轮只改技能及必要摘要；现有候选18游戏未提交现场原样保留，不继续游戏编码、测试或导出，不写GitHub、不提交推送。此前plane18导出错误仍需在测试停止后串行重做，V0.8仍未验收。下一轮可发现，未刷新重启Codex并从qingyun-sect根目录进入；不要把安装当作视觉问题已解决。
+
+## 2026-10-23 最新：ECC精选三个补充技能
+
+负责人“把有需要的安装一下”指affaan-m/ECC。本轮只装change-impact、search-first、architecture-decision-records，固定上游SHA90606c8315ee09cafc303515c5f33024db6b9882、清单版本2.2.3，系统skill-installer下载到项目.agents/skills，纯Markdown，无辅助代码执行。MIT许可、独立ecc.lock.json、README和AGENTS自动选用入口已补；Superpowers15项原样保留，总计18技能。其余ECC（重复TDD/计划/验证、无关Web/数据库、全局agents/hooks/MCP、记忆/遥测/自主循环）不装。上游示例按Godot/Windows和当前实际工具适配，不因引用researcher自动配置代理；新依赖仍需授权，ADR需先确认，不覆盖现有任务/验收台账。
+
+安装校验不等于未来技能任务端到端验证；下一轮可发现，若未刷新重启Codex。V0.7已验收、V0.8 #37/#38仍open/TESTED，本轮只读核对未写GitHub；分支仍feature/v0.8-visual-polish、HEAD26ca346、本地已有三提交未推。没有继续候选18、重跑游戏测试或Windows导出，保留所有既有游戏未提交现场；此前导出错误仍需后续串行重做。未提交/未推送，不记任何新增玩法验收。
+
+## 2026-10-23 最新：卸载Matt Pocock，改装Superpowers
+
+负责人明确“卸载掉刚才哪个，安装这个吧”，指obra/superpowers替代Matt Pocock。已用系统skill-installer按固定SHA2ce8aa15d05bd57213e6f746f953aafb7ded7a8b安装上游skills目录全部15项，7.0.1，84文件SHA256一致，MIT许可/锁记录在.agents。原27技能、旧README/lock/许可已验证精确路径并Move-Item到builds/skill-backups/mattpocock-20261023可恢复，未删除游戏或其他技能。现在扫描目录只15项。未做插件市场全局安装/全局配置或钩子，不自动更新，未运行上游脚本；bootstrap由AGENTS的using-superpowers入口提供，不能假称全局插件注册完成。下一轮可发现，若未刷新重启Codex。Windows脚本/可选视觉伴侣/多代理流程尚未端到端验证，不能照搬上游模型覆盖、长等待和全局设置。现有人工验收、旧档保护、阶段上传规则优先，安装不授权PR/合并/清理旧实现等。
+
+本轮没继续候选18；其63项回归通过但导出日志有测试临时文件扫描错误，仍需测试停止后串行重导出及隔离启动。所有游戏未提交现场保留，不把技能安装当游戏交付。无源码推送/GitHub状态写入。此前Matt安装记录是历史，当前不再启用Matt技能。
+
+## 2026-10-23 安装Matt Pocock技能；候选18尚未交付
+
+负责人最新改为要求安装https://github.com/mattpocock/skills到项目。本轮已安装上游正式发布清单27技能（20工程/7生产力）到`.agents/skills`，固定SHA5beb35b040e3de97e54fa9e386d7e42d15c295c2、包1.3.1；通过系统skill-installer的--dest安装，不执行上游代码。79文件与固定SHA下载副本逐一SHA256一致，MIT许可证/锁文件/使用说明已加。未运行setup-matt-pocock-skills，它需要另行确认任务跟踪、标签和领域文档，不能覆盖现有人验收流程。无全局安装/自动更新/源码推送。
+
+安装前还有候选18未提交现场，必须保留：基线26ca346、V0.8 #37/#38，候选17被负责人否定“歪歪扭扭”；负责人“开始”批准先做两栋统一透视结构样板。新增planar_courtyard_sample.gd，两轴(1,.40)/(-1,.60)，院坪/连接路共投影；弟子居源边线+.53/-.55做小幅仿射校准，围绕脚点，描边跟随且alpha拾取做逆变换。主殿不变形。ImageGen仅清除旧平台/台阶，输出assets/environment/sect_plane_underlay18.png（1672x941，SHA F263122DB250AEFBA18996A3DD7F46865B1BAC56CC303F65F070295B6B19EEFE；原输出cache exec-c72410f4-d671-4263-bbed-d73fbf21f5c5.png）。运行仅两窗口叠加清除图，其余仍候选17；没有整体重新生成近景。首版石材缩小噪点，改成低对比素石几何稿，非最终美术。没有游戏数据/数值/version3变化，正式档未读写。
+
+新增test_planar_courtyard.gd首轮常量Plane冲突内置类型导致解析失败，已改PlanarData。最终63/63快测通过，builds/local-validation/20261023-084841/；audit_v08_planar.gd双尺寸14图PASS，builds/plane18-capture-final.log，目视样板/导引轴/弟子居描边。历史16/17测试及审图显式关闭fixed_planar_sample。Run-Courtyard-Preview.cmd已改指向plane18，但不要宣称包通过：导出与快测并行，builds/plane18-export.log有Can't open res://tests/.test_offline_ui.json（虽exit0仍失败）。现有包148184640字节、SHA2302FF09B2A29883542DDE35FA34D398D03341CDD2323297C4A91738164C63F9，属于未验证候选，不交付。继续时先确认所有测试结束，再串行重导出/查错误/四入口隔离APPDATA启动，完成素材许可/样板报告/#37/#38证据更新；不把此前出口0当成功。没有当前候选18的Issue评论或Project同步，未提交/未推送。这轮技能安装不授权新功能或V0.9。
+
 ## 2026-10-22 候选17完整园林背景重制（优先于历史）
 
 负责人用主殿/演武场/弟子居局部截图明确否定候选16“融合的还是很差劲”，要求以现有建筑风格改造背景。本轮基线13505c6，原工作区干净，继续V0.8 #37/#38，不记候选16验收。ImageGen第一稿沿用旧背景仍插画化，弃用；最终只以主殿/弟子居资产作风格参考重新生成sect_garden_scene17.png（实际1672×941，不宣称4K/3D）。原素材保留，fixed_garden_scene默认true时直接整图绘制，跳过候选16的羽化/补丁与全部旧园林贴片；保留轻接地影。Layout八处foot/width和资源标签为纯背景像素显示配置，新位置不写回旧cell_x/y/ID/数量/等级，version3不变。主殿310宽/脚点755,230避免HUD挡峰顶，伐木场牌移左避免压炼器坊。

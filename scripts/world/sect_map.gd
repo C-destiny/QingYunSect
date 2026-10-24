@@ -79,11 +79,18 @@ var placement_building: StringName = &""
 # 命中检测缓存解压后的图像；只在鼠标查询时采样，不在每帧重复从GPU读取。
 var hit_images: Dictionary = {}
 var unified_building_atlas: Texture2D = preload("res://assets/buildings/sect-buildings-unified.png")
+var lumber_contact_sample := true # 单栋接地试稿，可关闭作同状态对照；不持久化。
+var lumber_ground_alignment := true # 候选21仅校准伐木场地面，不改变建筑/逻辑格。
+var all_ground_alignment := true # 候选22全院落地面试稿；可关闭对照候选21，不持久化。
+var near_material_sample := true # 候选24仅伐木场周边高清近景，可关闭同状态对照，不持久化。
+const LUMBER_CONTACT_SAMPLE: Texture2D = preload("res://assets/buildings/lumber-contact20.png")
 var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
 var fixed_layout := false # 主场景默认启用；裸地图保留自由规则以供备份回归。
 var fixed_courtyard_blend := true # V0.8局部背景融合；审图可关以对照旧场景，不持久化。
 var fixed_garden_scene := true # 候选17整体园林背景；不修改存档建筑坐标。
+var fixed_planar_sample := true # 候选18主殿/弟子居统一平面样板。
+var planar_guides := false # 仅审图显示两条投影轴，不持久化。
 var fixed_selected_kind: StringName = &""
 var fixed_hover_kind: StringName = &""
 var terrain_detail_stage := 4 # 审图：0自然边缘、1道路和阶、2栏杆、3池岸、4松石。
@@ -106,6 +113,8 @@ const BUILDING_WIDTHS := {
 
 
 func _ready() -> void:
+	# Only the new high-resolution terrain supplies mip levels; existing sprites stay unchanged.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	GameState.assignments_changed.connect(queue_redraw)
 	GameState.buildings_changed.connect(queue_redraw)
@@ -951,6 +960,10 @@ func get_garden_rect(origin: Vector2) -> Rect2:
 
 # 绘制、alpha命中、建造预览和小卡共用配置；等级只缩放视觉，不改占地。
 func get_building_visual(building_type: StringName) -> Dictionary:
+	if building_type == &"lumber_yard" and lumber_contact_sample:
+		# 文件保留透明安全边，显示取内部逻辑格以免留白让建筑显得缩小。
+		return {"texture": LUMBER_CONTACT_SAMPLE, "source": Rect2(102, 102, 820, 820),
+			"profile": {"size": Vector2(178, 178), "foot": Vector2(0.5, (819.2 - 102.0) / 820.0)}}
 	if building_type == &"disciple_quarters":
 		return {"texture": QUARTERS_SAMPLE, "source": Rect2(Vector2.ZERO, QUARTERS_SAMPLE.get_size()), "profile": QUARTERS_VISUAL}
 	var texture := unified_building_atlas if unified_building_atlas != null else BUILDING_ATLAS

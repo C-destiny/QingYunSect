@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/obra/superpowers",
+  "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+  "upstreamVersion": "7.0.1",
+  "installedOn": "2026-10-23",
+  "scope": "repository",
+  "installationType": "standalone skill folders; no global marketplace plugin or runtime hooks",
+  "destination": ".agents/skills",
+  "license": "MIT",
+  "licenseFile": "skills/LICENSE.superpowers",
+  "upstreamFilesVerified": 84,
+  "bootstrap": "AGENTS.md points to using-superpowers/SKILL.md",
+  "replaced": "mattpocock/skills (27 skills)",
+  "previousBackup": "builds/skill-backups/mattpocock-20261023",
+  "skills": [
+    "brainstorming",
+    "diagnosing-superpowers",
+    "dispatching-parallel-agents",
+    "executing-plans",
+    "finishing-a-development-branch",
+    "receiving-code-review",
+    "requesting-code-review",
+    "subagent-driven-development",
+    "systematic-debugging",
+    "test-driven-development",
+    "using-git-worktrees",
+    "using-superpowers",
+    "verification-before-completion",
+    "writing-plans",
+    "writing-skills"
+  ]
+}

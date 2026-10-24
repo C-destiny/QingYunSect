@@ -18,6 +18,7 @@ func _run() -> void:
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
+	map.fixed_planar_sample = false # 历史候选17渲染链夹具。
 	assert(map.fixed_layout and map.fixed_garden_scene)
 	assert(map.FixedView.GARDEN_BACKDROP.get_size() == Layout.ART_SIZE)
 	assert(Garden.items(map).is_empty())

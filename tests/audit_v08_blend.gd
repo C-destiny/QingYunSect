@@ -24,6 +24,7 @@ func _run() -> void:
 	main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate() as Control
 	root.add_child(main)
 	main.sect_map.fixed_garden_scene = false # 仅回看历史候选16，不代表当前普通场景。
+	main.sect_map.fixed_planar_sample = false
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var state := root.get_node("GameState")

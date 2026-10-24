@@ -16,6 +16,7 @@ func _run() -> void:
 	root.get_node("SaveManager").save_path = "res://tests/.test_garden_audit.json"
 	main = (load("res://scenes/main/main.tscn") as PackedScene).instantiate() as Control
 	root.add_child(main)
+	main.sect_map.fixed_planar_sample = false # 历史候选17审图，不作为当前交付。
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var state := root.get_node("GameState")

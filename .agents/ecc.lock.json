@@ -1,0 +1,37 @@
+{
+  "repository": "https://github.com/affaan-m/ECC",
+  "commit": "90606c8315ee09cafc303515c5f33024db6b9882",
+  "upstreamVersion": "2.2.3",
+  "installedOn": "2026-10-23",
+  "scope": "repository",
+  "installationType": "selected standalone skill folders; no global plugin, hooks, agents, MCP, memory or runtime setup",
+  "installer": "system skill-installer with --repo affaan-m/ECC --ref <commit> --path <selected paths> --dest <project>/.agents/skills --method download",
+  "destination": ".agents/skills",
+  "license": "MIT",
+  "licenseFile": "skills/LICENSE.ecc",
+  "skills": [
+    "change-impact",
+    "search-first",
+    "architecture-decision-records"
+  ],
+  "files": [
+    {
+      "path": "skills/change-impact/SKILL.md",
+      "sha256": "B8D8A11417AF8B84E93983A8EB682E3B9A16D04F926778EB635C96E90019BF18"
+    },
+    {
+      "path": "skills/search-first/SKILL.md",
+      "sha256": "76835DB48DD910061D2E4271B1151793D2FDDBABEB2D2866EED068B3580C55D5"
+    },
+    {
+      "path": "skills/architecture-decision-records/SKILL.md",
+      "sha256": "263B20E81801AA5FA7E75EAEC6C38345C0AC028CA0EDBD67B1B9071C5FCBE11F"
+    }
+  ],
+  "bootstrap": "AGENTS.md selects relevant skills alongside using-superpowers",
+  "notInstalled": [
+    "duplicate planning, debugging, TDD and verification workflows",
+    "unrelated language, web and database frameworks",
+    "global agents, hooks, MCP, memory, telemetry and autonomous loops"
+  ]
+}

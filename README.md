@@ -6,7 +6,9 @@
 
 长期开发指令见 [AGENTS.md](AGENTS.md)，完整规划见 [PROJECT_DEVELOPMENT_PLAN.md](PROJECT_DEVELOPMENT_PLAN.md)。新会话先读 [TASKS.md](TASKS.md)、[AI_HANDOFF.md](AI_HANDOFF.md) 和 [CHANGELOG.md](CHANGELOG.md)，再核对 GitHub Issue 最新状态。
 
-V0.1～V0.3为负责人确认的已完成历史版本；V0.4正在逐项开发与验收，V0.5～V1.0均规划中。V0.4目标是战斗系统完善与经营联动。具体任务以 [GitHub Issues](https://github.com/C-destiny/QingYunSect/issues) 为主来源；编码测试通过不等于负责人验收。[里程碑和看板同步情况](docs/ROADMAP.md)。
+V0.1～V0.7为负责人确认的已完成历史版本；当前为V0.8宗门挂机美术、UI与体验定稿，尚未整体验收。V0.9及以后仍为规划中，不能将视觉试稿视作正式完成。具体任务以 [GitHub Issues](https://github.com/C-destiny/QingYunSect/issues) 为主来源；编码测试通过不等于负责人验收。[里程碑和看板同步情况](docs/ROADMAP.md)。
+
+最新开发分支为`feature/v0.8-visual-polish`。当前保留材质样板24；主殿＋庭院完整样板仅获准试做、尚未实现。另一台电脑同步及待办见[2026-10-24阶段交接](docs/SYNC_2026-10-24.md)。
 
 V0.1 宗门经营原型（功能验收完成）：
 

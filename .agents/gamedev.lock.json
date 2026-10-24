@@ -1,0 +1,125 @@
+{
+  "repository": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills",
+  "commit": "38a4c2500eeb5ff9ac084336b8f66108069d2f8d",
+  "installedOn": "2026-10-23",
+  "scope": "repository",
+  "engineBaseline": "Godot 4.7 (does not change project engine version)",
+  "installationType": "six standalone skill folders; no full router, global plugin or hooks",
+  "installer": "system skill-installer; fixed --ref and project --dest; --method download",
+  "destination": ".agents/skills",
+  "license": "Apache-2.0",
+  "licenseFile": "licenses/gamedev/LICENSE",
+  "noticeFile": "licenses/gamedev/NOTICE",
+  "skills": [
+    "create-game-assets",
+    "game-ui-ux",
+    "godot-gdscript",
+    "godot-ui-control",
+    "godot-export",
+    "godot-gdscript-headless-testing"
+  ],
+  "files": [
+    {
+      "path": "skills/create-game-assets/SKILL.md",
+      "upstreamPath": "skills/disciplines/create-game-assets/SKILL.md",
+      "sha256": "C178CDE20316F7D326F2A853A76522B375B325346B5B8797EF52AA98740AFF18"
+    },
+    {
+      "path": "skills/create-game-assets/agents/openai.yaml",
+      "upstreamPath": "skills/disciplines/create-game-assets/agents/openai.yaml",
+      "sha256": "B5FF9E75AB8A845324D28745AA97AF0A3CD4FCCC56067A6494947E12E40F1990"
+    },
+    {
+      "path": "skills/create-game-assets/assets/art-direction-brief.md",
+      "upstreamPath": "skills/disciplines/create-game-assets/assets/art-direction-brief.md",
+      "sha256": "6D5DC4F9F5FCB24300BAB9CE7DBD56D5C948BA41DA3CCA2D3B3D235FEE5FB72C"
+    },
+    {
+      "path": "skills/create-game-assets/assets/asset-manifest.json",
+      "upstreamPath": "skills/disciplines/create-game-assets/assets/asset-manifest.json",
+      "sha256": "6CCE05638C11B80EB5C8F776CF187F479A2579F1A1729B0970B1CC8E5FAB4C8E"
+    },
+    {
+      "path": "skills/create-game-assets/references/art-direction.md",
+      "upstreamPath": "skills/disciplines/create-game-assets/references/art-direction.md",
+      "sha256": "19B2CCB827EAE0C6C4CD3648AB7FEBB82E44706BEF8515F2E8912DE23DEC0A5C"
+    },
+    {
+      "path": "skills/create-game-assets/references/provenance.md",
+      "upstreamPath": "skills/disciplines/create-game-assets/references/provenance.md",
+      "sha256": "2C2B30C69DEC5C006C91ECBF506FCE2AE3F857B5CC82BDA9A10DDB5B769C7586"
+    },
+    {
+      "path": "skills/create-game-assets/references/raster-pipeline.md",
+      "upstreamPath": "skills/disciplines/create-game-assets/references/raster-pipeline.md",
+      "sha256": "834ECAEB35E61FC50ED5FBD518942F767F0717D1AB641822234A1F9CBE5EEB6F"
+    },
+    {
+      "path": "skills/create-game-assets/references/three-d-pipeline.md",
+      "upstreamPath": "skills/disciplines/create-game-assets/references/three-d-pipeline.md",
+      "sha256": "8278BAA203B7CD560D9FC5688C33489A9C478275C1795DEF119B7E024B27D03E"
+    },
+    {
+      "path": "skills/create-game-assets/scripts/asset_report.py",
+      "upstreamPath": "skills/disciplines/create-game-assets/scripts/asset_report.py",
+      "sha256": "93E364F095261B44F6FD0345F7132019AF1AF93E81EBD84D91FE2A5049918203"
+    },
+    {
+      "path": "skills/create-game-assets/scripts/build_preview_sheet.py",
+      "upstreamPath": "skills/disciplines/create-game-assets/scripts/build_preview_sheet.py",
+      "sha256": "002A550A7B5FAC6D8815078A72AFC249DD828C40D975B2323223FC770118C64B"
+    },
+    {
+      "path": "skills/create-game-assets/scripts/requirements.txt",
+      "upstreamPath": "skills/disciplines/create-game-assets/scripts/requirements.txt",
+      "sha256": "1954CA940740C612A12E7ABF0A307B7394715964D66DC8037D503FDD5C1B6424"
+    },
+    {
+      "path": "skills/game-ui-ux/SKILL.md",
+      "upstreamPath": "skills/disciplines/game-ui-ux/SKILL.md",
+      "sha256": "8A094C84A377503AA8F4C40DF676D1C6B6FC07D36FF95554CE06467F1614397E"
+    },
+    {
+      "path": "skills/game-ui-ux/references/layout-and-flow.md",
+      "upstreamPath": "skills/disciplines/game-ui-ux/references/layout-and-flow.md",
+      "sha256": "000D944DB77155EBF97FDE035A3D4FBE69EF0AE348E9DBCAFF48C5EA134D7D69"
+    },
+    {
+      "path": "skills/godot-gdscript/SKILL.md",
+      "upstreamPath": "skills/godot/godot-gdscript/SKILL.md",
+      "sha256": "B2625F5651FC9373E057EA47B5E2372319C4ED027FFFC958F8A91D25CDEA5A39"
+    },
+    {
+      "path": "skills/godot-gdscript/references/annotations-and-typing.md",
+      "upstreamPath": "skills/godot/godot-gdscript/references/annotations-and-typing.md",
+      "sha256": "F1CEA898E0346BE3FAC816093B577B30EF0F112D83CC2C1472C44D4A936700B3"
+    },
+    {
+      "path": "skills/godot-ui-control/SKILL.md",
+      "upstreamPath": "skills/godot/godot-ui-control/SKILL.md",
+      "sha256": "9AC89920E74BBF8D939B4D565E350D53B07C9AFBE0970345C97D4122F590CFD5"
+    },
+    {
+      "path": "skills/godot-ui-control/references/layout-and-theming.md",
+      "upstreamPath": "skills/godot/godot-ui-control/references/layout-and-theming.md",
+      "sha256": "2B5A7D64F00709640385ADDA215AA3F9A839C2D461C53C886BA9C320723A9F3D"
+    },
+    {
+      "path": "skills/godot-export/SKILL.md",
+      "upstreamPath": "skills/godot/godot-export/SKILL.md",
+      "sha256": "E97F0A889B8E06934ACED7FDCEE667D5BB848E33BC44D500C92F580E60295305"
+    },
+    {
+      "path": "skills/godot-export/references/presets-and-cli.md",
+      "upstreamPath": "skills/godot/godot-export/references/presets-and-cli.md",
+      "sha256": "DDB73ED10A107D806E883A1D13C6A78377226223D57B536201DDA9C97505AE62"
+    },
+    {
+      "path": "skills/godot-gdscript-headless-testing/SKILL.md",
+      "upstreamPath": "skills/godot/godot-gdscript-headless-testing/SKILL.md",
+      "sha256": "556B63C125CD01864411A07A7D9C067B5B5DF26DB9CD60C745EDF871EDABB47E"
+    }
+  ],
+  "validation": "upstream Git blob and SHA256 inventory; not an end-to-end gameplay or skills workflow test",
+  "auxiliaryScripts": "Installed with create-game-assets but not executed; Python/Pillow not installed by this task"
+}
