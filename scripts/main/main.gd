@@ -133,6 +133,13 @@ const MANAGEMENT_SECTIONS := {
 
 
 func _ready() -> void:
+	if "--hall-courtyard-sample" in OS.get_cmdline_user_args():
+		# This branch runs before any formal-save check or normal gameplay setup.
+		set_process(false)
+		var sample := preload("res://scenes/samples/hall_courtyard.tscn").instantiate()
+		get_parent().add_child.call_deferred(sample)
+		queue_free()
+		return
 	preload("res://scripts/ui/hud_styling.gd").apply(self)
 	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
 	var courtyard_demo := "--courtyard-demo" in OS.get_cmdline_user_args()

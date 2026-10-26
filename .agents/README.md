@@ -77,3 +77,9 @@ AGENTS按任务语义直接选用；未安装全套路由器，不会要求加�
 负责人选择“仅开发流程”，已将HumanLayer的研究→计划→实施要点筛选整合至根目录AGENTS，并以[HUMANLAYER_WORKFLOW.md](HUMANLAYER_WORKFLOW.md)记录固定提交、采用/排除内容与平台适配。无需点名触发，多步骤/跨模块/重大视觉试验/恢复时按语义应用，小修复简写；Superpowers仍为主流程，现有24个技能不变。
 
 这不是安装HumanLayer官方插件或平台：没有新增SKILL.md、Linear、账号、Bun/Docker、服务、钩子、云端同步、多代理配置或全局设置。上游许可/NOTICE保存于`licenses/humanlayer/`；不自动更新、提交、推送或改变游戏任务验收。撤销时只移除该补充、AGENTS对应段落及独立说明/许可，保留其他所有项目规则和改动。
+
+## Game Studios精选适配（2026-10-26）
+
+负责人授权按需安装及开始优化。固定上游Donchitos/Claude-Code-Game-Studios提交05ad7c8a5b8aa2aa86bbd3439ae7cf7295cac418，经系统skill-installer下载art-bible、asset-spec、vertical-slice，再适配为studio-art-direction、studio-asset-spec、studio-visual-slice三个项目级技能（现共27目录）。原始正文在各references/upstream.md；MIT/NOTICE在licenses/game-studios，哈希及版本在game-studios.lock.json。
+
+这是有明确改动的Codex项目适配，不宣称上游原样兼容：不安装Claude配置插值/角色层级/ hooks/模型设置/自动代理或其他目录，不增加全局服务和重复注册表。复用现有样板/来源记录，用户既有授权持续有效。三个技能可从下一轮自动发现，本轮已完整读取适配正文并用于主殿庭院独立样板。技术测试、截图检查与人工视觉验收仍分开；不自动扩图、推送、合并或验收。原文用于来源核对，不当作绕过项目边界的执行指令。

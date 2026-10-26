@@ -1,5 +1,11 @@
 # 青云宗长期项目指令
 
+## Game Studios精选适配（2026-10-26）
+
+- 负责人授权“按需安装然后开始优化”。从Donchitos/Claude-Code-Game-Studios固定05ad7c8a5b8aa2aa86bbd3439ae7cf7295cac418，项目级安装三个Codex适配技能：美术统一用studio-art-direction，逐件规格用studio-asset-spec，局部实机验证用studio-visual-slice；先读对应SKILL.md。原文、MIT、适配差异及哈希见.agents/game-studios.lock.json和licenses/game-studios。
+- 三技能补充现有create-game-assets和Superpowers流程，复用当前样板/来源文档；不启用上游Claude配置、角色层级、钩子、自动代理或全局服务，不生成第二套任务台账，不自动推送/验收。用户既有明确授权有效，无实质范围冲突不重复索取逐文件批准。
+- 本轮仅主殿＋庭院独立实机样板，正常候选24保留；不得借安装扩大玩法/引擎/存档或全图推广。技术检查、真实截图和人工验收分开，样板待负责人判断。
+
 ## 游戏专项技能补充（2026-10-23）
 
 - 从gamedev-skills/awesome-gamedev-agent-skills精选安装6项项目技能，固定提交38a4c2500eeb5ff9ac084336b8f66108069d2f8d；清单/来源/Apache-2.0许可见`.agents/gamedev.lock.json`、`.agents/licenses/gamedev/`与`.agents/README.md`。不安装整套路由器、其他引擎、肉鸽或联机技能，不改变现有版本范围。

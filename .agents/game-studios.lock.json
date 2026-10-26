@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/Donchitos/Claude-Code-Game-Studios",
+  "files": [
+    {
+      "path": ".agents\\skills\\studio-art-direction\\SKILL.md",
+      "sha256": "C71330BDC0238D89CD9548B2D345224DE03EF9246A3415DF2A218846103EBB9D"
+    },
+    {
+      "path": ".agents\\skills\\studio-art-direction\\references\\upstream.md",
+      "sha256": "7873271F9E19FD6F126F00770C3861A2001AFA492350F9232E3609FB4D61518A"
+    },
+    {
+      "path": ".agents\\skills\\studio-asset-spec\\SKILL.md",
+      "sha256": "CD6B2ADE638F2C56F8BC20DDD6ACC19F5F69F2594C31E54E69ECA1C9C2E54095"
+    },
+    {
+      "path": ".agents\\skills\\studio-asset-spec\\references\\upstream.md",
+      "sha256": "8E9126653DCF25BDD2E197EE9DF6587E3FFD7EE67DE7103087CF8971C59FE025"
+    },
+    {
+      "path": ".agents\\skills\\studio-visual-slice\\SKILL.md",
+      "sha256": "B647C0E43EABAF43B35351F401C11114C3BE913F47EE250530026A719F8DD8C6"
+    },
+    {
+      "path": ".agents\\skills\\studio-visual-slice\\references\\upstream.md",
+      "sha256": "E7D48F49119CF1EA8C18B13A6CF5857E7D9E11BB91B8C76B12CC322103021AA5"
+    }
+  ],
+  "license": "MIT",
+  "mode": "Three project-level adaptations; no hooks or global install",
+  "commit": "05ad7c8a5b8aa2aa86bbd3439ae7cf7295cac418"
+}

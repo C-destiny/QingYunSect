@@ -1,0 +1,1 @@
+Derived from https://github.com/Donchitos/Claude-Code-Game-Studios at 05ad7c8a5b8aa2aa86bbd3439ae7cf7295cac418, MIT. Original texts retained as references/upstream.md. Changed: renamed standalone Codex project workflows, removed Claude config/hooks/director/delegation and duplicate registry/approval requirements. No upstream scripts executed.
