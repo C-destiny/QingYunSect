@@ -3,7 +3,7 @@
   "files": [
     {
       "path": ".agents\\skills\\studio-art-direction\\SKILL.md",
-      "sha256": "C71330BDC0238D89CD9548B2D345224DE03EF9246A3415DF2A218846103EBB9D"
+      "sha256": "DA3A2A41B10C33AE8D8FEF299B895EF34C8C471F14550C0D329CD90BBAB8782A"
     },
     {
       "path": ".agents\\skills\\studio-art-direction\\references\\upstream.md",
@@ -11,7 +11,7 @@
     },
     {
       "path": ".agents\\skills\\studio-asset-spec\\SKILL.md",
-      "sha256": "CD6B2ADE638F2C56F8BC20DDD6ACC19F5F69F2594C31E54E69ECA1C9C2E54095"
+      "sha256": "B0FAFDD84FFFA15CCC5AD5F1517EB7CD060F24C06458E5538A6043868B77A05E"
     },
     {
       "path": ".agents\\skills\\studio-asset-spec\\references\\upstream.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": ".agents\\skills\\studio-visual-slice\\SKILL.md",
-      "sha256": "B647C0E43EABAF43B35351F401C11114C3BE913F47EE250530026A719F8DD8C6"
+      "sha256": "86A1FEDA0CDEB29ACB4882181D600CCC307A4F079E869080999528140CBE5BF5"
     },
     {
       "path": ".agents\\skills\\studio-visual-slice\\references\\upstream.md",
