@@ -6,6 +6,7 @@ var map_view: Control
 var card: PanelContainer
 var info: Label
 var action: Button
+var compare: Button
 var baseline: Dictionary
 
 func _ready() -> void:
@@ -51,6 +52,13 @@ func _ready() -> void:
 	action = Button.new()
 	action.pressed.connect(build_or_upgrade)
 	bar.add_child(action)
+	compare = Button.new()
+	compare.text = "对照原庭院"
+	compare.pressed.connect(func() -> void:
+		map_view.garden_enabled = not map_view.garden_enabled
+		compare.text = "对照原庭院" if map_view.garden_enabled else "返回园林版"
+		map_view.queue_redraw())
+	bar.add_child(compare)
 	var reset := Button.new()
 	reset.text = "施工试玩"
 	reset.tooltip_text = "仅重置本次独立演示，按原资源和时间建设；不操作玩家存档"
@@ -62,7 +70,7 @@ func _ready() -> void:
 		GameState.process_construction(30)
 		close_card()
 	refresh()
-	print("HALL_COURTYARD25: isolated sample; formal save not loaded or saved")
+	print("HALL_COURTYARD26: isolated sample; formal save not loaded or saved")
 
 func _process(delta: float) -> void:
 	GameState.process_construction(delta)
@@ -79,7 +87,7 @@ func refresh() -> void:
 			status = "施工 %.1f秒" % float(building["remaining"])
 		elif building.get("upgrading", false):
 			status = "升级 %.1f秒" % float(building["upgrade_remaining"])
-	info.text = "青云宗 · 庭院样板25（独立演示）　木材%d · 灵石%d　%s" % [GameState.resources["wood"], GameState.resources["spirit_stone"], status]
+	info.text = "青云宗 · 庭院样板26（独立演示）　木材%d · 灵石%d　%s" % [GameState.resources["wood"], GameState.resources["spirit_stone"], status]
 	action.text = "建设弟子居" if building.is_empty() else "升级弟子居"
 	action.disabled = not GameState.can_afford(BuildingCatalog.get_data(&"disciple_quarters")["cost"]) if building.is_empty() else not GameState.can_upgrade_building(int(building["instance_id"]))
 	if card.visible:

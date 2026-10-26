@@ -3,6 +3,8 @@ extends "res://scripts/world/sect_map.gd"
 signal site_selected(kind: StringName)
 
 const BACKGROUND: Texture2D = preload("res://assets/environment/hall_courtyard25.png")
+const GARDEN_BACKGROUND: Texture2D = preload("res://assets/environment/hall_courtyard26.png")
+const GARDEN_FOREGROUND: Texture2D = preload("res://assets/environment/hall_garden_foreground26.png")
 const Outline25 = preload("res://scripts/world/building_selection_outline.gd")
 const Garden25 = preload("res://scripts/world/fixed_courtyard_details.gd")
 const CANVAS := Vector2(1672, 941)
@@ -11,10 +13,21 @@ const DISPLAY := {
 	&"disciple_quarters": {"foot": Vector2(550, 560), "width": 300.0},
 }
 var selected: StringName = &""
+var garden_enabled := true
+var foreground_enabled := true
+var foreground_source := Rect2()
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	foreground_source = Rect2(GARDEN_FOREGROUND.get_image().get_used_rect())
 	mouse_exited.connect(func() -> void: tooltip_text = "")
+
+func foreground_frame() -> Dictionary:
+	# Alpha>0 includes the soft ground haze; the measured opaque moss edge ends at
+	# y=862 in the source, i.e. 84% of the used frame. Anchor that contact, not the canvas.
+	var extent := Vector2(190, 190 * foreground_source.size.y / foreground_source.size.x) * world_rect().size.x / CANVAS.x
+	return {"texture": GARDEN_FOREGROUND, "source": foreground_source,
+		"rect": Rect2(point(Vector2(670, 590)) - extent * Vector2(0.5, 0.84), extent)}
 
 func world_rect() -> Rect2:
 	var extent := CANVAS * minf(size.x / CANVAS.x, size.y / CANVAS.y)
@@ -65,7 +78,7 @@ func pick(at: Vector2) -> StringName:
 
 func _draw() -> void:
 	draw_texture_rect(DISTANT_CLOUDS, Rect2(Vector2.ZERO, size), false)
-	draw_texture_rect(BACKGROUND, world_rect(), false)
+	draw_texture_rect(GARDEN_BACKGROUND if garden_enabled else BACKGROUND, world_rect(), false)
 	for kind: StringName in [&"hall", &"disciple_quarters"]:
 		var building := wing() if kind == &"disciple_quarters" else {}
 		if kind != &"hall" and building.is_empty():
@@ -84,6 +97,11 @@ func _draw() -> void:
 			draw_texture_rect(texture, rect, false)
 			if selected == kind:
 				Outline25.draw(self, texture, Rect2(Vector2.ZERO, texture.get_size()), rect)
+	if garden_enabled and foreground_enabled:
+		# Grounded in the new flat planting pocket, after the lower wing (depth 560).
+		# It may hide a base corner, but never participates in occupancy or hit mapping.
+		var foreground := foreground_frame()
+		draw_texture_rect_region(foreground["texture"], foreground["rect"], foreground["source"])
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
