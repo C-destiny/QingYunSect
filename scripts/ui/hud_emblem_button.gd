@@ -2,6 +2,7 @@ extends Button
 
 var caption := ""
 var symbol: Texture2D
+var compact := false
 var active := false:
 	set(value):
 		active = value
@@ -27,6 +28,16 @@ func configure(label: String, texture: Texture2D) -> void:
 
 func _draw() -> void:
 	if symbol == null:
+		return
+	if compact:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("395752") if active or is_hovered() or has_focus() else Color("203e41")
+		style.border_color = Color("dcc28c") if active or has_focus() else Color("8b896c")
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(4)
+		draw_style_box(style, Rect2(Vector2(3, 2), size - Vector2(6, 4)))
+		draw_texture_rect(symbol, Rect2(Vector2(20, (size.y - 34) * 0.5), Vector2(34, 34)), false)
+		draw_string(get_theme_font("font"), Vector2(68, size.y * 0.5 + 8), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("f3e8cf"))
 		return
 	var center := Vector2(size.x * 0.5, 46)
 	var lit := active or is_hovered() or has_focus()

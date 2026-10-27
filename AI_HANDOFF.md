@@ -1,5 +1,39 @@
 # 会话交接
 
+## 2026-10-27 完整宗门29
+
+最新授权：负责人确认完整目标图“可以，看起来这样更好一些，你开始开发吧”；所选图已由用户导入 `assets/imported/a04f0273-53d2-4fea-ba3a-6d6127bb1db8.png`，画布节点41bd582d-56af-4531-87e4-fcc4e405b9a1。批准开发完整游戏视觉，不再限两建筑样板，但未记任何实机/版本验收。直接接续原feature脏工作区，27/28与用户导入均保留，未提交推送。
+
+main现正式默认complete_sect；fixed_sect_view仅委托新complete_sect_view的绘制/脚点/纸牌/施工架/alpha拾取。八建筑图集与无建筑地形经画布complete29-building-atlas/complete29-empty-ground共享历史生成，实际图均1672×941，图集真实混合alpha但列不等分，按实际边界手工取样。两生产副本启用mips；get_building_visual的旧图配置继续服务旧样板与自由建造。固定旧实例仍按类型归组，原ID/逻辑格/等级/数量、数值与version3不变，核心代码未动。
+
+新增complete_sect_hud/overview，正式资源栏紧凑化、五类导航矩形化、右侧总览/快捷入口/原院落实例卡。深入管理仍走原560宽抽屉，展开可覆盖右侧场景；不声称全部界面和参考逐像素一致。独立代码审查的P2：原Food/Disciples的IGNORE鼠标使新悬停详情不可达；红测复现后设PASS并保留可见缺粮，专项/全量再绿。
+
+最终73快测PASS/0失败，无超时和ERROR，builds/local-validation/20261027-185600/；首次69/4失败均是历史16/18/22/23坐标夹具，四测试显式关闭新视觉后保留原断言，不改旧核心或数据测试。新test_complete_sect覆盖原价格工期、八场所真实alpha/纸牌/施工中心与不可见屋顶、五类功能、保存失败回滚与隔离往返。GPU最终两尺寸18图PASS/0，builds/complete29-check/gpu-final.log；首轮审图在prepare前读atlas报null已修审图调用，日志保留。已目视1080p完工及720p空院/院落卡/挂机界面。正式档目录无savegame.json*，不是读取真实旧档；旧档仍由合成隔离回归验证。
+
+Windows最终包 `builds/QingYunSect-v0.8-complete29-win64.exe`，206828920字节，SHA256 D177411128D49C48D96C1B4075F2489851EF4B367C8FB421EDDBABD50184D15D。导出退出0，七个隔离APPDATA图形入口均启动/退出0，无脚本错误；仍全有系统根证书库ERROR，不能算无错误Windows验证。测试/GPU临时override.cfg使用已有Git证书包，导出前已删除，不进包。导入首次编辑器设置路径错误后改用仓库已有模板环境重导入无错误；无全局环境修改。
+
+新 `Run-QingYunSect.cmd` 进入正式游戏原档；`Run-Complete-Sect-Preview.cmd` 经原fixed-layout-showcase进入八院落完工的独立演示档，仍使用完整main功能。`--fixed-layout-demo` 空院付费试玩；`--legacy-fixed-art` 回退旧24绘制，旧27/28 CLI先分流仍可用。新实机图docs/art/v08-complete29-*.png已放当前画布，canvas_check通过。未真人鼠标试玩/30分钟长稳/联机/另一电脑验证；GitHub/Project本轮证据欠同步，Issue保持open，不记ACCEPTED，详见docs/V0.8_COMPLETE_SECT29.md。
+
+## 2026-10-27 背景建筑统一重制28
+
+负责人看27建议后明确“重构背景和建筑都可以，按着你的想法进行修改”，授权重制外观，但不记27/整版验收。基线仍066a396及未提交27，保留27所有成果。新地形/主殿/弟子居以同一场景参照派生，青灰瓦/暖木白墙/灰石与草地园林统一，去掉大广场。新--unified-courtyard-sample在普通读档前分流；新map继承27对照，新stage复用原资源/工期/升级/卡片，仅原stage新增create_map工厂。新显示脚点/比例不回写逻辑格，GameState/SaveManager/数值/12×8/104×52/version3及普通24不变。常用Run-Hall-Courtyard-Sample.cmd和Run-Unified-Courtyard.cmd打开28，旧27 CLI和包保留，画面内可同状态对照。
+
+资产/尺寸/alpha使用框/哈希/完整提示词见docs/V0.8_UNIFIED_COURTYARD28.md。三生产图位于assets/environment/courtyard-unified28.png和assets/buildings/*-unified28.png，mipmaps已开。地形通过画布节点共享历史生成，建筑内置image_gen透明生成并由编辑器保存，原始生成文件保留；没有读取被禁止的用户配置路径。首个参考和node保存脚本受阻记录在报告；后用编辑器生成/保存成功，未继续被拒绝的node写操作。canvas/jobs.json为编辑器生成历史，含引用图数据，不要随手当源码提交。
+
+新专项先红后绿；首轮全量71 PASS/1 FAIL（20261027-132625），旧test_planar_courtyard.gd:55存读档断言失败/超时。未改旧核心或测试，带save/load信号原样探针均true；最终全量72 PASS/0失败/无超时（20261027-133211），根因未证实，不称修复。最终GPU两尺寸18图PASS，无ERROR，实际新入口/空院/施工/卡片/升级/27对照；建筑显现有效变化6204/6198采样。已目视全景及720p空院/施工/卡片，画布产物已更新，canvas_check通过。测试临时使用已有Git证书包，配置删除，不随包交付。
+
+Windows串行导出exit0，unified28包186399136字节，SHA256 EBB58B80F528400514982F88D1C9D83C939C2B5B03E5F89000C2FA2A7D3EDEEF。新28/旧27/普通/付费施工/全景/自由备份六入口图形启动exit0、无脚本错误，但均仍有系统根证书库ERROR，不能计Windows干净通过。正式档哈希未验证，测试/启动均隔离。证据builds/unified28-check/；没有真人鼠标/独立审查/联机/30分钟长稳/人工验收。#37/#38只读核对仍open，更新日期10-26；上轮评论写入被拒绝，本轮不重试，远端和Project本轮证据欠同步。源码未提交推送、远端代码未重新同步，本地仍领先4个已存提交。停在主殿庭院局部供负责人判断，不推广全图。
+
+## 2026-10-27 主殿接地修整27
+
+负责人在接手诊断建议后明确“开始修整”。基线066a396，只动独立样板：原1280px主殿台基与三处台阶下缘描点，替代主殿椭圆影，接入贴轮廓暗部/右下局部柔影和中央入口两排窄石板，原图/脚点/比例不改。新增“接地对照”，25/26背景对照保留。普通24、GameState/SaveManager、原成本工期、旧身份/格坐标、12×8/104×52/version3均不动，不重生成整图或推广全图。
+
+新专项先红exit1后绿；最终71快测PASS/0失败/无超时，builds/local-validation/20261027-124413/。受限进程读取系统根证书库报ERROR，测试期间临时override.cfg指定已有Git证书包，finally删除；未放宽日志判定，最终测试/GPU无ERROR，临时配置未入包。新GPU两尺寸6全图+2原尺寸细节，变化6689/15081像素，主殿区域外0；原实际主入口16帧选中/卡片/付费施工/升级PASS。已看1080细节/720全景和主殿卡，改善有限，不代表整体融合已解决。画布追加3个实机资产节点，canvas_check通过。
+
+首次导出因用户模板/缓存权限失败，改用builds/local-validation/appdata下既有4.7.2模板及隔离APPDATA/LOCALAPPDATA后导出exit0。包contact27，168206384字节，SHA256 5C8E85D9D0BE37F582D38DAA0AED2499628E89A733CFBC0537A29E6B071C2332。五入口图形启动均exit0，无脚本错误，但导出和运行均保留系统证书库ERROR，不能称Windows干净通过。原样板启动器已指27，26和普通24保留。均隔离存档；未枚举到正式savegame.json*，前后哈希文件未产生，不能沿用此前“哈希不变”结论。证据builds/contact27-check/；报告docs/V0.8_HALL_CONTACT27.md。
+
+未真人鼠标/独立代码审查/联机/30分钟长稳/负责人验收。#37评论写入返回user rejected MCP tool call，未重试#38；本轮远端证据和Project欠同步，Issue沿用open/TESTED，不记验收。源码未提交/推送，未创建worktree，原未跟踪canvas文件保留。下一步先看负责人对接地局部的判断，Windows系统证书访问限制未解决，不借此改玩法或扩范围。
+
 ## 2026-10-26 局部园林候选26
 
 负责人在25交付后“可以，继续优化”，不记验收/全图推广。fetch无远端新增，基线b9e97fe。本轮沿用studio三技能和现有Godot链，只改独立样板；25底图经内置ImageGen编辑为26灰石路、边缘园林和植床，另生成透明花石。实际植床偏上，源alpha实测主体底y862/使用框约84%，以(670,590)、宽190源像素接地最后绘制，略遮侧翼底角、避开入口。没有修改两栋显示脚点/比例、GameState/SaveManager、旧身份/格坐标/数值/12×8/104×52/version3。对照按钮可同状态返回25底图，普通24入口保留；样板内部隔离路径沿用25名称，不读取或写入正式档。

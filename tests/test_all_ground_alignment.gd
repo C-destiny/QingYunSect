@@ -7,17 +7,23 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	for suffix: String in ["", ".bak", ".tmp"]:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH + suffix))
 	var planar := Planar.new()
 	if not planar.has_method("site_ground_quad"):
 		print("FAIL: only lumber has a calibrated ground; the other courtyards still use baked plot frames")
 		quit(1)
 		return
 	root.get_node("SaveManager").save_path = PATH
+	# This is a visual/save round-trip check, not an offline-time test. A real
+	# second boundary can otherwise legitimately settle progress during load.
+	root.get_node("SaveManager").unix_time_provider = func() -> int: return 5000
 	var main := (load("res://scenes/main/main.tscn") as PackedScene).instantiate() as Control
 	root.add_child(main)
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
+	map.complete_sect = false # Historical candidate22 plinth measurements, retained as a legacy-art regression.
 	var state := root.get_node("GameState")
 	state.resources["wood"] = 5000
 	state.resources["spirit_stone"] = 5000

@@ -20,3 +20,9 @@ Desktop.ini
 tests/.test_*.json
 tests/.test_*.json.bak
 
+# Local OhMyGame/editor state and temporary machine-specific test configuration
+.data/
+canvas/jobs.json
+canvas/editor/
+override.cfg
+

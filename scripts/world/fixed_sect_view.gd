@@ -1,6 +1,7 @@
 extends RefCounted
 
 const Layout = preload("res://scripts/world/fixed_sect_layout.gd")
+const Complete = preload("res://scripts/world/complete_sect_view.gd")
 const Garden = preload("res://scripts/world/fixed_courtyard_details.gd")
 const Outline = preload("res://scripts/world/building_selection_outline.gd")
 const Feedback = preload("res://scripts/world/fixed_site_feedback.gd")
@@ -9,6 +10,8 @@ const GARDEN_BACKDROP: Texture2D = preload("res://assets/environment/sect_garden
 const Planar = preload("res://scripts/world/planar_courtyard_sample.gd")
 
 static func site_frame(map: Control, kind: StringName) -> Dictionary:
+	if map.complete_sect:
+		return Complete.site_frame(map, kind)
 	var profile: Dictionary = map.MAIN_HALL_VISUAL if kind == &"hall" else map.get_building_visual(kind)["profile"]
 	var frame := Layout.frame(kind, map.size, profile)
 	var pose := Planar.sprite_transform(kind, frame["foot"]) if map.fixed_planar_sample and Planar.SITES.has(kind) else Transform2D.IDENTITY
@@ -17,6 +20,8 @@ static func site_frame(map: Control, kind: StringName) -> Dictionary:
 	return frame
 
 static func plaque_rect(map: Control, kind: StringName) -> Rect2:
+	if map.complete_sect:
+		return Complete.plaque_rect(map, kind)
 	var frame := site_frame(map, kind)
 	var width := float(Layout.SITES[kind]["width"]) * float(frame["scale"])
 	var offset := Vector2(width * 0.42, -width * 0.54)
@@ -25,6 +30,8 @@ static func plaque_rect(map: Control, kind: StringName) -> Rect2:
 	return Rect2(frame["foot"] + offset, Vector2(43, 102) * float(frame["scale"]))
 
 static func construction_geometry(map: Control, kind: StringName) -> Dictionary:
+	if map.complete_sect:
+		return Complete.construction_geometry(map, kind)
 	var frame := site_frame(map, kind)
 	var base := Planar.site_ground_quad(map, kind)
 	if base.is_empty():
@@ -66,6 +73,9 @@ static func draw_construction(map: Control, kind: StringName) -> void:
 	map.draw_line(base[2], top[1], timber, line_width * 0.65, true)
 
 static func draw(map: Control, state: Node) -> void:
+	if map.complete_sect:
+		Complete.draw(map, state)
+		return
 	map.draw_texture_rect(map.DISTANT_CLOUDS, Rect2(Vector2.ZERO, map.size), false)
 	if map.fixed_planar_sample:
 		Planar.draw_background(map, GARDEN_BACKDROP)
@@ -142,6 +152,8 @@ static func draw(map: Control, state: Node) -> void:
 		map._draw_map_label(at, "%s采集" % resource["resource_name"], 100, 13)
 
 static func hit(map: Control, position: Vector2) -> StringName:
+	if map.complete_sect:
+		return Complete.hit(map, position)
 	var kinds: Array = Layout.SITES.keys()
 	kinds.sort_custom(func(a: StringName, b: StringName) -> bool: return Vector2(Layout.SITES[a]["foot"]).y > Vector2(Layout.SITES[b]["foot"]).y)
 	for kind: StringName in kinds:

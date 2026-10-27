@@ -133,6 +133,13 @@ const MANAGEMENT_SECTIONS := {
 
 
 func _ready() -> void:
+	if "--unified-courtyard-sample" in OS.get_cmdline_user_args():
+		# Independent art sample branches before all formal-save checks.
+		set_process(false)
+		var unified := preload("res://scenes/samples/unified_courtyard.tscn").instantiate()
+		get_parent().add_child.call_deferred(unified)
+		queue_free()
+		return
 	if "--hall-courtyard-sample" in OS.get_cmdline_user_args():
 		# This branch runs before any formal-save check or normal gameplay setup.
 		set_process(false)
@@ -145,6 +152,7 @@ func _ready() -> void:
 	var courtyard_demo := "--courtyard-demo" in OS.get_cmdline_user_args()
 	var fixed_demo := "--fixed-layout-demo" in OS.get_cmdline_user_args() or "--fixed-layout-showcase" in OS.get_cmdline_user_args()
 	sect_map.fixed_layout = not (full_demo or courtyard_demo or "--visual-sample" in OS.get_cmdline_user_args() or "--legacy-free-build" in OS.get_cmdline_user_args())
+	sect_map.complete_sect = sect_map.fixed_layout and not "--legacy-fixed-art" in OS.get_cmdline_user_args()
 	sect_map.structured_terrain = courtyard_demo
 	var visual_demo := fixed_demo or courtyard_demo or full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
@@ -305,6 +313,8 @@ func _ready() -> void:
 	cancel_build_button.visible = not sect_map.fixed_layout
 	if sect_map.fixed_layout:
 		placement_status.text = "选择院落，消耗资源开始建设"
+	if sect_map.complete_sect:
+		preload("res://scripts/ui/complete_sect_hud.gd").apply(self)
 	print("青云宗 V0.8 开发版：美术与UI定稿启动成功")
 
 
@@ -350,6 +360,13 @@ func _refresh_resources() -> void:
 	]
 	if GameState.get_sustenance_multiplier() < 1.0:
 		disciples_label.text += " · 缺粮"
+	if sect_map.complete_sect:
+		food_label.tooltip_text = food_label.text
+		food_label.text = "灵谷  %d" % food_amount
+		if GameState.get_sustenance_multiplier() < 1.0:
+			food_label.text += " · 缺粮"
+		disciples_label.tooltip_text = disciples_label.text
+		disciples_label.text = "弟子 %d/%d" % [GameState.total_disciples, GameState.get_disciple_capacity()]
 	if not build_buttons.is_empty():
 		for building_id: StringName in build_buttons:
 			var definition := BuildingCatalog.get_data(building_id)
@@ -1380,6 +1397,8 @@ func _open_fixed_site(kind: StringName) -> void:
 	var rect: Rect2 = frame["rect"]
 	var nav_top: float = $Layout/Body/BottomNav.global_position.y - global_position.y
 	fixed_site_card.place_near(Rect2(rect.position + offset, rect.size), Rect2(Vector2(24, 104), Vector2(size.x - 48, nav_top - 120)))
+	if sect_map.complete_sect:
+		preload("res://scripts/ui/complete_sect_hud.gd").dock_card(self, fixed_site_card)
 
 
 func _construct_fixed_site(kind: StringName) -> void:
@@ -1486,3 +1505,5 @@ func _refresh_building_card() -> void:
 	var visual_rect := Rect2(building_visual_rect.position + map_offset, building_visual_rect.size)
 	var nav_top: float = $Layout/Body/BottomNav.global_position.y - global_position.y
 	building_card.place_near(visual_rect, Rect2(Vector2(24, 104), Vector2(size.x - 48, nav_top - 120)))
+	if sect_map.complete_sect:
+		preload("res://scripts/ui/complete_sect_hud.gd").dock_card(self, building_card)

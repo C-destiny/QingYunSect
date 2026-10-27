@@ -19,6 +19,7 @@ func _run() -> void:
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
+	map.complete_sect = false # This fixture explicitly checks candidate16's old entrance routes.
 	map.fixed_garden_scene = false # 保留候选16局部绘制链的回归夹具，不代表当前普通场景。
 	map.fixed_planar_sample = false
 	assert(map.fixed_layout and map.fixed_courtyard_blend)

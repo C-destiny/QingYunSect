@@ -14,6 +14,7 @@ func _run() -> void:
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
+	map.complete_sect = false # Preserve candidate18's sprite basis/ground regression independently of29.
 	var state := root.get_node("GameState")
 	assert(map.fixed_planar_sample)
 	assert(PlanarData.UNDERLAY.get_size() == Layout.ART_SIZE)

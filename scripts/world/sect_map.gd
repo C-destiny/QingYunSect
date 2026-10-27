@@ -87,6 +87,7 @@ const LUMBER_CONTACT_SAMPLE: Texture2D = preload("res://assets/buildings/lumber-
 var courtyard_atlas: Texture2D = preload("res://assets/environment/courtyard_fusion_atlas.png")
 var structured_terrain := false # 独立局部样板开关，未验收前不替换全图。
 var fixed_layout := false # 主场景默认启用；裸地图保留自由规则以供备份回归。
+var complete_sect := false # 正式场景启用完整宗门29；历史样板保持各自视觉。
 var fixed_courtyard_blend := true # V0.8局部背景融合；审图可关以对照旧场景，不持久化。
 var fixed_garden_scene := true # 候选17整体园林背景；不修改存档建筑坐标。
 var fixed_planar_sample := true # 候选18主殿/弟子居统一平面样板。
@@ -495,6 +496,8 @@ func _draw_pine(base: Vector2, scale_value: float) -> void:
 func _fixed_resource_at(point: Vector2) -> Dictionary:
 	for resource: Dictionary in resource_nodes:
 		var at := FixedLayout.point(FixedLayout.RESOURCE_POINTS[resource["site_id"]], size)
+		if complete_sect:
+			at = FixedView.Complete.point(FixedView.Complete.RESOURCE_POINTS[resource["site_id"]], size)
 		if Rect2(at - Vector2(50, 20), Vector2(100, 32)).has_point(point):
 			return resource
 	return {}

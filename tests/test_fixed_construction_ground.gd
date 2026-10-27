@@ -17,6 +17,7 @@ func _run() -> void:
 	main.set_process(false)
 	main.autosave_timer.stop()
 	var map: Control = main.sect_map
+	map.complete_sect = false # Candidate23's measured source-art construction plane.
 	var state := root.get_node("GameState")
 	state.resources["wood"] = 5000
 	state.resources["spirit_stone"] = 5000

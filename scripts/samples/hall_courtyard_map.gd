@@ -16,6 +16,60 @@ var selected: StringName = &""
 var garden_enabled := true
 var foreground_enabled := true
 var foreground_source := Rect2()
+var contact_enabled := true
+
+# Traced on the original 1280px hall sprite: lower stone/plinth edge, including
+# the three stairs. Pure presentation; never used for picking or occupancy.
+const HALL_CONTACT_EDGE := [
+	Vector2(37, 795), Vector2(80, 814), Vector2(79, 841),
+	Vector2(137, 864), Vector2(183, 842), Vector2(262, 878),
+	Vector2(262, 947), Vector2(435, 1017), Vector2(511, 984),
+	Vector2(634, 1033), Vector2(657, 1027), Vector2(731, 1065),
+	Vector2(820, 1024), Vector2(934, 1073), Vector2(963, 1061),
+	Vector2(1008, 1077), Vector2(1075, 1051), Vector2(1088, 1061),
+	Vector2(1172, 1019), Vector2(1170, 987), Vector2(1226, 962),
+	Vector2(1226, 915),
+]
+
+func hall_contact_geometry() -> Dictionary:
+	var rect: Rect2 = frame(&"hall")["rect"]
+	var edge := PackedVector2Array()
+	for at: Vector2 in HALL_CONTACT_EDGE:
+		edge.append(rect.position + rect.size * at / 1280.0)
+	var apron := PackedVector2Array()
+	# Two shallow rows extend the central stair's own axes, not a new platform.
+	for at: Vector2 in [Vector2(262, 947), Vector2(435, 1017), Vector2(394, 1039), Vector2(221, 969)]:
+		apron.append(rect.position + rect.size * at / 1280.0)
+	return {"edge": edge, "apron": apron, "cast": rect.size * Vector2(0.026, 0.018)}
+
+func _draw_hall_contact() -> void:
+	var geometry := hall_contact_geometry()
+	var edge: PackedVector2Array = geometry["edge"]
+	var cast: Vector2 = geometry["cast"]
+	# Shallow stone courses bridge the stair edge. No opaque rectangular plinth.
+	var apron: PackedVector2Array = geometry["apron"]
+	for row: int in range(2):
+		for column: int in range(5):
+			var near_left := apron[0].lerp(apron[1], column / 5.0)
+			var near_right := apron[0].lerp(apron[1], (column + 1) / 5.0)
+			var far_left := apron[3].lerp(apron[2], column / 5.0)
+			var far_right := apron[3].lerp(apron[2], (column + 1) / 5.0)
+			var slab := PackedVector2Array([
+				near_left.lerp(far_left, row / 2.0), near_right.lerp(far_right, row / 2.0),
+				near_right.lerp(far_right, (row + 1) / 2.0), near_left.lerp(far_left, (row + 1) / 2.0)])
+			draw_colored_polygon(slab, Color(0.66, 0.65, 0.60, 0.30 + (column % 2) * 0.04))
+			draw_line(slab[3], slab[2], Color(0.31, 0.33, 0.31, 0.17), 0.7, true)
+			draw_line(slab[1], slab[2], Color(0.31, 0.33, 0.31, 0.13), 0.6, true)
+	# Feathered edge strips follow every stair/plinth turn. Keeping only the
+	# local ribbon prevents an ellipse or a large dark polygon under the court.
+	for layer: int in range(7, 0, -1):
+		var offset := cast * (layer / 7.0)
+		for i: int in range(edge.size() - 1):
+			var strip := PackedVector2Array([edge[i], edge[i + 1], edge[i + 1] + offset, edge[i] + offset])
+			if absf((edge[i + 1] - edge[i]).cross(offset)) > 0.01:
+				draw_colored_polygon(strip, Color(0.12, 0.16, 0.17, 0.022))
+	var scale_value := world_rect().size.x / CANVAS.x
+	draw_polyline(edge, Color(0.10, 0.13, 0.13, 0.26), 2.3 * scale_value, true)
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -85,7 +139,10 @@ func _draw() -> void:
 			continue
 		var visual := frame(kind)
 		var rect: Rect2 = visual["rect"]
-		Garden25.shadow(self, visual["foot"] + Vector2(5, 3) * visual["scale"], rect.size.x * 0.34, rect.size.y * 0.035, 0.16)
+		if kind == &"hall" and contact_enabled:
+			_draw_hall_contact()
+		else:
+			Garden25.shadow(self, visual["foot"] + Vector2(5, 3) * visual["scale"], rect.size.x * 0.34, rect.size.y * 0.035, 0.16)
 		if kind == &"disciple_quarters" and not building["completed"]:
 			var geometry := scaffold()
 			for i: int in range(4):

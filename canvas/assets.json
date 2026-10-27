@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "assets": {
+    "hall-contact27-before": {
+      "name": "主殿接地27 · 修整前实机",
+      "path": "docs/art/v08-contact27-before.png",
+      "description": "候选26接地效果；本轮同机位同建筑状态实机捕获，界面版本为27。"
+    },
+    "hall-contact27-after": {
+      "name": "主殿接地27 · 修整后实机",
+      "path": "docs/art/v08-contact27-after.png",
+      "description": "主殿轮廓接触暗部、右下局部投影与窄门前补石。1920×1080真实渲染，待负责人判断融合效果。"
+    },
+    "hall-contact27-detail": {
+      "name": "主殿接地27 · 左前右后原尺寸对照",
+      "path": "docs/art/v08-contact27-detail.png",
+      "description": "左为修整前，右为修整后；同状态实际渲染裁切，不是概念图。"
+    },
+    "unified28-master": {
+      "description": "背景和建筑统一风格的场景参考；建筑烘焙在图中，不能作为施工/空院的运行资产。",
+      "path": "assets/generated/image-0e0472f1-f5c4-435e-8ee4-00dc237651d5.png",
+      "name": "统一庭院28 · 场景参考"
+    },
+    "d3de9646-4eea-4b12-9832-201366f467b5": {
+      "name": "output.png",
+      "path": "assets/environment/courtyard-unified28.png",
+      "libraryAssetId": "d3de9646-4eea-4b12-9832-201366f467b5",
+      "prompt": "Edit this supplied monastery scene into a CLEAN TERRAIN PLATE for a 2.5D game. Preserve the exact landscape 1672x941 framing, distant mountains, near ground, all trees/rocks/pond, sunlight, camera and path positions. REMOVE BOTH buildings completely: the large hall at upper right and the lower residential wing at left. Remove their roofs, walls, pillars, stone foundation platforms, railings, decorative pots and ALL building entrance steps, but preserve the foreground entry stair at the outer retaining wall. Fill their entire former areas with plausible continuation of the landscape BEHIND them and FLAT buildable fine-grain grey limestone paving or grass beneath them. No tall rocks or tree trunks in the former building footprints. The main hall reserve is approximately x780..1560,y65..510, with flat stone/earth ground below y395 and landscape behind the upper portion. The side-wing reserve is x210..740,y260..525, with flat grass/paving ground at y460..540. Extend the existing path to the two former door positions without a new pedestal or duplicate stairs. Former building locations must be empty and natural in a construction/empty state, no ghost architecture, no roof shadows. Keep whole scene equally sharp, original camera, architecture-compatible orthographic ground direction, original grey limestone and muted sage greens. No buildings, people, text, interface or new objects. Do not change terrain into a giant square tiled plaza."
+    },
+    "unified28-hall-asset": {
+      "name": "统一庭院28 · 独立主殿",
+      "description": "1581×995真实透明PNG，原图使用框与脚点已测量；主殿生产资产。",
+      "path": "assets/buildings/hall-unified28.png"
+    },
+    "unified28-wing-asset": {
+      "name": "统一庭院28 · 独立弟子居",
+      "description": "1671×941真实透明PNG；实际用于独立选择、付费施工及升级。",
+      "path": "assets/buildings/quarters-unified28.png"
+    },
+    "unified28-before": {
+      "name": "统一庭院28 · 候选27同状态实机",
+      "description": "同一演示资源和建筑等级下切回候选27；旧版对照。",
+      "path": "docs/art/v08-unified28-before.png"
+    },
+    "unified28-after": {
+      "name": "统一庭院28 · 1080p实际游戏",
+      "description": "背景与两栋建筑已分别接入运行；不是场景参考图，仍待负责人视觉验收。",
+      "path": "docs/art/v08-unified28-after.png"
+    },
+    "unified28-720": {
+      "name": "统一庭院28 · 720p实际游戏",
+      "description": "原生1280×720实机画面，用于检查小尺寸可读性。",
+      "path": "docs/art/v08-unified28-720.png"
+    },
+    "unified28-empty": {
+      "name": "统一庭院28 · 未建设状态实机",
+      "description": "弟子居尚未建设，地形没有烘焙残留建筑；仍需原资源和工期。",
+      "path": "docs/art/v08-unified28-empty.png"
+    },
+    "851cf514-ea17-4ae0-8975-4d208aeca135": {
+      "name": "a04f0273-53d2-4fea-ba3a-6d6127bb1db8.png",
+      "path": "assets/imported/a04f0273-53d2-4fea-ba3a-6d6127bb1db8.png",
+      "libraryAssetId": "851cf514-ea17-4ae0-8975-4d208aeca135"
+    },
+    "409d7124-e6df-4457-9724-1133ade7eb14": {
+      "name": "output.png",
+      "path": "assets/imported/output-2.png",
+      "libraryAssetId": "409d7124-e6df-4457-9724-1133ade7eb14",
+      "prompt": "Edit the supplied 1672x941 Chinese monastery complete-game concept into its EXACT EMPTY TERRAIN PLATE for a real 2D game. Keep camera, world composition, all terrace shapes, rock cliffs, stairs, garden and landscape pixel positions as closely as possible. Remove ALL user interface: the top 0..52 header, right x1320..1672 management panel, bottom y834..941 navigation, and ALL eight vertical cream nameplates. Replace these border areas with natural landscape continuation, NOT blank white. Within the world area x0..1320,y52..834 remove ALL eight functional buildings/site contents completely: upper center main hall roof/walls/foundation; upper-left two-storey library; middle-left multi-wing residence; lower-left log yard and logs/shed; lower-left-middle golden crop fields and water wheel; lower center training dummies/fence/racks; lower-right forge/furnace/smoke; upper-right mine entrance/shed/crystals/scaffold. Keep the GROUND TERRACES and cross-terrace connecting stairways, roads, mountain rocks and retaining walls. Fill each cleared site with flat grey limestone, bare earth or short grass, at the EXACT SAME ground height. No remaining building ghosts. Do not enlarge trees into any former building footprint. Keep blue-grey mountains and sage-green pines, subtle small pond at right, same warm upper-left daylight, clear detailed game materials at original scale. No new buildings, UI, text, people. This is the empty/unbuilt version of the SAME scene, not a newly composed image. Output same wide framing."
+    },
+    "8bc984b9-31ff-46a1-a076-39b2b7b2d624": {
+      "name": "output.png",
+      "path": "assets/imported/output-3.png",
+      "libraryAssetId": "8bc984b9-31ff-46a1-a076-39b2b7b2d624",
+      "prompt": "Using the reference ONLY as architectural style and design reference, create ONE production RGBA transparent sprite atlas for a 2.5D Chinese sect management game. Exactly FOUR equal columns and TWO equal rows, eight separate cells, no printed grid, no text/UI/labels/numbers. The canvas aspect is 16:9. ALL space outside the eight objects must be TRUE transparent alpha, not white, no checkerboard. Keep objects fully inside their respective cells with generous empty padding, no touching neighbors. Same orthographic elevated three-quarter camera, upper-left daylight, blue-grey roof tiles, warm timber, cream plaster, grey low stone plinths, fine semi-realistic stylized game rendering.\nTOP ROW LEFT TO RIGHT: (1) the large main hall from the upper center of the reference, complete roof, walls, foundation and front stairs; (2) the two-storey scripture library from upper-left, full building and front steps; (3) a compact residence compound of two small matching residential wings with short connecting wall, as reference middle-left; (4) the lumber yard, one rustic log shed plus neat log piles and short workbench, no surrounding forest.\nBOTTOM ROW LEFT TO RIGHT: (5) spirit mine, compact rocky mine entrance with timber support and small sorting shed, a few restrained blue mineral clusters, no giant cliff or terrain; (6) grain farm, neat golden-green grain rows on a small irregular earth planting bed with a tiny low shed, no water wheel; (7) the training court, low grey rectangular paving footprint with wood practice dummies, racks and low fence, no surrounding landscape; (8) forge workshop with blue-grey roof, warm small furnace and a chimney, no huge smoke, include complete low foundation.\nEach cell is one grouped functional object with its full silhouette. Transparent outside footprint. No massive square tile/slab under any building, no surrounding trees or mountains or waterfalls, no external ground shadow haze. Match the quiet believable materials and proportions of the supplied concept so all eight belong to ONE game. Objects face generally toward front of image, same scale language, do not stylize as miniature toys or chibi. All architecture normal proportions. This is an atlas of independent buildings/precinct objects, NOT a complete scene. No names, calligraphy, plaques or UI."
+    },
+    "complete29-built": {
+      "name": "完整宗门29 · 八院落实机",
+      "path": "docs/art/v08-complete29-built.png",
+      "description": "2026-10-27完整main场景GPU渲染，非目标图。隔离存档，含原经营/建设/弟子/养成/挂机功能。待负责人实机视觉验收。"
+    },
+    "complete29-empty": {
+      "name": "完整宗门29 · 原资源付费建设前实机",
+      "path": "docs/art/v08-complete29-empty.png",
+      "description": "2026-10-27完整main场景GPU渲染，非目标图。隔离存档，含原经营/建设/弟子/养成/挂机功能。待负责人实机视觉验收。"
+    },
+    "complete29-card": {
+      "name": "完整宗门29 · 院落实例管理实机",
+      "path": "docs/art/v08-complete29-card.png",
+      "description": "2026-10-27完整main场景GPU渲染，非目标图。隔离存档，含原经营/建设/弟子/养成/挂机功能。待负责人实机视觉验收。"
+    },
+    "complete29-battle": {
+      "name": "完整宗门29 · 原挂机功能实机",
+      "path": "docs/art/v08-complete29-battle.png",
+      "description": "2026-10-27完整main场景GPU渲染，非目标图。隔离存档，含原经营/建设/弟子/养成/挂机功能。待负责人实机视觉验收。"
+    }
+  }
+}

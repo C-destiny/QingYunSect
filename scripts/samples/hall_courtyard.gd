@@ -9,6 +9,9 @@ var action: Button
 var compare: Button
 var baseline: Dictionary
 
+func create_map() -> Control:
+	return preload("res://scripts/samples/hall_courtyard_map.gd").new()
+
 func _ready() -> void:
 	# Explicit standalone entry: no formal save read, load, autosave or save on exit.
 	SaveManager.save_path = "user://v08_hall_courtyard25_demo.json"
@@ -16,7 +19,7 @@ func _ready() -> void:
 	GameState.resources["wood"] = 1000
 	GameState.resources["spirit_stone"] = 1000
 	baseline = GameState.export_save_data().duplicate(true)
-	map_view = preload("res://scripts/samples/hall_courtyard_map.gd").new()
+	map_view = create_map()
 	add_child(map_view)
 	map_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	map_view.site_selected.connect(select_site)
@@ -59,6 +62,14 @@ func _ready() -> void:
 		compare.text = "对照原庭院" if map_view.garden_enabled else "返回园林版"
 		map_view.queue_redraw())
 	bar.add_child(compare)
+	var contact := Button.new()
+	contact.text = "接地对照"
+	contact.tooltip_text = "同一园林与建筑状态，开关主殿台基接地修正"
+	contact.pressed.connect(func() -> void:
+		map_view.contact_enabled = not map_view.contact_enabled
+		contact.text = "接地对照" if map_view.contact_enabled else "返回修整"
+		map_view.queue_redraw())
+	bar.add_child(contact)
 	var reset := Button.new()
 	reset.text = "施工试玩"
 	reset.tooltip_text = "仅重置本次独立演示，按原资源和时间建设；不操作玩家存档"
@@ -70,7 +81,7 @@ func _ready() -> void:
 		GameState.process_construction(30)
 		close_card()
 	refresh()
-	print("HALL_COURTYARD26: isolated sample; formal save not loaded or saved")
+	print("HALL_COURTYARD27: isolated sample; formal save not loaded or saved")
 
 func _process(delta: float) -> void:
 	GameState.process_construction(delta)
@@ -87,7 +98,7 @@ func refresh() -> void:
 			status = "施工 %.1f秒" % float(building["remaining"])
 		elif building.get("upgrading", false):
 			status = "升级 %.1f秒" % float(building["upgrade_remaining"])
-	info.text = "青云宗 · 庭院样板26（独立演示）　木材%d · 灵石%d　%s" % [GameState.resources["wood"], GameState.resources["spirit_stone"], status]
+	info.text = "青云宗 · 接地样板27　木材%d · 灵石%d　%s" % [GameState.resources["wood"], GameState.resources["spirit_stone"], status]
 	action.text = "建设弟子居" if building.is_empty() else "升级弟子居"
 	action.disabled = not GameState.can_afford(BuildingCatalog.get_data(&"disciple_quarters")["cost"]) if building.is_empty() else not GameState.can_upgrade_building(int(building["instance_id"]))
 	if card.visible:
