@@ -41,6 +41,8 @@ try {
         if ($test.BaseName -eq 'test_real_time_stability') { $limit = 2100 }
         $arguments = '--headless --path "{0}" --log-file "{1}" --quit-after 200000 --script "res://tests/{2}"' -f $projectRoot,$logPath,$test.Name
         $process = Start-Process -FilePath $Godot -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $outPath -RedirectStandardError $errPath
+        # Windows PowerShell can lose ExitCode when a short-lived child's handle was never retained.
+        $null = $process.Handle
         $timedOut = -not $process.WaitForExit($limit * 1000)
         if ($timedOut) {
             # Only stop the exact child launched for this test.

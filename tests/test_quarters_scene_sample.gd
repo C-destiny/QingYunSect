@@ -87,7 +87,7 @@ func _run() -> void:
 	assert(manager.save_game())
 	assert(manager.load_game())
 	assert(state.get_building(instance_id).is_empty())
-	assert(manager.SAVE_VERSION == 3)
+	assert(manager.SAVE_VERSION == 6)
 	assert(map.QUARTERS_SAMPLE.get_image().get_pixel(0, 0).a < 0.01)
 	assert(map.QUARTERS_VISUAL["size"].x < map.MAIN_HALL_VISUAL["size"].x)
 	main.queue_free()

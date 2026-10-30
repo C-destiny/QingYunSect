@@ -45,7 +45,7 @@ func _init() -> void:
 	assert(restored.import_save_data(saved))
 	assert(restored.equipment_crafts_completed == 3)
 	assert(restored.equipment_inventory.size() == 3)
-	assert(restored.EQUIPMENT_DROP_INTERVAL == 5)
+	assert(restored.EQUIPMENT_DROP_INTERVAL == 100)
 
 	while restored.equipment_inventory.size() < restored.MAX_EQUIPMENT_INVENTORY:
 		assert(restored.create_equipment_instance(&"spirit_ring", &"common") > 0)

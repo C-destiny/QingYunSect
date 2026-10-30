@@ -23,9 +23,9 @@ func _init() -> void:
 			assert(state.import_save_data(snapshot))
 			assert(state.export_save_data() == snapshot)
 	assert(state.battle_victories > 0)
-	assert(state.get_resource_amount(&"wood") == initial_wood + state.battle_victories * 20)
+	assert(state.get_resource_amount(&"wood") == initial_wood + state.battle_victories * 1)
 	assert(state.get_resource_amount(&"spirit_stone") == initial_stone)
-	assert(state.get_resource_amount(&"food") == initial_food + state.battle_victories * 10 - consumed_total)
+	assert(state.get_resource_amount(&"food") == initial_food + state.battle_victories * 1 - consumed_total)
 	assert(state.battle_log.size() <= state.BATTLE_LOG_LIMIT)
 	for resource_id: StringName in state.RESOURCE_IDS:
 		assert(state.get_resource_amount(resource_id) >= 0)

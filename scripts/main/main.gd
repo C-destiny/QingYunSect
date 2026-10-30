@@ -1,5 +1,8 @@
 extends Control
 
+# Explicit historical preview; ordinary gameplay uses the existing free-build rules.
+@export var fixed_layout_preview := false
+
 const BattleCatalogData = preload("res://scripts/data/battle_catalog.gd")
 const EquipmentCatalogData = preload("res://scripts/data/equipment_catalog.gd")
 const EquipmentCraftingCatalogData = preload("res://scripts/data/equipment_crafting_catalog.gd")
@@ -36,6 +39,9 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var disciple_selector: OptionButton = %DiscipleSelector
 @onready var disciple_detail: Label = %DiscipleDetail
 @onready var breakthrough_button: Button = %BreakthroughButton
+@onready var disciple_training_button: Button = %DiscipleTrainingButton
+@onready var disciple_training_status: Label = %DiscipleTrainingStatus
+@onready var disciple_action_status: Label = %DiscipleActionStatus
 @onready var disciple_job_selector: OptionButton = %DiscipleJobSelector
 @onready var disciple_job_status: Label = %DiscipleJobStatus
 @onready var roster_filter: OptionButton = %RosterFilter
@@ -95,6 +101,7 @@ const DevelopmentGoalCatalogData = preload("res://scripts/data/development_goal_
 @onready var offline_summary_text: Label = %OfflineSummaryText
 
 var building_card: Control
+var economy_panel: VBoxContainer
 var fixed_site_card: Control
 var fixed_card_refresh := 0.0
 var card_is_hall := false
@@ -148,12 +155,26 @@ func _ready() -> void:
 		queue_free()
 		return
 	preload("res://scripts/ui/hud_styling.gd").apply(self)
+	var medicine_panel := preload("res://scripts/ui/medicine_panel.gd").new()
+	disciple_training_button.get_parent().add_child(medicine_panel)
+	medicine_panel.setup(GameState, SaveManager, func() -> int: return selected_disciple_id)
+	var technique_panel := preload("res://scripts/ui/technique_panel.gd").new()
+	disciple_training_button.get_parent().add_child(technique_panel)
+	technique_panel.setup(GameState, SaveManager, func() -> int: return selected_disciple_id)
 	var full_demo := "--full-scene-demo" in OS.get_cmdline_user_args()
 	var courtyard_demo := "--courtyard-demo" in OS.get_cmdline_user_args()
 	var fixed_demo := "--fixed-layout-demo" in OS.get_cmdline_user_args() or "--fixed-layout-showcase" in OS.get_cmdline_user_args()
-	sect_map.fixed_layout = not (full_demo or courtyard_demo or "--visual-sample" in OS.get_cmdline_user_args() or "--legacy-free-build" in OS.get_cmdline_user_args())
+	var fixed_preview := fixed_layout_preview or fixed_demo or "--fixed-layout-preview" in OS.get_cmdline_user_args() or "--legacy-fixed-art" in OS.get_cmdline_user_args()
+	sect_map.fixed_layout = fixed_preview and not (full_demo or courtyard_demo or "--visual-sample" in OS.get_cmdline_user_args() or "--legacy-free-build" in OS.get_cmdline_user_args())
 	sect_map.complete_sect = sect_map.fixed_layout and not "--legacy-fixed-art" in OS.get_cmdline_user_args()
-	sect_map.structured_terrain = courtyard_demo
+	# The ordinary free grid needs one continuous surface, not the old painted terraces.
+	var historical_free := full_demo or "--visual-sample" in OS.get_cmdline_user_args() or "--legacy-free-build" in OS.get_cmdline_user_args()
+	sect_map.structured_terrain = courtyard_demo or (not sect_map.fixed_layout and not historical_free)
+	economy_panel = preload("res://scripts/ui/economy_panel.gd").new()
+	var sect_section := sect_heading.get_parent()
+	sect_section.add_child(economy_panel)
+	sect_section.move_child(economy_panel, 2)
+	economy_panel.guidance_requested.connect(_open_economy_guidance)
 	var visual_demo := fixed_demo or courtyard_demo or full_demo or "--visual-sample" in OS.get_cmdline_user_args()
 	if visual_demo:
 		# 必须在首次has_save/load之前切换路径；演示模式不读取或覆盖正式玩家存档。
@@ -181,6 +202,7 @@ func _ready() -> void:
 	GameState.resources_changed.connect(_refresh_resources)
 	GameState.assignments_changed.connect(_refresh_assignment)
 	GameState.buildings_changed.connect(_refresh_buildings)
+	GameState.buildings_changed.connect(_refresh_selected_training)
 	GameState.recruitment_changed.connect(_refresh_recruitment)
 	GameState.sustenance_changed.connect(_refresh_resources)
 	GameState.training_changed.connect(_refresh_training)
@@ -232,6 +254,19 @@ func _ready() -> void:
 	upgrade_button.pressed.connect(_upgrade_selected_building)
 	disciple_selector.item_selected.connect(_on_disciple_selected)
 	breakthrough_button.pressed.connect(_breakthrough_selected_disciple)
+	disciple_training_button.pressed.connect(_toggle_selected_disciple_training)
+	var practice_button := Button.new()
+	practice_button.text = "使用此弟子进入试炼场"
+	practice_button.custom_minimum_size.y = 42
+	disciple_action_status.get_parent().add_child(practice_button)
+	practice_button.pressed.connect(_enter_practice)
+	var claim_dungeon := Button.new()
+	claim_dungeon.text = "领取首通稀有法器（满背包时保留）"
+	claim_dungeon.custom_minimum_size.y = 42
+	disciple_action_status.get_parent().add_child(claim_dungeon)
+	claim_dungeon.pressed.connect(func() -> void:
+		var service = preload("res://scripts/core/dungeon_service.gd").new(GameState,SaveManager)
+		disciple_action_status.text = "首通法器已领取并保存" if service.claim_weapon() else "暂无待领取法器，或背包已满/保存失败")
 	sect_upgrade_button.pressed.connect(_upgrade_sect)
 	territory_unlock_button.pressed.connect(_unlock_next_region)
 	claim_goal_button.pressed.connect(_claim_current_development_goal)
@@ -313,6 +348,8 @@ func _ready() -> void:
 	cancel_build_button.visible = not sect_map.fixed_layout
 	if sect_map.fixed_layout:
 		placement_status.text = "选择院落，消耗资源开始建设"
+	else:
+		placement_status.text = "自由建造 · 选择建筑后点击绿色格子，右键或Esc取消"
 	if sect_map.complete_sect:
 		preload("res://scripts/ui/complete_sect_hud.gd").apply(self)
 	print("青云宗 V0.8 开发版：美术与UI定稿启动成功")
@@ -325,6 +362,10 @@ func _process(delta: float) -> void:
 		if fixed_card_refresh >= 0.5:
 			fixed_card_refresh = 0.0
 			_open_fixed_site(fixed_site_card.site_kind)
+	_advance_sect_time(delta)
+
+
+func _advance_sect_time(delta: float) -> void:
 	for resource_data: Dictionary in sect_map.resource_nodes:
 		GameState.process_production(
 			resource_data["site_id"],
@@ -332,6 +373,7 @@ func _process(delta: float) -> void:
 			resource_data["rate"],
 			delta
 		)
+	GameState.process_medicine(delta)
 	GameState.process_construction(delta)
 	if GameState.process_recruitment(delta):
 		SaveManager.save_game()
@@ -345,6 +387,11 @@ func _process(delta: float) -> void:
 func _refresh_resources() -> void:
 	wood_label.text = "木材  %d" % GameState.get_resource_amount("wood")
 	spirit_stone_label.text = "灵石  %d" % GameState.get_resource_amount("spirit_stone")
+	var report := preload("res://scripts/core/sect_economy.gd").overview(GameState)
+	for entry: Array in [[wood_label, "wood"], [spirit_stone_label, "spirit_stone"], [food_label, "food"]]:
+		var row: Dictionary = report["rows"][entry[1]]
+		entry[0].mouse_filter = Control.MOUSE_FILTER_PASS
+		entry[0].tooltip_text = "%s：%d\n每分钟产出%.1f / 消耗%.1f / 净%+.1f\n用途：%s\n打开宗门查看发展建议" % [row["name"], row["amount"], row["income"], row["consumption"], row["net"], row["use"]]
 	var food_rate := _get_food_production_per_minute()
 	var food_net := food_rate - GameState.get_food_consumption_per_minute()
 	var food_amount := GameState.get_resource_amount("food")
@@ -374,6 +421,25 @@ func _refresh_resources() -> void:
 	_refresh_crafting_panel()
 
 
+func _open_economy_guidance(_displayed_step: Dictionary) -> void:
+	# Re-evaluate on click so a stale hint never routes to an obsolete action.
+	var step := preload("res://scripts/core/sect_economy.gd").guidance(GameState)
+	match String(step["action"]):
+		"site":
+			for resource: Dictionary in sect_map.resource_nodes:
+				if String(resource["site_id"]) == String(step["target"]):
+					_on_resource_selected(resource)
+					return
+		"build":
+			_start_building_placement(StringName(step["target"]))
+		"build_menu":
+			_open_management_panel(management_heading)
+		"disciples":
+			_open_management_panel(disciples_heading if step["id"] == "recruit" else disciple_job_selector)
+		"growth":
+			_open_management_panel(growth_heading)
+
+
 func _on_resource_selected(resource_data: Dictionary) -> void:
 	sect_map.clear_selection()
 	if is_instance_valid(fixed_site_card):
@@ -381,7 +447,7 @@ func _on_resource_selected(resource_data: Dictionary) -> void:
 	building_card.hide()
 	selected_resource = resource_data
 	selected_building_instance = 0
-	_open_management_panel(sect_heading)
+	_open_management_panel(selection_name)
 	building_actions.visible = false
 	assignment_status.visible = true
 	production_status.visible = true
@@ -509,6 +575,7 @@ func _is_training_ground_selected() -> bool:
 
 
 func _refresh_training() -> void:
+	_refresh_selected_training()
 	if not _is_training_ground_selected():
 		return
 	assignment_status.text = "修炼弟子 %d/%d · 空闲 %d 人" % [
@@ -605,7 +672,7 @@ func _open_management_panel(target: Control = null) -> void:
 	var module_name := "宗门"
 	if target == management_heading:
 		module_name = "建设"
-	elif target == disciples_heading:
+	elif target == disciples_heading or target == disciple_job_selector:
 		module_name = "弟子"
 	elif target == growth_heading:
 		module_name = "养成"
@@ -637,6 +704,10 @@ func _ensure_sidebar_target_visible(_target: Control) -> void:
 	await get_tree().process_frame
 	if management_sidebar.visible:
 		sidebar_scroll.scroll_vertical = 0
+		if _target == selection_name and assign_button.is_visible_in_tree():
+			sidebar_scroll.ensure_control_visible(assign_button)
+		elif _target == disciple_job_selector and disciple_job_selector.is_visible_in_tree():
+			sidebar_scroll.ensure_control_visible(disciple_job_selector)
 
 
 func _request_close_management_panel() -> void:
@@ -654,6 +725,11 @@ func _close_management_panel() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var cancel_placement: bool = event.is_action_pressed("ui_cancel") or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed)
+	if cancel_placement and sect_map.placement_building != &"":
+		_cancel_building_placement()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel") and is_instance_valid(fixed_site_card) and fixed_site_card.visible:
 		fixed_site_card.hide()
 		sect_map.clear_selection()
@@ -780,6 +856,7 @@ func _on_disciple_selected(index: int) -> void:
 	if index < 0 or index >= disciple_selector.item_count:
 		return
 	selected_disciple_id = int(disciple_selector.get_item_metadata(index))
+	disciple_action_status.text = ""
 	_refresh_disciple_detail()
 	_refresh_equipment_panel()
 	_refresh_battle()
@@ -801,6 +878,7 @@ func _refresh_core_character_preview() -> void:
 
 
 func _refresh_disciple_detail() -> void:
+	_refresh_selected_training()
 	var disciple := GameState.get_disciple(selected_disciple_id)
 	if disciple.is_empty():
 		disciple_detail.text = "暂无弟子"
@@ -842,11 +920,107 @@ func _refresh_disciple_detail() -> void:
 	_refresh_equipment_panel()
 
 
+func _refresh_selected_training() -> void:
+	var disciple := GameState.get_disciple(selected_disciple_id)
+	disciple_training_button.disabled = true
+	if disciple.is_empty():
+		disciple_training_button.text = "请选择弟子"
+		disciple_training_status.text = "暂无弟子可培养"
+		return
+	var job := StringName(disciple.get("job", "idle"))
+	var capacity := GameState.get_training_capacity()
+	disciple_training_status.text = "普通弟子 · 每分钟消耗1灵谷\n演武场修炼位：%d/%d（每人占1位）" % [GameState.training_disciples, capacity]
+	if job == &"training":
+		disciple_training_button.text = "停止此弟子修炼"
+		disciple_training_button.disabled = false
+	elif job == &"combat":
+		disciple_training_button.text = "请先从挂机队伍移出此弟子"
+	elif int(disciple.get("realm_level", 1)) >= GameState.REALM_MAX_LEVEL:
+		disciple_training_button.text = "已达当前最高境界"
+	elif capacity == 0:
+		disciple_training_button.text = "请先建成演武场"
+	elif GameState.training_disciples >= capacity:
+		disciple_training_button.text = "修炼位已满"
+	else:
+		disciple_training_button.text = "停止采集并修炼" if job in [&"forest", &"mine", &"field"] else "安排此弟子修炼"
+		disciple_training_button.disabled = not GameState.can_set_disciple_job(selected_disciple_id, &"training")
+
+
+func _keep_disciple_selected(disciple_id: int) -> void:
+	# Job/realm changes can remove this ID from an active roster filter.
+	var visible_ids: Array[int] = []
+	for disciple: Dictionary in _get_visible_disciples():
+		visible_ids.append(int(disciple["id"]))
+	if disciple_id not in visible_ids:
+		roster_filter.select(0)
+	selected_disciple_id = disciple_id
+	roster_signature = ""
+	_refresh_disciple_roster()
+
+
+func _save_disciple_action(rollback: Dictionary, disciple_id: int, success_text: String, feedback: Label) -> void:
+	var saved := SaveManager.save_game()
+	if not saved:
+		GameState.import_save_data(rollback)
+	_keep_disciple_selected(disciple_id)
+	feedback.text = success_text + "，已保存" if saved else "保存失败，本次操作已撤回，可重试"
+	feedback.modulate = Color(0.55, 0.85, 0.62) if saved else Color(0.9, 0.55, 0.42)
+
+
+func _toggle_selected_disciple_training() -> void:
+	_refresh_selected_training()
+	if disciple_training_button.disabled:
+		return
+	var disciple_id := selected_disciple_id
+	var disciple := GameState.get_disciple(disciple_id)
+	var training := StringName(disciple.get("job", "idle")) != &"training"
+	var rollback := GameState.export_save_data()
+	if GameState.set_disciple_job(disciple_id, &"training" if training else &"idle"):
+		_save_disciple_action(rollback, disciple_id, "已开始修炼" if training else "已停止修炼", disciple_action_status)
+
+
 func _get_selected_equipment_slot() -> StringName:
 	var index := equipment_slot_selector.selected
 	if index < 0 or index >= equipment_slot_selector.item_count:
 		return &"weapon"
 	return StringName(equipment_slot_selector.get_item_metadata(index))
+
+
+func _enter_practice() -> void:
+	var disciple := GameState.get_disciple(selected_disciple_id)
+	if disciple.is_empty() or str(disciple.get("job", "")) != "idle" or GameState.auto_battle_enabled:
+		disciple_action_status.text = "请先停止挂机，并将此弟子调整为空闲"
+		return
+	if not SaveManager.save_game():
+		disciple_action_status.text = "保存失败，未进入试炼"
+		return
+	var dungeon_service = preload("res://scripts/core/dungeon_service.gd").new(GameState,SaveManager)
+	if not dungeon_service.recover():
+		disciple_action_status.text = "中断副本恢复保存失败，请重试"
+		return
+	var run_id: int = dungeon_service.begin(selected_disciple_id)
+	if run_id == 0:
+		disciple_action_status.text = "副本入场保存失败，请重试"
+		return
+	var arena = preload("res://scripts/combat/dungeon_arena.gd").new()
+	arena.service = dungeon_service
+	arena.run_id = run_id
+	arena.disciple_id = selected_disciple_id
+	arena.sect_tick.connect(_advance_sect_time)
+	arena.stats = GameState.get_disciple_battle_stats(selected_disciple_id).duplicate(true)
+	arena.character_name = str(disciple["name"])
+	var previous_mode := process_mode
+	hide()
+	process_mode = Node.PROCESS_MODE_DISABLED
+	get_parent().add_child(arena)
+	arena.exited.connect(func() -> void:
+		if not arena.settle():
+			return
+		arena.queue_free()
+		process_mode = previous_mode
+		show()
+		_open_management_panel(growth_heading)
+		disciple_action_status.text = dungeon_service.last_message + "；首通法器可在下方领取")
 
 
 func _format_equipment_stats(stats: Dictionary) -> String:
@@ -874,14 +1048,17 @@ func _refresh_equipment_panel() -> void:
 	for slot: StringName in GameState.EQUIPMENT_SLOT_IDS:
 		var item := GameState.get_equipment_instance(int(equipped.get(String(slot), 0)))
 		equipment_names.append("%s：%s" % [EquipmentCatalogData.SLOTS[String(slot)], EquipmentCatalogData.get_display_name(item) if not item.is_empty() else "未装备"])
-	equipment_stats.text = "职业：%s　装备库存：%d/%d\n境界基础　%s\n职业修正后　%s\n装备加成　%s\n最终属性　生命%.0f　攻击%.0f　防御%.0f\n当前穿戴\n%s" % [
+	equipment_stats.text = "职业：%s　装备库存：%d/%d\n境界基础　%s\n职业修正后　%s\n装备加成　%s\n功法加成　%s\n最终属性　生命%.0f　攻击%.0f　防御%.0f\n当前穿戴\n%s" % [
 		profession_name, GameState.equipment_inventory.size(), GameState.MAX_EQUIPMENT_INVENTORY,
 		_format_equipment_stats(stats.get("realm_stats", {})), _format_equipment_stats(stats.get("profession_stats", {})),
-		_format_equipment_stats(stats.get("equipment_bonus", {})), stats.get("hp", 0.0), stats.get("attack", 0.0), stats.get("defense", 0.0),
+		_format_equipment_stats(stats.get("equipment_bonus", {})), _format_equipment_stats(stats.get("technique_bonus", {})), stats.get("hp", 0.0), stats.get("attack", 0.0), stats.get("defense", 0.0),
 		"\n".join(equipment_names),
 	]
 	var selected_slot := _get_selected_equipment_slot()
 	var current_id := int(equipped.get(String(selected_slot), 0))
+	var previous_item_id := 0
+	if equipment_inventory_selector.selected >= 0:
+		previous_item_id = int(equipment_inventory_selector.get_item_metadata(equipment_inventory_selector.selected))
 	equipment_inventory_selector.clear()
 	for item: Dictionary in GameState.equipment_inventory:
 		if StringName(item.get("slot", "")) != selected_slot:
@@ -892,6 +1069,8 @@ func _refresh_equipment_panel() -> void:
 		var label := "%s · %s%s" % [EquipmentCatalogData.get_display_name(item), _format_equipment_stats(item.get("stats", {})), "（已装备）" if int(item.get("id", 0)) == current_id else ""]
 		equipment_inventory_selector.add_item(label)
 		equipment_inventory_selector.set_item_metadata(equipment_inventory_selector.item_count - 1, int(item.get("id", 0)))
+		if int(item.get("id", 0)) == previous_item_id:
+			equipment_inventory_selector.select(equipment_inventory_selector.item_count - 1)
 	if equipment_inventory_selector.item_count == 0:
 		equipment_inventory_selector.add_item("该部位暂无可用装备")
 		equipment_inventory_selector.set_item_metadata(0, 0)
@@ -971,10 +1150,10 @@ func _equip_selected_item() -> void:
 	if selected_disciple_id <= 0 or equipment_inventory_selector.selected < 0:
 		return
 	var instance_id := int(equipment_inventory_selector.get_item_metadata(equipment_inventory_selector.selected))
+	var disciple_id := selected_disciple_id
+	var rollback := GameState.export_save_data()
 	if instance_id > 0 and GameState.equip_item(selected_disciple_id, instance_id):
-		equipment_status.text = "装备已穿戴并保存"
-		equipment_status.modulate = Color(0.55, 0.85, 0.62)
-		SaveManager.save_game()
+		_save_disciple_action(rollback, disciple_id, "装备已穿戴", equipment_status)
 	else:
 		equipment_status.text = "无法穿戴：装备可能已被其他弟子占用"
 		equipment_status.modulate = Color(0.9, 0.55, 0.42)
@@ -982,10 +1161,10 @@ func _equip_selected_item() -> void:
 
 
 func _unequip_selected_item() -> void:
+	var disciple_id := selected_disciple_id
+	var rollback := GameState.export_save_data()
 	if selected_disciple_id > 0 and GameState.unequip_item(selected_disciple_id, _get_selected_equipment_slot()):
-		equipment_status.text = "装备已卸下并保存"
-		equipment_status.modulate = Color(0.55, 0.85, 0.62)
-		SaveManager.save_game()
+		_save_disciple_action(rollback, disciple_id, "装备已卸下", equipment_status)
 	_refresh_equipment_panel()
 
 
@@ -993,11 +1172,11 @@ func _on_disciple_job_selected(index: int) -> void:
 	if index < 0 or index >= disciple_job_selector.item_count or selected_disciple_id <= 0:
 		return
 	var job := StringName(disciple_job_selector.get_item_metadata(index))
+	var disciple_id := selected_disciple_id
+	var rollback := GameState.export_save_data()
 	if GameState.set_disciple_job(selected_disciple_id, job):
-		var disciple := GameState.get_disciple(selected_disciple_id)
-		disciple_job_status.text = "%s已调整为：%s" % [disciple.get("name", "该弟子"), GameState.get_disciple_job_text(job)]
-		disciple_job_status.modulate = Color(0.55, 0.85, 0.62)
-		SaveManager.save_game()
+		var disciple := GameState.get_disciple(disciple_id)
+		_save_disciple_action(rollback, disciple_id, "%s已调整为：%s" % [disciple.get("name", "该弟子"), GameState.get_disciple_job_text(job)], disciple_job_status)
 	else:
 		disciple_job_status.text = "无法调整岗位：修炼位或战斗队伍名额不足"
 		disciple_job_status.modulate = Color(0.9, 0.55, 0.42)
@@ -1005,9 +1184,10 @@ func _on_disciple_job_selected(index: int) -> void:
 
 
 func _breakthrough_selected_disciple() -> void:
+	var disciple_id := selected_disciple_id
+	var rollback := GameState.export_save_data()
 	if GameState.breakthrough_disciple(selected_disciple_id):
-		_refresh_disciple_roster()
-		SaveManager.save_game()
+		_save_disciple_action(rollback, disciple_id, "突破成功", disciple_action_status)
 
 
 func _refresh_sect_progress() -> void:
@@ -1133,6 +1313,9 @@ func _on_load_completed(success: bool, message: String) -> void:
 	if success:
 		var offline_window := SaveManager.get_pending_offline_window()
 		var offline_receipt := SaveManager.settle_pending_offline_progress()
+		var dungeon_service = preload("res://scripts/core/dungeon_service.gd").new(GameState,SaveManager)
+		if not dungeon_service.recover():
+			save_status.text = "副本恢复保存失败，原记录保留"
 		_handle_offline_receipt(offline_window, offline_receipt)
 		_refresh_resources()
 		_refresh_assignment()
@@ -1371,13 +1554,20 @@ func _on_placement_requested(building_id: StringName, cell: Vector2i) -> void:
 	if sect_map.fixed_layout:
 		placement_status.text = "固定院落模式，请选择院落建设"
 		return
+	if not sect_map.is_placement_valid(cell):
+		placement_status.text = str(sect_map.get_placement_feedback(cell)["reason"])
+		return
+	var snapshot := GameState.export_save_data().duplicate(true)
 	if GameState.start_construction(building_id, cell):
+		if not SaveManager.save_game():
+			GameState.import_save_data(snapshot)
+			placement_status.text = "保存失败，建设已撤回，可重试"
+			return
 		var definition := BuildingCatalog.get_data(building_id)
 		placement_status.text = "%s开始施工（%.0f秒）" % [definition["name"], definition["build_time"]]
 		selected_building = &""
 		sect_map.cancel_placement()
 		cancel_build_button.disabled = true
-		SaveManager.save_game()
 	else:
 		placement_status.text = "无法在这里建造"
 

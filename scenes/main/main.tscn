@@ -577,6 +577,19 @@ custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 show_percentage = false
 
+[node name="DiscipleTrainingButton" type="Button" parent="Layout/Body/Sidebar/Margin/Scroll/Info/TrainingSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "安排此弟子修炼"
+
+[node name="DiscipleTrainingStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/TrainingSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 2
+text = "选择弟子，查看修炼位与当前职责"
+
 [node name="DiscipleJobRow" type="HBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info/JobSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -604,6 +617,12 @@ custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 disabled = true
 text = "修为不足，无法突破"
+
+[node name="DiscipleActionStatus" type="Label" parent="Layout/Body/Sidebar/Margin/Scroll/Info/TrainingSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 2
 
 [node name="EquipmentSection" type="VBoxContainer" parent="Layout/Body/Sidebar/Margin/Scroll/Info"]
 layout_mode = 2

@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "nodes": [
+    {
+      "id": "core-development-manual",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-core-development-manual"
+      },
+      "title": "青云宗核心玩法开发手册 v1.0",
+      "description": "v1.0原文保留，末尾明确补充2026-10-28负责人新决定：核心身份/获取暂缓，先用现有免费普通弟子完成养成过渡。P1/P2已验收，P3过渡候选待验收。"
+    },
+    {
+      "id": "p1-free-built-720",
+      "type": "asset",
+      "data": {
+        "assetId": "p1-free-built-720",
+        "mediaType": "image"
+      },
+      "title": "P1自由建造 · 720p实际游戏",
+      "description": "当前源码GPU真实截图，复用连续地形的功能候选；未真人试玩或负责人验收，不是最终美术目标。"
+    },
+    {
+      "id": "p1-free-selected-1080",
+      "type": "asset",
+      "data": {
+        "assetId": "p1-free-selected-1080",
+        "mediaType": "image"
+      },
+      "title": "P1自由建造 · 1080p建筑选择",
+      "description": "当前源码GPU真实截图，复用连续地形的功能候选；未真人试玩或负责人验收，不是最终美术目标。"
+    },
+    {
+      "id": "p1-free-delivery",
+      "type": "text",
+      "data": {
+        "text": "2026-10-28负责人先验收P1自由建造，后明确“验收完成，继续下一阶段”验收P2资源发展。当前进入P3核心弟子与养成底座准备，尚未实现P4主动战斗；旧V0.8视觉Issue不随之验收。",
+        "instruction": "项目交付状态说明，不是媒体生成请求。"
+      },
+      "title": "P1自由建造 · 负责人已验收"
+    },
+    {
+      "id": "p2-economy-opening",
+      "type": "asset",
+      "data": {
+        "assetId": "p2-economy-opening",
+        "mediaType": "image"
+      },
+      "title": "P2资源发展 · 开局收支与下一步",
+      "description": "P2源码GPU实际截图；2026-10-28负责人确认本阶段验收完成。原经济数值/奖励/存档保持，Windows原生证书问题仍保留。"
+    },
+    {
+      "id": "p2-economy-hungry",
+      "type": "asset",
+      "data": {
+        "assetId": "p2-economy-hungry",
+        "mediaType": "image"
+      },
+      "title": "P2资源发展 · 缺粮恢复提示",
+      "description": "P2源码GPU实际截图；2026-10-28负责人确认本阶段验收完成。原经济数值/奖励/存档保持，Windows原生证书问题仍保留。"
+    },
+    {
+      "id": "p2-economy-transfer",
+      "type": "asset",
+      "data": {
+        "assetId": "p2-economy-transfer",
+        "mediaType": "image"
+      },
+      "title": "P2资源发展 · 无闲人时调岗",
+      "description": "P2源码GPU实际截图；2026-10-28负责人确认本阶段验收完成。原经济数值/奖励/存档保持，Windows原生证书问题仍保留。"
+    },
+    {
+      "id": "qingyun-p2-resource-delivery",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p2-resource-delivery"
+      },
+      "title": "P2宗门资源发展 · 交付与四节点基线",
+      "description": "2026-10-28负责人明确“验收完成，继续下一阶段”，P2已ACCEPTED并授权进入P3。本文档保留交付时证据快照；最新验收记录见qingyun-sect/docs/CORE_P2_RESOURCE_DEVELOPMENT.md。Windows证书问题仍保留。"
+    },
+    {
+      "id": "qingyun-p3-ordinary-preparation",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p3-ordinary-preparation"
+      },
+      "title": "P3普通弟子养成过渡 · 已验收",
+      "description": "采用现有新档3名普通弟子；指定修炼、突破、换装与保存回滚。独立核心身份延期，78快测/双尺寸8实图通过；Windows证书错误保留，待负责人验收。"
+    },
+    {
+      "id": "p3-ordinary-opening",
+      "type": "asset",
+      "data": {
+        "assetId": "p3-ordinary-opening",
+        "mediaType": "image"
+      },
+      "title": "P3普通弟子 · 720p开局养成",
+      "description": "当前源码GPU实际游戏截图，已目视检查。P3普通养成过渡候选待验收；测试使用隔离存档，无核心身份/晋升/单独招募或主动战斗。"
+    },
+    {
+      "id": "p3-ordinary-training",
+      "type": "asset",
+      "data": {
+        "assetId": "p3-ordinary-training",
+        "mediaType": "image"
+      },
+      "title": "P3普通弟子 · 1080p指定修炼",
+      "description": "当前源码GPU实际游戏截图，已目视检查。P3普通养成过渡候选待验收；测试使用隔离存档，无核心身份/晋升/单独招募或主动战斗。"
+    },
+    {
+      "id": "p3-ordinary-save-failure",
+      "type": "asset",
+      "data": {
+        "assetId": "p3-ordinary-save-failure",
+        "mediaType": "image"
+      },
+      "title": "P3普通弟子 · 保存失败撤回",
+      "description": "当前源码GPU实际游戏截图，已目视检查。P3普通养成过渡候选待验收；测试使用隔离存档，无核心身份/晋升/单独招募或主动战斗。"
+    },
+    {
+      "id": "qingyun-p4-practice",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p4-practice"
+      },
+      "title": "P4战斗手感原型 · 已验收"
+    },
+    {
+      "id": "p4-practice-1280",
+      "type": "asset",
+      "data": {
+        "assetId": "p4-practice-1280",
+        "mediaType": "image"
+      },
+      "title": "P4试炼实图 1280"
+    },
+    {
+      "id": "p4-practice-1920",
+      "type": "asset",
+      "data": {
+        "assetId": "p4-practice-1920",
+        "mediaType": "image"
+      },
+      "title": "P4试炼实图 1920"
+    },
+    {
+      "id": "qingyun-p5-single-run",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p5-single-run"
+      },
+      "title": "P5完整单局 · 已验收"
+    },
+    {
+      "id": "p5-upgrades",
+      "type": "asset",
+      "data": {
+        "assetId": "p5-upgrades",
+        "mediaType": "image"
+      },
+      "title": "P5 upgrades 实图"
+    },
+    {
+      "id": "p5-boss",
+      "type": "asset",
+      "data": {
+        "assetId": "p5-boss",
+        "mediaType": "image"
+      },
+      "title": "P5 boss 实图"
+    },
+    {
+      "id": "qingyun-p6-dungeon-loop",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p6-dungeon-loop"
+      },
+      "title": "P6闭环功能已验收 · 收益整改候选",
+      "description": "P6功能已验收；本轮挂机收益整改85快测通过，Windows包可启动但保留系统证书错误。P7丹药边界待答复，未实现丹药功法。"
+    },
+    {
+      "id": "p6-victory",
+      "type": "asset",
+      "data": {
+        "assetId": "p6-victory",
+        "mediaType": "image"
+      },
+      "title": "P6 victory 实图"
+    },
+    {
+      "id": "p6-returned",
+      "type": "asset",
+      "data": {
+        "assetId": "p6-returned",
+        "mediaType": "image"
+      },
+      "title": "P6 returned 实图"
+    },
+    {
+      "id": "p7-medicine-1280",
+      "type": "asset",
+      "data": {
+        "assetId": "p7-medicine-1280",
+        "mediaType": "image"
+      },
+      "title": "P7修炼丹 · 1280实际游戏",
+      "description": "当前源码GPU实际截图，隔离夹具制作一粒丹药；展示养成页库存和按钮，未真人验收。"
+    },
+    {
+      "id": "p7-medicine-1920",
+      "type": "asset",
+      "data": {
+        "assetId": "p7-medicine-1920",
+        "mediaType": "image"
+      },
+      "title": "P7修炼丹 · 1920实际游戏",
+      "description": "当前源码GPU实际截图，隔离夹具制作一粒丹药；展示养成页库存和按钮，未真人验收。"
+    },
+    {
+      "id": "p7-medicine-document",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p7-medicine"
+      },
+      "title": "P7修炼丹 · 已验收"
+    },
+    {
+      "id": "p7-techniques-1280",
+      "type": "asset",
+      "data": {
+        "assetId": "p7-techniques-1280",
+        "mediaType": "image"
+      },
+      "title": "P7永久功法 · 1280实际游戏",
+      "description": "隔离GPU夹具，养成页单槽功法与学习切换按钮；待负责人验收。"
+    },
+    {
+      "id": "p7-techniques-1920",
+      "type": "asset",
+      "data": {
+        "assetId": "p7-techniques-1920",
+        "mediaType": "image"
+      },
+      "title": "P7永久功法 · 1920实际游戏",
+      "description": "隔离GPU夹具，养成页单槽功法与学习切换按钮；待负责人验收。"
+    },
+    {
+      "id": "p7-techniques-document",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p7-techniques"
+      },
+      "title": "P7永久功法 · 已验收"
+    },
+    {
+      "id": "p8-attributes-1280",
+      "type": "asset",
+      "data": {
+        "assetId": "p8-attributes-1280",
+        "mediaType": "image"
+      },
+      "title": "P8属性来源 · 1280实际游戏",
+      "description": "当前源码GPU隔离夹具，展示功法加成与最终属性；不是正式档或真人通关截图。"
+    },
+    {
+      "id": "p8-attributes-1920",
+      "type": "asset",
+      "data": {
+        "assetId": "p8-attributes-1920",
+        "mediaType": "image"
+      },
+      "title": "P8属性来源 · 1920实际游戏",
+      "description": "当前源码GPU隔离夹具，展示功法加成与最终属性；不是正式档或真人通关截图。"
+    },
+    {
+      "id": "p8-delivery-document",
+      "type": "document",
+      "data": {
+        "documentId": "qingyun-p8-delivery"
+      },
+      "title": "P8核心循环候选 · 已验收"
+    }
+  ],
+  "edges": [],
+  "id": "8f158a54-73fb-4871-92da-06f49972a2e3"
+}

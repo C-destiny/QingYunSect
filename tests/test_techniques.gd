@@ -1,0 +1,61 @@
+extends SceneTree
+func _init() -> void:
+	call_deferred("run")
+func run() -> void:
+	var s = load("res://scripts/core/game_state.gd").new()
+	root.add_child(s)
+	s.get_idle_disciples()
+	assert(not s.learn_technique(1,"edge"))
+	s.resources["wood"] = 1000
+	s.resources["spirit_stone"] = 1000
+	assert(s.start_construction(&"scripture_library",Vector2i(0,0)))
+	s.process_construction(999)
+	var stats: Dictionary = s.get_disciple_battle_stats(1)
+	var stone: int = s.resources["spirit_stone"]
+	assert(s.learn_technique(1,"edge"))
+	assert(s.resources["spirit_stone"] == stone-20)
+	assert(not s.learn_technique(1,"edge"))
+	assert(s.get_disciple_battle_stats(1)["attack"] == stats["attack"])
+	assert(s.select_technique(1,"edge"))
+	assert(s.get_disciple_battle_stats(1)["attack"] == stats["attack"]+3)
+	assert(s.get_disciple_battle_stats(1).get("technique_bonus",{}) == {"hp":0.0,"attack":3.0})
+	assert(s.learn_technique(1,"guard"))
+	assert(s.select_technique(1,"guard"))
+	assert(s.get_disciple_battle_stats(1)["attack"] == stats["attack"])
+	assert(s.get_disciple_battle_stats(1)["hp"] == stats["hp"]+30)
+	assert(s.get_disciple_battle_stats(2)["hp"] != s.get_disciple_battle_stats(1)["hp"])
+	var sim = load("res://scripts/combat/single_run_simulation.gd").new()
+	sim.configure(s.get_disciple_battle_stats(1))
+	assert(sim.maximum_hp == stats["hp"]+30)
+	assert(s.set_disciple_job(1,&"combat"))
+	assert(not s.select_technique(1,"edge"))
+	assert(s.set_disciple_job(1,&"idle"))
+	var before: Dictionary = s.export_save_data()
+	assert(s.import_save_data(before))
+	for bad: Variant in [{"999":{"learned":["edge"],"active":"edge"}},{"1":{"learned":["edge","edge"],"active":"edge"}},{"1":{"learned":[],"active":"guard"}},{"1":{"learned":["bad"],"active":""}}]:
+		var corrupt: Dictionary = before.duplicate(true)
+		corrupt["techniques"] = bad
+		assert(not s.import_save_data(corrupt))
+		assert(s.export_save_data() == before)
+	var manager = load("res://scripts/core/save_manager.gd").new()
+	root.add_child(manager)
+	manager.game_state = s
+	manager.save_path = "res://tests/.missing_technique_folder/save.json"
+	var panel = load("res://scripts/ui/technique_panel.gd").new()
+	root.add_child(panel)
+	panel.setup(s,manager,func(): return 1)
+	panel.perform("edge",false)
+	assert(s.export_save_data() == before)
+	assert("撤回" in panel.feedback.text)
+	panel.selected = func(): return 2
+	panel.perform("edge",true)
+	assert(s.export_save_data() == before)
+	var old: Dictionary = before.duplicate(true)
+	old.erase("techniques")
+	assert(s.import_save_data(old))
+	assert(s.techniques.is_empty())
+	panel.queue_free()
+	manager.queue_free()
+	s.queue_free()
+	print("PASS: permanent technique costs, single slot, battle snapshot, migration and save rollback")
+	quit()

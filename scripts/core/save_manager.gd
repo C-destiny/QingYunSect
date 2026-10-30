@@ -4,8 +4,8 @@ signal save_completed(success: bool, message: String)
 signal load_completed(success: bool, message: String)
 signal offline_window_ready(window: Dictionary)
 
-const SAVE_VERSION := 3
-const SUPPORTED_SAVE_VERSIONS := [1, 2, SAVE_VERSION]
+const SAVE_VERSION := 6
+const SUPPORTED_SAVE_VERSIONS := [1, 2, 3, 4, 5, SAVE_VERSION]
 const TEMP_SUFFIX := ".tmp"
 const BACKUP_SUFFIX := ".bak"
 const MAX_OFFLINE_SECONDS := 8 * 60 * 60
@@ -262,9 +262,15 @@ func _is_payload_game_state_compatible(payload: Dictionary) -> bool:
 	var version := int(payload.get("version", 0))
 	if version == 1:
 		return true
-	if version not in [2, SAVE_VERSION]:
+	if version not in [2, 3, 4, 5, SAVE_VERSION]:
 		return false
 	var state: Dictionary = payload.get("game_state", {})
+	if version == 6 and not state.has("techniques"):
+		return false
+	if version >= 5 and not state.has("medicine"):
+		return false
+	if version >= 4 and not state.has("dungeon_progress"):
+		return false
 	if not state.has("equipment_inventory") or not state["equipment_inventory"] is Array:
 		return false
 	if not state.has("next_equipment_instance_id") or typeof(state["next_equipment_instance_id"]) not in [TYPE_INT, TYPE_FLOAT]:
@@ -278,7 +284,7 @@ func _is_payload_game_state_compatible(payload: Dictionary) -> bool:
 		var disciple: Dictionary = raw_disciple
 		if not disciple.has("profession") or not disciple.has("equipment") or not disciple["equipment"] is Dictionary:
 			return false
-	if version == SAVE_VERSION:
+	if version >= 3:
 		if not state.has("unlocked_regions") or not state["unlocked_regions"] is Array:
 			return false
 		if not state.has("equipment_crafts_completed") or typeof(state["equipment_crafts_completed"]) not in [TYPE_INT, TYPE_FLOAT]:

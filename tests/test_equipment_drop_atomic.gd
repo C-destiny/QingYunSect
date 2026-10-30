@@ -21,7 +21,7 @@ func _init() -> void:
 	state.get_idle_disciples()
 	for disciple: Dictionary in state.disciples:
 		assert(state.set_disciple_job(int(disciple["id"]), &"combat"))
-	state.battle_victories = 4
+	state.battle_victories = 99
 	assert(state.start_auto_battle(1))
 	var before: Dictionary = state.export_save_data()
 	manager.save_path = "res://tests/missing-directory/drop.json"

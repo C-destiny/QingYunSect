@@ -46,7 +46,7 @@ func _init() -> void:
 	assert(state.process_battle(1000.0))
 	assert(state.get_battle_phase() == &"repeat_wait")
 	assert(state.battle_victories == 1)
-	assert(state.get_resource_amount(&"wood") == wood_before + 20)
+	assert(state.get_resource_amount(&"wood") == wood_before + 1)
 	assert(not state.process_battle(0.5))
 	assert(state.get_battle_phase() == &"repeat_wait")
 	assert(not state.process_battle(state.BATTLE_RESTART_DELAY))

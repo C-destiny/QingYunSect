@@ -11,7 +11,7 @@ func _init() -> void:
 	assert("第1回合" in state.battle_log[-1] or "第1回合" in state.battle_log[-2])
 	assert(state.process_battle(100.0))
 	assert(state.last_battle_result["result"] == "胜利")
-	assert("木材20" in state.last_battle_result["reward_text"])
+	assert("木材1" in state.last_battle_result["reward_text"])
 	var wins: int = state.battle_victories
 	var saved: Dictionary = state.export_save_data()
 	var restored := preload("res://scripts/core/game_state.gd").new()

@@ -1,10 +1,51 @@
 {
-  "version": 1,
-  "boards": [
-    {
-      "id": "985ce38c-09ac-4c7b-bb77-4d491e30d4ab",
-      "name": "Untitled"
-    }
-  ],
-  "documents": []
+    "version":  1,
+    "boards":  [
+                   {
+                       "id":  "985ce38c-09ac-4c7b-bb77-4d491e30d4ab",
+                       "name":  "Untitled"
+                   },
+                   {
+                       "id":  "8f158a54-73fb-4871-92da-06f49972a2e3",
+                       "name":  "Untitled"
+                   }
+               ],
+    "documents":  [
+                      {
+                          "id":  "qingyun-core-development-manual",
+                          "title":  "青云宗核心玩法开发手册 v1.0"
+                      },
+                      {
+                          "id":  "qingyun-p2-resource-delivery",
+                          "title":  "P2宗门资源发展 · 交付与四节点基线"
+                      },
+                      {
+                          "id":  "qingyun-p3-ordinary-preparation",
+                          "title":  "P3普通弟子养成过渡 · 待验收"
+                      },
+                      {
+                          "id":  "qingyun-p4-practice",
+                          "title":  "P4战斗手感原型 · 已验收"
+                      },
+                      {
+                          "id":  "qingyun-p5-single-run",
+                          "title":  "P5完整单局 · 已验收"
+                      },
+                      {
+                          "id":  "qingyun-p6-dungeon-loop",
+                          "title":  "P6副本闭环 · 功能候选与收益整改"
+                      },
+                      {
+                          "id":  "qingyun-p7-medicine",
+                          "title":  "P7修炼丹 · 已验收"
+                      },
+                      {
+                          "id":  "qingyun-p7-techniques",
+                          "title":  "P7永久功法 · 已验收"
+                      },
+                      {
+                          "id":  "qingyun-p8-delivery",
+                          "title":  "P8核心循环候选 · 已验收"
+                      }
+                  ]
 }

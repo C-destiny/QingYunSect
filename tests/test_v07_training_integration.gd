@@ -31,6 +31,6 @@ func _init() -> void:
 	assert(offline.set_disciple_job(disciple_id, &"combat"))
 	assert(offline.training_disciples == 0)
 	assert(disciple_id in offline.battle_party)
-	assert(offline.EQUIPMENT_DROP_INTERVAL == 5)
+	assert(offline.EQUIPMENT_DROP_INTERVAL == 100)
 	print("PASS: scripture bonuses match online/offline training, segment at completion, and preserve job exclusivity")
 	quit()

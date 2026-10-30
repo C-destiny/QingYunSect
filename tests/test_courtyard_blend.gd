@@ -15,6 +15,7 @@ func _run() -> void:
 	var manager := root.get_node("SaveManager")
 	manager.save_path = PATH
 	var main := (load("res://scenes/main/main.tscn") as PackedScene).instantiate() as Control
+	main.fixed_layout_preview = true # Explicit historical fixed-layout fixture.
 	root.add_child(main)
 	main.set_process(false)
 	main.autosave_timer.stop()

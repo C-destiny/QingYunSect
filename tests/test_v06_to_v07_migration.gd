@@ -51,7 +51,7 @@ func _init() -> void:
 	assert(state.buildings[0]["cell_x"] == 0 and state.buildings[0]["cell_y"] == 0)
 	assert(manager.save_game())
 	var migrated := _read_payload()
-	assert(int(migrated["version"]) == 3)
+	assert(int(migrated["version"]) == manager.SAVE_VERSION)
 	assert(migrated["game_state"]["unlocked_regions"] == ["core"])
 	assert(int(migrated["game_state"]["equipment_crafts_completed"]) == 0)
 	assert(migrated["game_state"]["claimed_development_goals"] == [])

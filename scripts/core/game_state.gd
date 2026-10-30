@@ -38,7 +38,7 @@ const BATTLE_ROUND_TIME := BattleCatalogData.ROUND_TIME
 const BATTLE_RESTART_DELAY := BattleCatalogData.RESTART_DELAY
 const BATTLE_LOG_LIMIT := 30
 const MAX_EQUIPMENT_INVENTORY := 60
-const EQUIPMENT_DROP_INTERVAL := 5
+const EQUIPMENT_DROP_INTERVAL := 100
 const EQUIPMENT_DROP_TEMPLATES := [&"initiate_weapon", &"cloud_robe", &"spirit_ring"]
 const PROFESSION_IDS := [&"sword", &"mage"]
 const EQUIPMENT_SLOT_IDS := [&"weapon", &"armor", &"ring"]
@@ -62,6 +62,7 @@ var training_disciples: int = 0
 var cultivation_points: float = 0.0
 var disciples: Array[Dictionary] = []
 var next_disciple_id: int = 1
+var dungeon_progress: Dictionary = preload("res://scripts/core/dungeon_ledger.gd").empty()
 var equipment_inventory: Array[Dictionary] = []
 var next_equipment_instance_id: int = 1
 var unlocked_regions: Array[String] = ["core"]
@@ -155,7 +156,7 @@ func get_resource_net_per_minute(resource_id: StringName) -> float:
 
 func get_idle_disciples() -> int:
 	_ensure_disciple_records()
-	return total_disciples - assigned_disciples
+	return total_disciples - assigned_disciples - (0 if dungeon_progress["active"].is_empty() else 1)
 
 
 func _create_disciple() -> Dictionary:
@@ -373,6 +374,8 @@ func get_equipment_owner(instance_id: int) -> int:
 
 
 func equip_item(disciple_id: int, instance_id: int) -> bool:
+	if is_dungeon_locked(disciple_id):
+		return false
 	var disciple := get_disciple(disciple_id)
 	var equipment := get_equipment_instance(instance_id)
 	if disciple.is_empty() or equipment.is_empty():
@@ -394,6 +397,8 @@ func equip_item(disciple_id: int, instance_id: int) -> bool:
 
 
 func unequip_item(disciple_id: int, slot: StringName) -> bool:
+	if is_dungeon_locked(disciple_id):
+		return false
 	if slot not in EQUIPMENT_SLOT_IDS:
 		return false
 	var disciple := get_disciple(disciple_id)
@@ -502,6 +507,8 @@ func can_breakthrough(disciple_id: int) -> bool:
 
 
 func breakthrough_disciple(disciple_id: int) -> bool:
+	if is_dungeon_locked(disciple_id):
+		return false
 	if not can_breakthrough(disciple_id):
 		return false
 	var disciple := get_disciple(disciple_id)
@@ -524,6 +531,8 @@ func get_disciple_job_text(job: StringName) -> String:
 
 
 func can_set_disciple_job(disciple_id: int, job: StringName) -> bool:
+	if is_dungeon_locked(disciple_id):
+		return false
 	if job not in [&"idle", &"forest", &"mine", &"field", &"training", &"combat"]:
 		return false
 	var disciple := get_disciple(disciple_id)
@@ -624,14 +633,16 @@ func get_disciple_battle_stats(disciple_id: int) -> Dictionary:
 	if profession_stats.is_empty():
 		return {}
 	var equipment_bonus := get_disciple_equipment_bonus(disciple_id)
+	var technique_bonus := get_technique_bonus(disciple_id)
 	return {
-		"hp": float(profession_stats["hp"]) + float(equipment_bonus["hp"]),
-		"attack": float(profession_stats["attack"]) + float(equipment_bonus["attack"]),
+		"hp": float(profession_stats["hp"]) + float(equipment_bonus["hp"]) + float(technique_bonus["hp"]),
+		"attack": float(profession_stats["attack"]) + float(equipment_bonus["attack"]) + float(technique_bonus["attack"]),
 		"defense": float(profession_stats["defense"]) + float(equipment_bonus["defense"]),
 		"profession": String(profession),
 		"realm_stats": realm_stats,
 		"profession_stats": profession_stats,
 		"equipment_bonus": equipment_bonus,
+		"technique_bonus": technique_bonus,
 	}
 
 
@@ -666,6 +677,8 @@ func get_battle_phase() -> StringName:
 
 
 func start_auto_battle(stage_id: int = selected_battle_stage) -> bool:
+	if not dungeon_progress["active"].is_empty():
+		return false
 	if battle_running:
 		return false
 	if battle_party.is_empty() or not is_battle_party_consistent() or not select_battle_stage(stage_id):
@@ -921,7 +934,7 @@ func assign_training_disciple() -> bool:
 	if get_idle_disciples() <= 0 or training_disciples >= get_training_capacity():
 		return false
 	for disciple: Dictionary in disciples:
-		if StringName(disciple.get("job", "idle")) == &"idle":
+		if StringName(disciple.get("job", "idle")) == &"idle" and not is_dungeon_locked(int(disciple["id"])):
 			disciple["job"] = "training"
 			break
 	_sync_aggregate_state_from_disciples()
@@ -1066,7 +1079,7 @@ func assign_disciple(site_id: StringName) -> bool:
 	if get_idle_disciples() <= 0:
 		return false
 	for disciple: Dictionary in disciples:
-		if StringName(disciple.get("job", "idle")) == &"idle":
+		if StringName(disciple.get("job", "idle")) == &"idle" and not is_dungeon_locked(int(disciple["id"])):
 			disciple["job"] = String(site_id)
 			break
 	_sync_aggregate_state_from_disciples()
@@ -1206,6 +1219,7 @@ func apply_offline_progress(window: Dictionary) -> Dictionary:
 	if not bool(window.get("eligible", false)) or seconds <= 0.0:
 		return receipt
 	var before_resources := resources.duplicate(true)
+	process_medicine(seconds)
 	_process_offline_timed_activities(seconds, receipt)
 	var battle_result := _process_offline_battle(seconds)
 	receipt["battle_victories"] = int(battle_result.get("victories", 0))
@@ -1376,9 +1390,15 @@ func _start_offline_battle_encounter(stage: Dictionary, party_stats: Dictionary)
 	battle_restart_cooldown = 0.0
 
 
+var techniques: Dictionary = {}
+var medicine: Dictionary = {"stock": 0, "remaining": 0.0}
+
 func export_save_data() -> Dictionary:
 	_ensure_disciple_records()
 	return {
+		"techniques": techniques.duplicate(true),
+		"medicine": medicine.duplicate(true),
+		"dungeon_progress": dungeon_progress.duplicate(true),
 		"resources": resources.duplicate(true),
 		"total_disciples": total_disciples,
 		"assignments": assignments.duplicate(true),
@@ -1640,6 +1660,18 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 		return false
 	if total_disciples + (1 if is_recruiting() else 0) > get_disciple_capacity():
 		return false
+	var loaded_dungeon: Variant = data.get("dungeon_progress",preload("res://scripts/core/dungeon_ledger.gd").empty())
+	if not preload("res://scripts/core/dungeon_ledger.gd").valid(loaded_dungeon,self):
+		return false
+	var loaded_medicine: Variant = data.get("medicine", {"stock": 0, "remaining": 0.0})
+	if not preload("res://scripts/core/medicine_rules.gd").valid(loaded_medicine):
+		return false
+	var loaded_techniques: Variant = data.get("techniques", {})
+	if not preload("res://scripts/data/technique_catalog.gd").valid(loaded_techniques,self):
+		return false
+	techniques = loaded_techniques.duplicate(true)
+	medicine = loaded_medicine.duplicate(true)
+	dungeon_progress = loaded_dungeon.duplicate(true)
 	resources_changed.emit()
 	assignments_changed.emit()
 	buildings_changed.emit()
@@ -1654,3 +1686,71 @@ func _import_save_data_in_place(data: Dictionary) -> bool:
 	development_goal_changed.emit()
 	return true
 
+
+func is_dungeon_locked(disciple_id: int) -> bool:
+	return int(dungeon_progress["active"].get("disciple_id",0)) == disciple_id
+
+func can_start_medicine() -> bool:
+	return get_training_capacity() > 0 and float(medicine["remaining"]) == 0.0 and int(medicine["stock"]) < 20 and get_resource_amount(&"food") >= 20 and get_resource_amount(&"spirit_stone") >= 8 and dungeon_progress["active"].is_empty()
+
+func start_medicine() -> bool:
+	if not can_start_medicine():
+		return false
+	resources["food"] -= 20
+	resources["spirit_stone"] -= 8
+	medicine["remaining"] = 60.0
+	resources_changed.emit()
+	return true
+
+func process_medicine(delta: float) -> void:
+	if not is_finite(delta) or delta <= 0.0 or float(medicine["remaining"]) <= 0.0:
+		return
+	medicine["remaining"] = maxf(0.0, float(medicine["remaining"]) - delta)
+	if float(medicine["remaining"]) == 0.0:
+		medicine["stock"] += 1
+
+func can_use_medicine(disciple_id: int) -> bool:
+	var disciple := get_disciple(disciple_id)
+	return int(medicine["stock"]) > 0 and not disciple.is_empty() and int(disciple["realm_level"]) < REALM_MAX_LEVEL and disciple["job"] in ["idle", "training"] and not is_dungeon_locked(disciple_id)
+
+func use_medicine(disciple_id: int) -> bool:
+	if not can_use_medicine(disciple_id):
+		return false
+	medicine["stock"] -= 1
+	get_disciple(disciple_id)["cultivation"] += 5.0
+	disciples_changed.emit()
+	return true
+func can_manage_technique(disciple_id: int) -> bool:
+	var d := get_disciple(disciple_id)
+	return not d.is_empty() and d["job"] in ["idle","training"] and not is_dungeon_locked(disciple_id)
+
+func get_technique_record(disciple_id: int) -> Dictionary:
+	return techniques.get(str(disciple_id), {"learned":[],"active":""}).duplicate(true)
+
+func can_learn_technique(disciple_id: int, id: String) -> bool:
+	return can_manage_technique(disciple_id) and preload("res://scripts/data/technique_catalog.gd").ITEMS.has(id) and id not in get_technique_record(disciple_id)["learned"] and get_completed_building_count(&"scripture_library") > 0 and get_resource_amount(&"spirit_stone") >= preload("res://scripts/data/technique_catalog.gd").COST
+
+func learn_technique(disciple_id: int, id: String) -> bool:
+	if not can_learn_technique(disciple_id,id):
+		return false
+	var record := get_technique_record(disciple_id)
+	record["learned"].append(id)
+	techniques[str(disciple_id)] = record
+	resources["spirit_stone"] -= preload("res://scripts/data/technique_catalog.gd").COST
+	resources_changed.emit()
+	disciples_changed.emit()
+	return true
+
+func select_technique(disciple_id: int, id: String) -> bool:
+	var record := get_technique_record(disciple_id)
+	if not can_manage_technique(disciple_id) or (id != "" and id not in record["learned"]) or record["active"] == id:
+		return false
+	record["active"] = id
+	techniques[str(disciple_id)] = record
+	disciples_changed.emit()
+	return true
+
+func get_technique_bonus(disciple_id: int) -> Dictionary:
+	var id: String = get_technique_record(disciple_id)["active"]
+	var data: Dictionary = preload("res://scripts/data/technique_catalog.gd").ITEMS.get(id,{})
+	return {"hp":float(data.get("hp",0)),"attack":float(data.get("attack",0))}
